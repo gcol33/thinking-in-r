@@ -1,0 +1,431 @@
+# Data transformation {#sec-data-transformation}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+Every data analysis is the same four moves: keep the rows you want, pick the columns you need, compute new values, summarize. dplyr gives each move a name.
+
+
+## The idea: verbs for data {#sec-verbs-for-data}
+
+A dplyr verb takes a data frame and returns a data frame. The data frame goes in first, the result comes out the same shape (a data frame), and nothing else changes. Every verb does one thing:
+
+- `filter()` keeps rows that match a condition.
+- `select()` picks columns by name.
+- `mutate()` adds new columns computed from existing ones.
+- `summarise()` collapses rows into a summary.
+- `arrange()` reorders rows.
+
+These five verbs cover most of what you need. You compose them for complex transformations (via pipes, @sec-pipes-and-composition), but each one does exactly one thing. A dplyr pipeline is function composition: each verb transforms a data frame and passes it to the next, the same composition from lambda calculus, (g ∘ f)(x) = g(f(x)), applied to tables instead of numbers.
+
+The verbs map directly onto *relational algebra*, a mathematical framework for working with tables: `filter()` is restriction (keep rows where a predicate holds), `select()` is projection (keep certain columns), `mutate()` is extension (add computed columns), and `summarise()` is aggregation (collapse groups to summaries). `arrange()` handles ordering, which has no relational equivalent but is essential for display. You don't need to know relational algebra, but the mathematical grounding explains why they compose so cleanly and why the same ideas appear in every language that works with tabular data.
+
+```{r}
+library(palmerpenguins)
+library(dplyr)
+```
+
+The `penguins` data frame (loaded by `palmerpenguins`) has 344 rows and 8 columns: species, island, bill measurements, flipper length, body mass, sex, and year. Every example in this chapter uses it.
+
+```{r}
+penguins
+```
+
+
+## `filter()`: keep rows {#sec-filter}
+
+`filter()` takes a data frame and one or more conditions. It returns only the rows where every condition is `TRUE`.
+
+```{r}
+filter(penguins, species == "Adelie")
+```
+
+The first argument is the data frame. The second is a logical expression, the same kind you wrote in @sec-comparison-operators. Inside `filter()`, column names work like variables: `species` refers to the `species` column, not an object in your global environment.
+
+Multiple conditions, separated by commas, are combined with AND:
+
+```{r}
+#| results: hide
+filter(penguins, species == "Adelie", body_mass_g > 4000)
+```
+
+This keeps only Adelie penguins heavier than 4000 grams. Comma means "and." You can also write `&` explicitly, but the comma is cleaner.
+
+For OR, use `|`:
+
+```{r}
+#| results: hide
+filter(penguins, species == "Adelie" | species == "Chinstrap")
+```
+
+When testing membership in a set, `%in%` is clearer than chaining `|`:
+
+```{r}
+#| results: hide
+filter(penguins, species %in% c("Adelie", "Chinstrap"))
+```
+
+One detail worth knowing: `filter()` drops rows where the condition evaluates to `NA`. If `body_mass_g` is `NA` for a row, then `body_mass_g > 4000` is `NA`, and `filter()` excludes it. This is usually what you want. If you need to keep `NA` rows, test for them explicitly: `filter(penguins, is.na(body_mass_g))`.
+
+Under the hood, `filter()` is doing the same logical subsetting you saw in @sec-comparison-operators: `penguins[penguins$species == "Adelie", ]`. The verb just makes the intent explicit.
+
+
+### Exercises {.unnumbered}
+
+1. Filter `penguins` to keep only female penguins from Biscoe island.
+2. Filter `penguins` to keep rows where `flipper_length_mm` is greater than 200 or `body_mass_g` is less than 3000.
+3. How many rows have missing values in `sex`? Use `filter()` and `nrow()`.
+
+
+## `select()`: pick columns {#sec-select}
+
+`select()` keeps the columns you name and drops everything else.
+
+```{r}
+select(penguins, species, bill_length_mm, body_mass_g)
+```
+
+The result keeps only those three columns; the rest are gone.
+
+Drop columns by prefixing with `-`:
+
+```{r}
+#| results: hide
+select(penguins, -year)
+```
+
+For more flexible selection, dplyr provides helper functions. `starts_with()`, `ends_with()`, and `contains()` match column names by pattern:
+
+```{r}
+#| results: hide
+select(penguins, starts_with("bill"))
+```
+
+```{r}
+#| results: hide
+select(penguins, ends_with("mm"))
+```
+
+`where()` selects columns based on their content, not their name. `where(is.numeric)` keeps every numeric column:
+
+```{r}
+#| results: hide
+select(penguins, species, where(is.numeric))
+```
+
+You can rename columns inside `select()`:
+
+```{r}
+select(penguins, species, mass = body_mass_g)
+```
+
+This selects `species` and `body_mass_g`, renaming the latter to `mass`. If you want to rename without dropping columns, use `rename()`:
+
+```{r}
+#| results: hide
+rename(penguins, mass = body_mass_g)
+```
+
+To reorder columns (move `species` to the front, keep everything else), use `everything()`:
+
+```{r}
+#| results: hide
+select(penguins, island, species, everything())
+```
+
+
+### Exercises {.unnumbered}
+
+1. Select all columns from `penguins` that contain the string `"length"`.
+2. Select `species`, `island`, and all numeric columns. (Hint: combine names and `where()`.)
+3. What is the difference between `select(penguins, mass = body_mass_g)` and `rename(penguins, mass = body_mass_g)`? Try both.
+
+
+## `mutate()`: compute new columns {#sec-mutate}
+
+`mutate()` adds new columns. The original columns stay.
+
+`mutate()` is the functor pattern applied to data frames. It maps a function over a column (the container), producing a new column of the same length. The container's shape (344 rows) is preserved; only the contents change. You saw the same pattern with vectorized `sqrt()` on vectors (@sec-vectorized-ops), with `sapply()` on lists (@sec-passing-functions), and with `map()` on split data frames (@sec-purrr-map). Each time, the structure is 'apply a function inside a container, keep the container intact.' The word for this, across all of these instances, is functor.
+
+```{r}
+mutate(penguins, mass_kg = body_mass_g / 1000)
+```
+
+You can reference a column you just created in the same `mutate()` call:
+
+```{r}
+#| results: hide
+mutate(
+  penguins,
+  mass_kg = body_mass_g / 1000,
+  mass_lb = mass_kg * 2.205
+)
+```
+
+`mass_lb` uses `mass_kg`, which was defined one line above. dplyr evaluates them in order, top to bottom.
+
+Any function that works on vectors works inside `mutate()`: `log()`, `sqrt()`, `cumsum()`, `lag()`, `lead()`, `percent_rank()`. The conditional functions from @sec-vectorized-conditionals work here too:
+
+```{r}
+#| results: hide
+mutate(
+  penguins,
+  size = if_else(body_mass_g > 4000, "large", "small")
+)
+```
+
+For more than two categories, `case_when()` is the tool:
+
+```{r}
+#| results: hide
+mutate(
+  penguins,
+  size = case_when(
+    body_mass_g > 5000 ~ "large",
+    body_mass_g > 3500 ~ "medium",
+    .default = "small"
+  )
+)
+```
+
+If you want to keep only the new columns and drop everything else, use `.keep = "none"`:
+
+```{r}
+mutate(
+  penguins,
+  mass_kg = body_mass_g / 1000,
+  .keep = "none"
+)
+```
+
+
+### Exercises {.unnumbered}
+
+1. Add a column `bill_ratio` that divides `bill_length_mm` by `bill_depth_mm`.
+2. Use `mutate()` and `case_when()` to create a column `island_code` that maps `"Biscoe"` to `"B"`, `"Dream"` to `"D"`, and `"Torgersen"` to `"T"`.
+3. What happens if you use a column name that already exists in `mutate()`? Try `mutate(penguins, species = toupper(species))`.
+
+
+## `summarise()` and `group_by()`: aggregate {#sec-summarise-group-by}
+
+`summarise()` collapses an entire data frame into a single row:
+```{r}
+summarise(penguins, mean_mass = mean(body_mass_g, na.rm = TRUE))
+```
+
+On its own, collapsing everything into a single row is limited. Paired with `group_by()`, it does the real work.
+
+`group_by()` marks a data frame as grouped. It doesn't change the data; it attaches metadata that tells subsequent verbs to operate per group:
+
+```{r}
+penguins_grouped <- group_by(penguins, species)
+summarise(penguins_grouped, mean_mass = mean(body_mass_g, na.rm = TRUE))
+```
+
+`summarise()` applied `mean()` within each group and returned one row per species.
+
+You can group by multiple variables:
+
+```{r}
+summarise(
+  group_by(penguins, species, island),
+  mean_mass = mean(body_mass_g, na.rm = TRUE),
+  count = n()
+)
+```
+
+`n()` counts the number of rows in each group. `n_distinct()` counts unique values:
+
+```{r}
+summarise(
+  group_by(penguins, species),
+  n_islands = n_distinct(island)
+)
+```
+
+The shortcut `count()` does `group_by()` plus `summarise(n = n())` in one step:
+
+```{r}
+count(penguins, species)
+```
+
+::: callout-tip
+## Opinion
+After `summarise()`, the last grouping variable is silently peeled off. The result may still be grouped. This causes subtle bugs downstream: a `mutate()` you expect to operate on the full data frame operates per group instead. Always add `.groups = "drop"` to `summarise()`, or call `ungroup()` afterward. Be explicit about grouping state.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Compute the median `flipper_length_mm` for each species.
+2. Use `group_by()` and `summarise()` to find the maximum `bill_length_mm` per species and island combination.
+3. Use `count()` to find how many penguins were observed in each year.
+
+
+
+## `arrange()`: order rows {#sec-arrange}
+
+`arrange()` sorts rows. The default is ascending:
+
+```{r}
+arrange(penguins, body_mass_g)
+```
+
+Wrap a column in `desc()` for descending order:
+
+```{r}
+#| results: hide
+arrange(penguins, desc(body_mass_g))
+```
+
+Multiple columns break ties. Sort by species alphabetically, then by mass descending within each species:
+
+```{r}
+#| results: hide
+arrange(penguins, species, desc(body_mass_g))
+```
+
+Unlike the other verbs, `arrange()` ignores grouping by default. If you want to sort within groups, set `.by_group = TRUE`.
+
+`arrange()` is pure display. It does not change the data, only the order of rows. No information is added or removed. But a well-sorted table can reveal patterns that a jumbled one hides.
+
+
+## More verbs {#sec-more-verbs}
+
+The five core verbs handle most transformations. A few more are worth knowing.
+
+`distinct()` returns unique rows:
+
+```{r}
+distinct(penguins, species, island)
+```
+
+Seven combinations of species and island exist in the data.
+
+`slice_head()` and `slice_tail()` keep the first or last `n` rows:
+
+```{r}
+slice_head(penguins, n = 3)
+```
+
+`slice_max()` and `slice_min()` keep the rows with the largest or smallest values:
+
+```{r}
+slice_max(penguins, body_mass_g, n = 3)
+```
+
+`pull()` extracts a single column as a vector. It is the pipe-friendly equivalent of `$`:
+
+```{r}
+pull(penguins, species) |> head()
+```
+
+`relocate()` moves columns without dropping any. Move `sex` and `year` to the front:
+
+```{r}
+#| results: hide
+relocate(penguins, sex, year)
+```
+
+Finally, `across()` applies a function to multiple columns at once. Summarise all numeric columns by their mean:
+
+```{r}
+summarise(penguins, across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
+```
+
+`across()` applies a function to multiple columns at once. It pairs naturally with `where()`, `starts_with()`, and the other selection helpers from @sec-select. It becomes easier to use after @sec-iteration-without-loops, where you will see the same pattern of "apply a function to many things" in a broader context.
+
+
+### Exercises {.unnumbered}
+
+1. Use `distinct()` to find all unique values of `island`.
+2. Use `slice_max()` to find the 5 penguins with the longest flippers.
+3. Use `across()` inside `summarise()` to compute the standard deviation (`sd()`) of every numeric column, grouped by species.
+
+
+
+## The base R equivalents {#sec-base-r-equivalents}
+
+Everything dplyr does, base R can do too. The verbs are convenient wrappers, not new capabilities. Here are the translations.
+
+`filter()` is logical subsetting:
+
+```{r}
+#| eval: false
+# dplyr
+filter(penguins, species == "Adelie", body_mass_g > 4000)
+
+# base R
+penguins[penguins$species == "Adelie" & penguins$body_mass_g > 4000, ]
+```
+
+`select()` is column indexing:
+
+```{r}
+#| eval: false
+# dplyr
+select(penguins, species, body_mass_g)
+
+# base R
+penguins[, c("species", "body_mass_g")]
+```
+
+`mutate()` is direct assignment:
+
+```{r}
+#| eval: false
+# dplyr
+mutate(penguins, mass_kg = body_mass_g / 1000)
+
+# base R
+penguins$mass_kg <- penguins$body_mass_g / 1000
+```
+
+Note the difference: the base R version modifies the data frame in place (or rather, modifies the binding). The dplyr version returns a new data frame and leaves the original untouched.
+
+`summarise()` plus `group_by()` maps to `aggregate()`:
+
+```{r}
+#| eval: false
+# dplyr
+summarise(group_by(penguins, species), mean_mass = mean(body_mass_g, na.rm = TRUE))
+
+# base R
+aggregate(body_mass_g ~ species, data = penguins, FUN = mean, na.rm = TRUE)
+```
+
+`arrange()` is `order()`:
+
+```{r}
+#| eval: false
+# dplyr
+arrange(penguins, desc(body_mass_g))
+
+# base R
+penguins[order(-penguins$body_mass_g), ]
+```
+
+Base R also has `subset()`, which combines filtering and column selection:
+
+```{r}
+#| eval: false
+subset(penguins, species == "Adelie", select = c(species, body_mass_g))
+```
+
+`subset()` is clean and readable. For simple operations, it works well. The advantage of dplyr is consistency: every verb takes a data frame first and returns a data frame, so they compose. In base R, `aggregate()` returns different column names, `order()` returns indices rather than a data frame, and `transform()` (the base equivalent of `mutate()`) cannot reference columns it just created. The dplyr verbs snap together; the base R equivalents each have their own interface. In fact, dplyr and SQL are the same language wearing different syntax: `filter(penguins, species == "Adelie")` becomes `SELECT * FROM penguins WHERE species = 'Adelie'`; `group_by(species) |> summarise(n = n())` becomes `SELECT species, COUNT(*) AS n FROM penguins GROUP BY species`. Both implement relational algebra, which is why they feel similar. Call `show_query()` on a database-backed tibble to see the translation directly.
+
+In category theory, a natural transformation maps one functor to another while preserving structure. `filter()` transforms a data frame (a container of rows) into a smaller container where columns keep their types and relationships are maintained. The clean composability of dplyr verbs is not an accident; it reflects this mathematical structure, where the transformation commutes with the container.
+
+::: callout-tip
+## Opinion
+Learn the base R equivalents. You will read them in other people's code, in Stack Overflow answers, in older packages. But write dplyr in your own work. The verbs compose, the names communicate intent, and the argument order is consistent. When you read `filter(penguins, species == "Adelie")`, the operation is the function name. When you read `penguins[penguins$species == "Adelie", ]`, you have to parse the indexing to understand what's happening.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Rewrite `select(penguins, species, island, body_mass_g)` using base R bracket notation.
+2. Rewrite `arrange(penguins, bill_length_mm)` using `order()`.
+3. Use `aggregate()` to compute the mean `flipper_length_mm` per island. Compare with the `group_by()` plus `summarise()` version.

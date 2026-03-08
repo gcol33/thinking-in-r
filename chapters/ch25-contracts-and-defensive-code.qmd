@@ -1,0 +1,405 @@
+# Contracts and defensive code {#sec-contracts-and-defensive-code}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+A function that silently returns the wrong answer is worse than one that crashes. At least a crash tells you something is wrong. This chapter teaches you to write functions that fail loudly, fail early, and fail helpfully, so that bugs surface where they originate, not fifty lines downstream.
+
+
+## The case for validation {#sec-case-for-validation}
+
+R is dynamically typed. Nothing stops you from passing a character vector to a function that expects a number. Without validation, the error surfaces deep inside the function body, far from the actual mistake:
+
+```{r}
+#| error: true
+add_tax <- function(price, rate) {
+  price * (1 + rate)
+}
+
+add_tax("42", 0.2)
+```
+
+The error message says `non-numeric argument to binary operator`. Helpful if you already know what went wrong, useless if you don't. The real problem is that someone passed `"42"` instead of `42`, but R doesn't tell you that. It tells you about the multiplication that failed three levels deep.
+
+With validation, the error surfaces immediately:
+
+```{r}
+#| error: true
+add_tax <- function(price, rate) {
+  if (!is.numeric(price)) {
+    stop(sprintf("price must be numeric, got %s", class(price)[1]))
+  }
+  price * (1 + rate)
+}
+
+add_tax("42", 0.2)
+```
+
+The principle: check inputs at the boundary, where data enters your function, not in the guts where it's consumed. This is *fail fast, fail loud, fail clear*. There is a deep connection to type theory here: a `stop()` that fires when input has the wrong type is a proof by contradiction. "If this value inhabited the type Numeric, execution would continue; it doesn't, so we halt." The type check is a proposition, and the program's continued execution past the check is the proof that the proposition holds. This is the Curry-Howard correspondence in miniature: types are propositions, programs are proofs. A function with signature `A -> B` is a proof that "if A then B." Dependently typed languages like Idris and Agda push this further, encoding preconditions in the type system itself and making runtime `stop()` calls unnecessary.
+
+A 2003 NASA study found that 40% of aerospace software failures came from *missing* code: situations the programmers didn't anticipate. The Ariane 5 rocket (1996) self-destructed 37 seconds after launch because a 64-bit float was silently converted to a 16-bit integer, overflowing without a check; a single `stop()` equivalent would have saved a $370 million rocket. Silent failures are more dangerous than crashes. When your function returns `NA` instead of erroring on bad input, you've created a silent failure. `stop()` with a clear message is the safe choice: it forces the caller to deal with the problem immediately, before the bad value propagates through fifty lines of downstream code.
+
+This chapter is about functions you write for yourself and for others. Not about validating user input in a Shiny app (different topic, different tools).
+
+
+## `stop()`, `warning()`, and `message()` {#sec-stop-warning-message}
+
+R has three signalling functions, each for a different severity:
+
+`stop("msg")` halts execution and signals an error. Use it when the function cannot produce a correct result.
+
+```{r}
+#| error: true
+divide <- function(x, y) {
+  if (y == 0) stop("y must not be zero")
+  x / y
+}
+
+divide(10, 0)
+```
+
+`warning("msg")` continues execution but signals a warning. Use it when the function can proceed but the result might be surprising.
+
+```{r}
+safe_log <- function(x) {
+  if (any(x <= 0)) warning("non-positive values replaced with NA")
+  ifelse(x > 0, log(x), NA)
+}
+
+safe_log(c(1, -2, 3))
+```
+
+`message("msg")` prints informational output. Use it for progress updates or status reports. `suppressMessages()` silences these, which is why message is better than `cat()` for status output: it respects the caller's wishes.
+
+```{r}
+load_data <- function(path) {
+  message(sprintf("Reading %s...", path))
+  # ... actual loading code ...
+}
+```
+
+The decision rule is simple: if the result would be wrong, `stop()`. If the result is correct but surprising, `warning()`. If you're just providing status, `message()`.
+
+::: callout-tip
+## Opinion
+Never use `warning()` when you should use `stop()`. A warning that scrolls past unread is worse than no warning at all. If you're not confident the function produced a correct result, don't return one.
+:::
+
+
+## Writing informative errors {#sec-informative-errors}
+
+The difference between a helpful error and a frustrating one is the difference between ten seconds of debugging and ten minutes.
+
+```{r}
+#| eval: false
+# Bad
+stop("invalid input")
+
+# Good
+stop(sprintf("x must be numeric, got %s", class(x)[1]))
+
+# Better
+stop(sprintf(
+  "x must be a single positive number, got %s of length %d",
+  class(x)[1], length(x)
+))
+```
+
+The pattern: say what was *expected*, say what was *received*. The caller should be able to fix the problem without reading your source code.
+
+`stopifnot()` is base R's assertion function. It's terse and good for internal checks:
+
+```{r}
+#| error: true
+normalize <- function(x) {
+  stopifnot(is.numeric(x), length(x) > 0)
+  x / sum(x)
+}
+
+normalize("abc")
+```
+
+The auto-generated error message is functional but cryptic. Since R 4.0, you can name the assertions to control the message:
+
+```{r}
+#| error: true
+normalize <- function(x) {
+  stopifnot(
+    "x must be numeric" = is.numeric(x),
+    "x must not be empty" = length(x) > 0
+  )
+  x / sum(x)
+}
+
+normalize("abc")
+```
+
+Named `stopifnot()` gives you the conciseness of assertions with messages you control. For functions that other people will call, this is the minimum standard.
+
+
+### Exercises {.unnumbered}
+
+1. The following function has a bad error message. Rewrite it so the error says what was expected and what was received.
+
+    ```{r}
+    #| eval: false
+    compute_bmi <- function(weight_kg, height_m) {
+      if (!is.numeric(weight_kg) || !is.numeric(height_m)) {
+        stop("bad input")
+      }
+      weight_kg / height_m^2
+    }
+    ```
+
+2. Rewrite the validation using named `stopifnot()`. Does the error message improve?
+
+3. What error message does `stopifnot(is.numeric("hello"))` produce? What about `stopifnot("x must be numeric" = is.numeric("hello"))`?
+
+
+## Common validation patterns {#sec-validation-patterns}
+
+Most validation falls into a handful of recurring patterns. Here are the ones you will use most.
+
+- **Type checks**: `is.numeric(x)`, `is.character(x)`, `is.logical(x)`, `is.data.frame(x)`, `is.list(x)`.
+- **Length checks**: `length(x) == 1` for scalars, `length(x) > 0` for non-empty inputs.
+- **Range checks**: `x > 0` for positive, `x >= 0 && x <= 1` for probabilities.
+- **NULL and NA handling**: `is.null(x)` and `anyNA(x)`.
+
+```{r}
+#| eval: false
+if (is.null(x)) stop("x must not be NULL")
+if (anyNA(x)) stop("x must not contain NA values")
+```
+
+**File existence.** `file.exists(path)`.
+
+```{r}
+#| eval: false
+if (!file.exists(path)) stop(sprintf("file not found: %s", path))
+```
+
+**Set membership.** This pattern deserves special attention: `match.arg()`.
+
+```{r}
+my_summary <- function(x, method = c("mean", "median", "trimmed")) {
+  method <- match.arg(method)
+  switch(method,
+    mean    = mean(x),
+    median  = median(x),
+    trimmed = mean(x, trim = 0.1)
+  )
+}
+```
+
+`match.arg()` does three things at once. It validates that the argument is one of the allowed choices. It supports partial matching, so `my_summary(1:10, "med")` works. And it picks the first option as the default, so calling `my_summary(1:10)` uses `"mean"`. All of this comes from the function signature, which means the valid choices are visible in the documentation and in `?my_summary`.
+
+```{r}
+my_summary(1:10)
+my_summary(1:10, "median")
+my_summary(1:10, "tri")
+```
+
+```{r}
+#| error: true
+my_summary(1:10, "xyz")
+```
+
+The error message from `match.arg()` is clear and lists the valid options. This is why `match.arg()` is preferred over manual `%in%` checks for string arguments with fixed options.
+
+
+### Exercises {.unnumbered}
+
+1. Write a function `rescale()` that takes a numeric vector `x` and a `method` argument accepting `"minmax"` or `"zscore"`. Use `match.arg()` for validation. Test that partial matching works.
+
+2. Add validation to the following function using `stopifnot()` or `if`/`stop()`. Check that `data` is a data frame, `n` is a single positive integer, and `col` is a string that exists as a column name.
+
+    ```{r}
+    #| eval: false
+    top_rows <- function(data, col, n = 5) {
+      data[order(data[[col]], decreasing = TRUE), ][seq_len(n), ]
+    }
+    ```
+
+
+## The checkmate package {#sec-checkmate}
+
+Writing validation by hand is repetitive. The `checkmate` package provides concise, fast assertion functions that handle the boilerplate:
+
+```{r}
+#| eval: false
+library(checkmate)
+
+process <- function(data, method = "fast", threshold = 0.5) {
+  assert_data_frame(data, min.rows = 1)
+  assert_choice(method, choices = c("fast", "accurate"))
+  assert_number(threshold, lower = 0, upper = 1)
+  # ...
+}
+```
+
+Each `assert_*` function throws an informative error if the check fails. No `if`/`stop` boilerplate, no `sprintf` formatting. The function names are self-documenting: `assert_numeric`, `assert_character`, `assert_file_exists`, `assert_flag` (for single TRUE/FALSE), and dozens more.
+
+`checkmate` also provides two softer variants. `test_*` functions return `TRUE` or `FALSE` for use in conditional logic. `check_*` functions return the error message as a string (or `TRUE` on success) for custom handling.
+
+```{r}
+#| eval: false
+# Conditional logic
+if (test_numeric(x)) {
+  mean(x)
+} else {
+  length(x)
+}
+
+# Custom error message
+msg <- check_numeric(x, lower = 0)
+if (!isTRUE(msg)) stop("Custom prefix: ", msg)
+```
+
+::: callout-tip
+## Opinion
+For package code with many validated arguments, `checkmate` pays for itself in readability and consistency. For scripts and one-off functions, `stopifnot()` and `match.arg()` are enough. Don't add a dependency for two assertions.
+:::
+
+
+## `tryCatch()` and error handling {#sec-trycatch}
+
+The previous sections were about signalling your own errors. Sometimes you need to *catch* errors from other functions and decide what to do about them.
+
+`tryCatch()` catches an error, warning, or message and runs a handler:
+
+```{r}
+result <- tryCatch(
+  log("a"),
+  error = function(e) NA
+)
+
+result
+```
+
+Instead of crashing, `log("a")` returns `NA`. The error handler receives the condition object `e` and returns a fallback value. This is *recovery*: you know an error might happen, and you have a plan for it.
+
+`try()` is a simpler wrapper. It returns the result on success, or an object of class `"try-error"` on failure:
+
+```{r}
+result <- try(log("a"), silent = TRUE)
+class(result)
+```
+
+`try()` is convenient for quick scripts, but `tryCatch()` gives you more control.
+
+For functional programming, `purrr::safely()` and `purrr::possibly()` wrap a function to make it error-tolerant. `safely()` returns a list with `$result` and `$error`, while `possibly()` returns a default value on failure. Both are designed for use with `map()` when applying a function that might fail on some elements.
+
+```{r}
+safe_log <- purrr::safely(log)
+safe_log(10)
+safe_log("a")
+```
+
+Erlang (1986, Ericsson) takes this philosophy to its extreme: instead of preventing crashes with validation, Erlang designs *supervisors* that detect and restart failed processes. Ericsson's telecom switches achieved 99.9999999% uptime using this "let it crash" philosophy. R's `tryCatch()` is a mild version of the same idea. Both philosophies agree on the essential point: silent failures are the real enemy.
+
+This pattern has a name in functional programming: the *Either* type (or *Result* in Rust). A computation either succeeds with a value or fails with an error. `tryCatch` runs the expression; if it succeeds, you get the result; if it throws, you get the error handler's output. This is the same 'value or absence' logic as `NA` propagation (@sec-missing-values), but for errors instead of missing data. `NA` implements Maybe (present or absent); `tryCatch` implements Either (success or failure). Both are ways of threading the possibility of failure through a computation without crashing. Haskell and Rust make these patterns explicit with monadic types; R keeps them implicit in `NA` semantics and `tryCatch` mechanics, but the underlying structure is identical.
+
+::: callout-tip
+## Opinion
+Use `tryCatch()` when you have a recovery plan. Don't use it to silently swallow errors. An error you hide is a bug you invite.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Write a function `safe_read` that takes a file path and returns the file contents (via `readLines()`), or `NULL` if the file doesn't exist. Use `tryCatch()`.
+
+2. Use `purrr::map()` and `purrr::possibly()` to apply `as.numeric()` to the list `list("1", "two", "3", "four")`. Use `NA` as the default.
+
+
+## `rlang::abort()` and cli {#sec-rlang-abort}
+
+`rlang::abort()` is a modern replacement for `stop()`. It automatically saves a backtrace (the chain of function calls that led to the error), and supports *condition classes* for selective catching:
+
+```{r}
+#| eval: false
+rlang::abort(
+  message = "x must be positive",
+  class = "validation_error",
+  x = x
+)
+```
+
+A caller can now catch `validation_error` specifically, while letting other errors propagate:
+
+```{r}
+#| eval: false
+tryCatch(
+  my_function(x),
+  validation_error = function(e) {
+    message("Validation failed: ", e$message)
+  }
+)
+```
+
+The `cli` package takes this further. `cli::cli_abort()` produces structured, formatted error messages with bullets and inline markup:
+
+```{r}
+#| eval: false
+cli::cli_abort(c(
+  "x" = "{.arg x} must be a positive number.",
+  "i" = "You supplied {.cls {class(x)}} of length {length(x)}."
+))
+```
+
+The `"x"` prefix marks the main error; `"i"` marks informational context. `{.arg x}` and `{.cls ...}` are cli's inline formatting: they render the argument name and class with special styling in terminals that support it.
+
+This is primarily for package developers. If you've ever wondered why tidyverse error messages look so polished, with colored bullets and formatted argument names, `cli::cli_abort()` is the answer. You don't need cli-formatted errors in scripts, but knowing they exist helps you read the error messages that tidyverse packages produce.
+
+`rlang` also provides `rlang::arg_match()`, a stricter alternative to `match.arg()`. It produces tidyverse-styled error messages and does *not* support partial matching, which makes it safer for package APIs where partial matching can cause subtle bugs.
+
+
+### Exercises {.unnumbered}
+
+1. Rewrite one of your `stop()` calls from the exercises above using `rlang::abort()` with a custom class (e.g., `"input_error"`). Then write a `tryCatch()` that catches only that class.
+2. Use `cli::cli_abort()` to produce an error message with a bullet point showing the expected type and the actual type. Compare the output with a plain `stop()` message.
+
+
+## Designing function interfaces {#sec-function-interface-design}
+
+Validation is downstream of good design. A well-designed function is hard to misuse in the first place.
+
+**Required arguments have no defaults. Optional arguments have sensible defaults.** If a function needs a file path to work, don't give `path` a default of `NULL` and then check for it inside the body. Make the caller provide it.
+
+**Use `match.arg()` for string options.** The valid choices are visible in the function signature and in the help page. The caller doesn't need to read the source code to know what's allowed.
+
+```{r}
+#| eval: false
+# Good: choices are visible
+my_plot <- function(data, type = c("scatter", "line", "bar")) {
+  type <- match.arg(type)
+  # ...
+}
+
+# Bad: choices are hidden inside the body
+my_plot <- function(data, type = "scatter") {
+  if (!type %in% c("scatter", "line", "bar")) stop("invalid type")
+  # ...
+}
+```
+
+**Put the data first.** This makes the function pipe-friendly (`data |> my_func()`). Modifier arguments come after.
+
+**Use `...` sparingly.** If you use it, document what it accepts and where it gets forwarded. An undocumented `...` is a trap: the caller passes a misspelled argument, `...` absorbs it silently, and no error is raised.
+
+**Don't overload argument types.** An argument `x` that can be a vector, a data frame, or a formula is hard to validate and hard to use. Each accepted type needs its own validation branch and its own documentation. If you find yourself writing `if (is.data.frame(x)) ... else if (is.numeric(x)) ...`, consider splitting the function or using S3 dispatch.
+
+This connects to @sec-s3-and-s7: S7 properties with type declarations are validation built into the class definition. When you declare that a property must be a positive numeric scalar, invalid objects cannot exist. Validation at construction time, enforced by the type system, is the strongest form of defensive programming.
+
+::: callout-tip
+## Opinion
+The best validation is the kind you don't have to write. A function with a clear signature, named options via `match.arg()`, and typed S7 properties catches most mistakes before any `if`/`stop` check runs. Design the interface right, and defensive code becomes a safety net instead of a load-bearing wall.
+:::
+
+
+## Summary
+
+Defensive code is about respect: for the people who call your functions (including future you), and for the hours they'll spend debugging when something goes wrong. The core patterns are simple. Validate at the boundary with `stop()`, `stopifnot()`, or `checkmate`. Use `match.arg()` for string options. Write error messages that say what was expected and what was received. Catch errors with `tryCatch()` only when you have a recovery plan. And design interfaces that are hard to misuse in the first place.
+

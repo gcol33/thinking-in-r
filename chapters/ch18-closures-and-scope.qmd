@@ -1,0 +1,380 @@
+# Closures and scope {#sec-closures-and-scope}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+When you call a function, R needs to find every name you use inside it. The rules for how it searches are simple and general. @sec-scope-first-look introduced the basics: local variables live inside the function, and a function can see variables from the environment where it was defined. This chapter makes those ideas precise and takes them further, to the point where functions can remember things between calls.
+
+
+## Environments {#sec-environments}
+
+An environment is R's internal data structure for keeping track of which names refer to which values. Think of it as a named bag: each name in the bag points to one object. Every environment has a parent, forming a chain that R walks when it needs to resolve a name. The empty environment, at the very top of the chain, has no parent; everything else does.
+
+You can inspect the current environment with `environment()`, list its contents with `ls()`, and find its parent with `parent.env()`:
+
+```{r}
+x <- 42
+y <- "hello"
+ls()
+```
+
+```{r}
+environment()
+```
+
+### The global environment {#sec-global-environment}
+
+The global environment (`.GlobalEnv`, or equivalently `globalenv()`) is where your interactive work lives. Every time you type `x <- 42` at the console, you create a binding in this environment. It is the bottom of the search path, the starting point for name resolution, and the default enclosing environment for any function you define interactively.
+
+```{r}
+identical(environment(), globalenv())
+```
+
+The global environment is special in three ways. First, it never gets garbage-collected; it lives for the entire R session. Second, it has no fixed parent: its parent is the last package you attached with `library()`. Third, it is the only environment you routinely modify by hand. Functions create and destroy execution environments automatically (@sec-execution-environments); the global environment accumulates bindings as you work.
+
+This accumulation is both convenient and dangerous. Convenient because you can explore interactively, building up data objects step by step. Dangerous because any function you define in the global environment can see and depend on those objects. A function that works in your current session may break in a fresh one because it relied on a global variable you forgot to pass as an argument. This is the free variable problem from lambda calculus: a function with unbound names is an *open term*, and its behavior depends on the context where it runs. Making all dependencies explicit (passing them as arguments) turns it into a *closed term*, a closure in the formal sense, and makes it portable.
+
+### The search path
+
+When you type `x` at the console, R looks in the global environment first; if it doesn't find a match, it moves to the parent, then the parent's parent, walking up the chain until it either finds the name or runs out of environments. This chain is the *search path*, and you can see it with `search()`:
+
+```{r}
+search()
+```
+
+The global environment sits at the bottom, with attached packages stacked above it and `package:base` near the top. This is why you can call `mean()` without writing `base::mean()`: R walks the chain, finds `mean` in the base package, and uses it.
+
+
+### Exercises {.unnumbered}
+
+1. Run `ls()` in a fresh R session. What do you see? Now assign `a <- 1` and run `ls()` again.
+2. Run `search()` and count how many environments are in the chain. Load a package with `library(tools)` and run `search()` again. Where did the new package appear?
+3. What does `parent.env(globalenv())` return? What about `parent.env(baseenv())`?
+
+
+## Lexical scoping {#sec-lexical-scoping}
+
+R uses lexical scoping: a function looks for names where it was *defined*, not where it was *called*. This choice traces back to Scheme (1975), which adopted lexical scoping over Lisp's dynamic scoping and changed programming history. Dynamic scoping searches the call stack, which is simpler to implement but makes functions unpredictable: the same function returns different results depending on who calls it. R inherited lexical scoping from Scheme, not from S (which originally used dynamic scoping; see @sec-s-language), and this one design decision is why closures work in R at all.
+
+```{r}
+x <- 10
+f <- function() x
+g <- function() { x <- 20; f() }
+g()
+```
+
+`g()` returns 10, not 20. Because `f` was defined in the global environment, it looks for `x` there, not inside `g` where it was called. The `x <- 20` inside `g` is invisible to `f`. What matters is where the function was written in the source code (the definition site), not where it happens to be called at runtime.
+
+Four rules govern how R resolves names:
+
+1. **Name masking.** Local names shadow names in parent environments. If a function defines `x`, that `x` hides any `x` in the global environment.
+
+2. **Functions vs variables.** R distinguishes function lookups from variable lookups. If you call `f(3)`, R searches for `f` but skips non-function values. This means you can have a variable `c <- 10` and still call `c(1, 2, 3)` to create a vector, because R knows you want the function.
+
+3. **Fresh start.** Every function call gets a fresh execution environment. Variables from a previous call don't carry over.
+
+4. **Dynamic lookup.** R looks up names when the function *runs*, not when it's defined. If a function uses a free variable, its value can change between calls:
+
+```{r}
+multiplier <- 2
+scale <- function(x) x * multiplier
+scale(5)
+```
+
+```{r}
+multiplier <- 10
+scale(5)
+```
+
+`scale` doesn't snapshot the value of `multiplier` when it's defined; it looks it up fresh each time it runs. This means the function adapts automatically if `multiplier` changes, which is occasionally useful but more often a source of bugs: someone modifies a global variable, and a seemingly unrelated function starts returning different results.
+
+
+### Exercises {.unnumbered}
+
+1. Predict the output before running:
+
+    ```r
+    x <- 1
+    f <- function() {
+      x <- 2
+      g <- function() x
+      g()
+    }
+    f()
+    ```
+
+2. Predict the output:
+
+    ```r
+    x <- 1
+    f <- function() {
+      g <- function() x
+      x <- 2
+      g()
+    }
+    f()
+    ```
+
+    Why is the result different from what you might expect? (Hint: rule 4.)
+
+3. Can you have a variable named `mean` and still call the function `mean()`? Try it.
+
+
+## Execution environments {#sec-execution-environments}
+
+Every time you call a function, R creates a new environment, the *execution environment*, with the function's arguments and local variables as bindings.
+
+```{r}
+f <- function() {
+  n <- 0
+  n <- n + 1
+  n
+}
+
+f()
+f()
+f()
+```
+
+Call `f()` ten times and you always get 1, because each call gets its own execution environment with its own `n`. The previous call's `n` doesn't carry over (rule 3).
+
+The parent of this fresh execution environment is not the environment where the function was *called*; it's the environment where the function was *defined* (the enclosing environment). This is what makes scoping lexical: the parent chain is determined by the structure of the source code, not by which function happened to call which at runtime.
+
+```{r}
+x <- "global"
+
+outer <- function() {
+  x <- "outer"
+  inner <- function() x
+  inner()
+}
+
+outer()
+```
+
+`inner` was defined inside `outer`, so its enclosing environment is `outer`'s execution environment. When `inner` looks for `x`, it finds `"outer"`, not `"global"`.
+
+Normally, local variables live and die with the call: when the function returns, its execution environment gets garbage-collected. But if the function returns another function that was defined inside it, that returned function holds a reference to the execution environment, keeping it alive. This is a closure.
+
+
+### Exercises {.unnumbered}
+
+1. Write a function `fresh()` that creates a local variable `n <- 0`, increments it, and returns it. Call it three times and verify you always get 1.
+2. Predict the output:
+
+    ```r
+    make <- function() {
+      a <- 1
+      function() a
+    }
+    h <- make()
+    a <- 99
+    h()
+    ```
+
+
+## Closures {#sec-closures}
+
+All R functions are technically closures (they all have an enclosing environment), but the term is most useful when a function captures variables from a parent that isn't the global environment. The classic example is a counter:
+
+```{r}
+make_counter <- function() {
+  n <- 0
+  function() {
+    n <<- n + 1
+    n
+  }
+}
+
+count <- make_counter()
+count()
+count()
+count()
+```
+
+When you call `make_counter()`, R creates an execution environment with `n <- 0`. The inner function is defined in that environment, making it the inner function's enclosing environment. When `make_counter` returns the inner function, the execution environment would normally be garbage-collected, but the returned function still points to it, so it survives. Each subsequent call to `count()` creates its own fresh execution environment, but the enclosing environment (the one from `make_counter` that holds `n`) is shared across all calls. That's how `count` remembers its state between invocations.
+
+`<<-` is the super-assignment operator. Instead of creating a local binding, it searches parent environments for an existing binding named `n` and modifies it in place. Without `<<-`, writing `n <- n + 1` would create a *local* `n` in the execution environment, shadowing the captured one, and the counter would always return 1.
+
+Two counters are independent. Each call to `make_counter()` creates a separate execution environment with its own `n`:
+
+```{r}
+a <- make_counter()
+b <- make_counter()
+a()
+a()
+a()
+b()
+```
+
+`a` has counted to 3; `b` has counted to 1. They don't share state.
+
+Connection to @sec-functions-returning-functions: `make_adder` was a preview. Now you understand *why* the returned function remembers `n`. the mechanism is an environment that stays alive because something still points to it.
+
+This is also exactly what happens in lambda calculus. In `make_adder(5)`, the returned function `\(x) x + n` has `n` as a *free variable*: a name that is used but not defined inside the function. The closure captures `n = 5`, binding that free variable. In lambda notation, `make_adder` is `(λn. λx. x + n)`. Applying it to 5 gives `λx. x + 5` by substitution (beta reduction). The free variable `n` gets replaced by a concrete value. Closures are the runtime mechanism that makes this substitution real. The name itself comes from this idea: a closure *closes over* its free variables, turning an open term (one with unresolved names) into a closed one (where every variable is accounted for).
+
+Every closure you create in R is a beta reduction frozen mid-step. `make_adder(5)` reduces `(λn. λx. x + n)` to `λx. x + 5`, but the returned function doesn't evaluate further until you give it an `x`. The closure holds the partially reduced term, waiting. When you finally call `add5(3)`, another beta reduction fires: `(λx. x + 5)(3)` becomes `3 + 5`, and R evaluates it to `8`. Two reductions, two calls, one answer. This is not a metaphor; it is what R does internally when it resolves the captured binding `n = 5` in the enclosing environment.
+
+
+### Exercises {.unnumbered}
+
+1. Create a counter with `make_counter`. Call it five times. Then inspect the captured `n` with `environment(count)$n`.
+2. Modify `make_counter` to accept a starting value: `make_counter <- function(start = 0) { ... }`. Verify that `make_counter(10)` starts counting from 11.
+3. Write `make_countdown(n)` that counts *down* from `n`. Each call returns the next value. What happens when it reaches 0?
+
+
+## `<<-` and mutable state {#sec-super-assignment}
+
+`<<-` is the only way to create mutable state in R's functional world. It searches parent environments for an existing binding and modifies it. If it doesn't find the variable in any parent, it creates one in the global environment. That's almost always a mistake.
+
+```{r}
+#| error: true
+rm(oops, envir = globalenv())  # clean slate
+f <- function() {
+  oops <<- "surprise"
+}
+f()
+oops
+```
+
+`oops` was never defined, so `<<-` created it in the global environment. This is a side effect, invisible at the call site, and exactly the kind of hidden dependency that makes code hard to debug.
+
+::: callout-tip
+## Opinion
+Use `<<-` inside closures, never in scripts. If you're using `<<-` to modify a global variable, you're writing a bug you haven't found yet. The legitimate use is closures that encapsulate state: counters, caches, accumulators. The state is private to the closure, invisible to the outside world.
+:::
+
+Inside a closure, `<<-` is safe because the variable it modifies lives in the closure's private environment, not in the global environment. Nobody outside the closure can see it or change it (unless they deliberately reach into the environment with `environment(f)$n`, which is an explicit choice, not an accident).
+
+```{r}
+rm(oops, envir = globalenv())
+```
+
+
+### Exercises {.unnumbered}
+
+1. Write a closure `make_accumulator(start)` that returns a function. Each call adds its argument to a running total and returns the new total. Test: `acc <- make_accumulator(0); acc(5); acc(3); acc(10)` should return 5, 8, 18.
+2. What happens if you use `<-` instead of `<<-` inside the closure? Try it with the counter example.
+
+
+## Closures as portable state {#sec-closures-portable-state}
+
+A closure bundles a function with its data. No global variables, no side effects visible from outside. This makes closures one of the most practical tools in R.
+
+A running mean:
+
+```{r}
+make_running_mean <- function() {
+  total <- 0
+  count <- 0
+  function(x) {
+    total <<- total + x
+    count <<- count + 1
+    total / count
+  }
+}
+
+avg <- make_running_mean()
+avg(10)
+avg(20)
+avg(6)
+```
+
+The pattern is always the same: a factory function creates an environment, returns an inner function that captures it, and `<<-` lets the inner function modify the captured state. Because the state lives in a private environment that travels with the function, no outside code can see or tamper with it, and it persists across calls.
+
+Compare this to the global-variable approach:
+
+```r
+# Don't do this
+total <- 0
+count <- 0
+
+running_mean <- function(x) {
+  total <<- total + x
+  count <<- count + 1
+  total / count
+}
+```
+
+This version pollutes the global environment with `total` and `count`. Any other code can read or modify them. You can't have two independent running means. And if you forget to reset them, your next analysis starts with stale state. The closure version has none of these problems.
+
+Practical uses for closures go beyond counters and accumulators:
+
+- **Function factories** (@sec-function-factories): parameterized families of functions. `make_adder`, `make_multiplier`, and their real-world cousins in ggplot2 themes, statistical tests, and data transformations.
+- **Memoization:** cache expensive results so they're computed only once.
+- **Callbacks and event handlers:** carry context without globals, common in Shiny applications.
+- **Encapsulated modules:** a list of closures sharing a private environment.
+
+That last pattern deserves a concrete example. A list of closures sharing an environment is functionally equivalent to an object with methods and private fields:
+
+```{r}
+make_bank_account <- function(balance = 0) {
+  list(
+    deposit  = function(amount) {
+      balance <<- balance + amount
+      invisible(balance)
+    },
+    withdraw = function(amount) {
+      balance <<- balance - amount
+      invisible(balance)
+    },
+    check    = function() balance
+  )
+}
+
+acct <- make_bank_account(100)
+acct$deposit(50)
+acct$withdraw(30)
+acct$check()
+```
+
+Three closures share a single environment containing one private variable, `balance`. From the outside, `acct` behaves like an object with methods; from the inside, it's just functions closing over a shared environment. Peter Norvig observed that "closures are poor man's objects, and objects are poor man's closures." R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment.
+
+
+### Exercises {.unnumbered}
+
+1. Build a `make_running_mean` closure. Feed it the values 4, 8, 12. Verify the running mean is 4, 6, 8.
+2. Create two independent running means, `avg1` and `avg2`. Feed different values to each and verify they don't interfere.
+3. Extend `make_bank_account` with a `statement` function that returns a character vector of all transactions (deposit or withdrawal). You'll need a `history` variable in the enclosing environment.
+
+
+## Inspecting environments {#sec-inspecting-environments}
+
+Closures are easier to understand when you can look inside them. `environment(f)` returns the enclosing environment of a function. `ls()` lists what's in it. And you can access captured variables directly with `$`:
+
+```{r}
+count <- make_counter()
+count()
+count()
+
+environment(count)
+ls(environment(count))
+environment(count)$n
+```
+
+The counter has been called twice, so `n` is 2. You can watch it change in real time:
+
+```{r}
+count()
+environment(count)$n
+```
+
+Now `n` is 3, incremented by the call.
+
+For a richer view, `rlang::env_print()` shows the environment's contents, parent, and memory address:
+
+```{r}
+#| eval: false
+rlang::env_print(environment(count))
+```
+
+These tools are not for production code (reaching into a closure's environment breaks its encapsulation), but for learning they're invaluable. The cycle of "make a closure, inspect its environment, call it, inspect again" is the fastest way to build intuition for how closures actually work under the hood.
+
+
+### Exercises {.unnumbered}
+
+1. Create a running mean with `make_running_mean`. Feed it three values. Then inspect `environment(avg)$total` and `environment(avg)$count` to verify the internal state.
+2. Create two counters. Inspect their environments and confirm they have different `n` values after calling them different numbers of times.
+3. What does `environment(mean)` return? Why is it different from `environment(count)`?

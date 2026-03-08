@@ -1,0 +1,7 @@
+# Preface {.unnumbered}
+
+This is the website for **Thinking in R**.
+
+R descends from the lambda calculus, by way of Scheme and a Bell Labs language called S. That ancestry shaped every part of the language. All of it traces back to a single design decision made in the 1970s.
+
+You'll learn R from scratch. You'll learn how to store and manipulate data, write your own functions, transform messy tables into clean results, and build visualizations. You'll also learn *why* R works the way it does, which makes everything else easier to learn. By the end, you'll understand functional programming, know how to work with real data, and see ideas (closures, composition, immutability) that show up in every modern language. No programming experience is assumed.

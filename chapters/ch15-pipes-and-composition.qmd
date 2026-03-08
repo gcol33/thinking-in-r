@@ -1,0 +1,239 @@
+# Pipes and composition {#sec-pipes-and-composition}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+Mathematicians write g(f(x)). R programmers write `x |> f() |> g()`. Same idea, better reading order. In @sec-church, function composition was one of the fundamental operations: apply one function, then apply another to the result. Pipes make that composition readable. This chapter explains how they work, why they work, and where they break down.
+
+
+## The problem with nesting {#sec-nesting-problem}
+
+Real analysis chains multiple operations. Suppose you want to take the `penguins` data, keep only Adelie penguins, select two columns, and sort by body mass. Without pipes, you have three choices.
+
+**Nesting**: read inside-out, right-to-left.
+
+```{r}
+#| eval: false
+arrange(filter(select(penguins, species, body_mass_g), species == "Adelie"), body_mass_g)
+```
+
+This works for two functions. At three, it's hard to read. At five, it's unreadable. The first operation you want to happen (`select`) is buried deepest inside the expression.
+
+**Intermediate variables**: name every step.
+
+```{r}
+#| eval: false
+a <- select(penguins, species, body_mass_g)
+b <- filter(a, species == "Adelie")
+c <- arrange(b, body_mass_g)
+```
+
+Readable, but the environment fills with throwaway names. `a`, `b`, `c`, `temp`, `df2`: names that exist only to carry a value from one line to the next.
+
+**Overwriting**: reuse the same name.
+
+```{r}
+#| eval: false
+df <- select(penguins, species, body_mass_g)
+df <- filter(df, species == "Adelie")
+df <- arrange(df, body_mass_g)
+```
+
+Compact, but fragile. You cannot re-run a single line without re-running everything above it, because each line depends on the previous value of `df`.
+
+All three approaches work, but none compose well. Pipes solve this problem.
+
+
+## The pipe: `|>` {#sec-pipe}
+
+```{r}
+library(palmerpenguins)
+library(dplyr)
+
+penguins |>
+  select(species, body_mass_g) |>
+  filter(species == "Adelie") |>
+  arrange(body_mass_g)
+```
+
+Read it top to bottom: take `penguins`, select two columns, keep Adelie rows, sort by mass. Each line transforms the result of the previous one.
+
+The rule is simple. `x |> f()` is syntactic sugar for `f(x)`. The pipe takes the value on its left and inserts it as the first argument of the function on its right. That is the entire mechanism. There is no magic, no special evaluation: just rewriting `x |> f()` as `f(x)` before the code runs. And `x |> f() |> g()` is `g(f(x))`, which is (g ∘ f)(x) in mathematical notation. The pipe is function composition from lambda calculus, written left-to-right instead of inside-out.
+
+Function composition is itself a monoid. The operation is `∘` (compose two functions), and the identity element is the identity function `\(x) x`, which returns its argument unchanged. `f ∘ id = f` and `id ∘ f = f`, just as `x + 0 = x` for addition. You saw the same structure with `c()` and `NULL` (@sec-no-scalars), with string concatenation and `""`, and you will see it again with ggplot's `+` (@sec-ggplot-lambda) and with `Reduce()` (@sec-reduce-and-accumulate). The monoid keeps showing up because composition is the fundamental way to build complex behavior from simple parts.
+
+The native pipe `|>` was introduced in R 4.1 (2021) and is built into the language, requiring no packages. The idea is older than R: Doug McIlroy proposed the pipe concept for Unix in 1964, writing "we should have some ways of coupling programs like garden hose." The `|` operator in the Unix shell chains programs, each reading from standard input and writing to standard output. R's `|>` is the same idea applied to data frames: each dplyr verb takes a data frame and returns a data frame, and the pipe connects them.
+
+::: callout-tip
+## Opinion
+One verb per line. Put a space before `|>` and a newline after it. A pipeline formatted as a single long line loses all the readability the pipe was designed to provide.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Rewrite the following nested call as a pipeline: `head(sort(sqrt(1:20)), 5)`.
+2. Take `penguins`, filter for penguins heavier than 4000g, and select only `species` and `island`. Write it as a pipeline.
+3. What does `10 |> sqrt()` return? What about `10 |> log(base = 2)`? Explain why `log` receives two arguments.
+
+
+## Building a pipeline {#sec-building-pipeline}
+
+Start with the data. Add one step at a time. Read the result like a recipe:
+
+```{r}
+penguins |>
+  filter(!is.na(body_mass_g)) |>
+  group_by(species) |>
+  summarise(mean_mass = mean(body_mass_g)) |>
+  arrange(desc(mean_mass))
+```
+
+"Take penguins, remove NAs, group by species, compute mean mass, sort descending." The code reads like the sentence.
+
+Build incrementally. Run the first line, check the output. Add the next step, check again. Pipes invite exploration: you grow a pipeline one verb at a time, inspecting the intermediate data frame at each stage. When the result looks right, the pipeline is done.
+
+```{r}
+penguins |>
+  filter(!is.na(flipper_length_mm), !is.na(body_mass_g)) |>
+  group_by(species, island) |>
+  summarise(
+    n = n(),
+    mean_flipper = mean(flipper_length_mm),
+    mean_mass = mean(body_mass_g),
+    .groups = "drop"
+  )
+```
+
+Each verb does one thing. `filter` removes rows. `group_by` sets the grouping. `summarise` collapses groups to summaries. `arrange` sorts. You compose them into a pipeline the same way you compose sentences into a paragraph: one idea at a time, in order.
+
+
+
+### Exercises {.unnumbered}
+
+1. Build a pipeline that counts how many penguins of each species live on each island. Start with `penguins`, group by `species` and `island`, then summarise with `n = n()`.
+2. Extend your pipeline from Exercise 1: arrange the result by `n` in descending order.
+3. Write a pipeline that computes the median `bill_length_mm` per species (removing NAs), then filters to keep only species where the median exceeds 40mm.
+
+
+## Function composition {#sec-function-composition}
+
+In @sec-church, you saw that lambda calculus is built on applying functions to arguments. Composition is the next step: apply one function, then apply another to the result.
+
+`x |> f() |> g()` is `g(f(x))`. In mathematical notation, that is (g . f)(x): the composition of g and f, applied to x. The pipe rewrites composition from inside-out to left-to-right. Nothing else changes.
+
+This is why dplyr verbs all follow the same contract: take a data frame as the first argument, return a data frame. Functions that follow this contract compose via the pipe. Functions that don't (first argument is a formula, a filename, a model object) require workarounds. The convention exists so that verbs compose via the pipe.
+
+In @sec-functions-are-values-chapter, you saw that functions are values you can pass around. Here, you see the other side: functions are things you compose. Passing and composing are the two fundamental operations on functions, and together they account for most of what makes R code concise.
+
+```{r}
+clean_and_summarise <- function(df) {
+  df |>
+    filter(!is.na(body_mass_g)) |>
+    group_by(species) |>
+    summarise(mean_mass = mean(body_mass_g), .groups = "drop")
+}
+
+penguins |> clean_and_summarise()
+```
+
+Wrapping a pipeline in a function gives the composition a name. `clean_and_summarise` is a single function built from four composed steps. You can pass it around, store it in a list, or use it inside another pipeline, exactly as @sec-functions-are-values-chapter described. Notice that `penguins |> filter(species == "Adelie") |> nrow()` describes the transformation without naming intermediates. In Haskell, this style is called "point-free" or "tacit" programming, tracing back to combinatory logic (Schönfinkel, 1924): functions are composed without mentioning the data they act on. R's pipe enables a mild version of this. It isn't fully point-free (dplyr verbs still reference column names), but the same impulse is at work.
+
+
+## The placeholder `_` {#sec-placeholder}
+
+The pipe inserts the left side as the first argument. Sometimes you need it somewhere else.
+
+```{r}
+penguins |>
+  filter(!is.na(body_mass_g), !is.na(bill_length_mm)) |>
+  lm(body_mass_g ~ bill_length_mm, data = _)
+```
+
+The `_` placeholder says "put the piped value here." It must appear as a named argument (`data = _`), and it can appear only once. This syntax requires R 4.2+.
+
+For anything more complex, use an anonymous function:
+
+```{r}
+c(1, 4, 9, 16) |>
+  (\(x) x[x > 3])()
+```
+
+The `\(x)` syntax from @sec-anonymous-functions creates a function inline. The trailing `()` calls it immediately with the piped value. This works for any situation where `_` is too restrictive.
+
+
+### Exercises {.unnumbered}
+
+1. Pipe `mtcars` into `lm()` to fit `mpg ~ wt`, using the `_` placeholder for the `data` argument.
+2. Rewrite the same call using an anonymous function instead of `_`.
+3. Why does `penguins |> lm(body_mass_g ~ species, _)` fail? (Hint: the placeholder must be a *named* argument.)
+
+
+## `|>` vs `%>%` {#sec-pipe-comparison}
+
+The magrittr pipe `%>%` came first (2014). The native pipe `|>` arrived in R 4.1 (2021). Both do the same basic thing: insert the left side as the first argument of the right side. The differences are practical.
+
+First, `|>` requires parentheses on the right side. `x |> sqrt()`, not `x |> sqrt`. Second, `|>` uses `_` as its placeholder (named argument only, once). `%>%` uses `.` (anywhere, multiple times). Third, `|>` is faster because it is a syntax transformation: the parser rewrites `x |> f()` to `f(x)` before evaluation. `%>%` is a function call with its own overhead. Fourth, `|>` needs no package. `%>%` needs magrittr (loaded automatically by the tidyverse). The theoretical distinction runs deeper: the base pipe `|>` is pure composition, (g . f)(x), with no implicit variable and no branching. The magrittr pipe `%>%` is closer to what Haskell calls Kleisli composition: it threads the result as `.`, allowing branching and multiple references, much like the monadic bind operator `>>=` chains computations.
+
+```{r}
+# These are equivalent
+penguins |> nrow()
+
+library(magrittr)
+penguins %>% nrow()
+```
+
+::: callout-tip
+## Opinion
+Use `|>`. It is in base R, it is faster, and it is the future of the language. The only reason to reach for `%>%` is legacy code or the rare case where you need `.` in multiple positions within a single call. For new code, `|>` is the right default.
+:::
+
+
+
+## When not to pipe {#sec-when-not-to-pipe}
+
+Pipes are for linear sequences: A then B then C. They are not for everything.
+
+**Multiple inputs.** If two data frames need to interact, pipe one and pass the other as an argument. A join is fine in a pipeline; a complex merge of three data frames with different preparation steps is not.
+
+**Multiple outputs.** If you need intermediate results for different purposes later, name them. A pipeline produces one result. If you need the filtered data *and* the summary, use two separate pipelines from a shared intermediate.
+
+```{r}
+adelie <- penguins |> filter(species == "Adelie")
+
+# Two different analyses from the same intermediate
+adelie |> summarise(mean_mass = mean(body_mass_g, na.rm = TRUE))
+adelie |> count(island)
+```
+
+**Long chains.** Past eight or ten steps, break the pipeline. Name the intermediate result at a meaningful boundary. A pipeline that scrolls off the screen tells a run-on story.
+
+**Side effects in the middle.** `print()`, `write.csv()`, and `plot()` produce side effects. They belong at the end of a pipeline, not in the middle. Putting a side effect between two transformations interrupts the data flow and makes the pipeline harder to reason about.
+
+**Debugging.** When a pipeline produces unexpected output, break it apart. Assign intermediates, inspect each one, find the step that goes wrong. Once you've fixed it, reassemble the pipeline.
+
+::: callout-tip
+## Opinion
+A pipe should tell a story. If it reads like a run-on sentence, break it into paragraphs. Name the paragraph boundaries with meaningful variable names, not `temp1` and `temp2`.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. The following pipeline tries to do too much. Break it into two or three named steps with meaningful names:
+
+```{r}
+#| eval: false
+penguins |>
+  filter(!is.na(body_mass_g)) |>
+  mutate(mass_kg = body_mass_g / 1000) |>
+  group_by(species) |>
+  summarise(mean_kg = mean(mass_kg)) |>
+  arrange(desc(mean_kg)) |>
+  mutate(label = paste(species, round(mean_kg, 1), "kg"))
+```
+
+2. Why is putting `write.csv()` in the middle of a pipeline (between `filter` and `summarise`) a bad idea? What could go wrong?
+3. You need both a summary table (mean mass per species) and a filtered dataset (Adelie penguins only) from `penguins`. Write code that avoids repeating the `filter(!is.na(body_mass_g))` step.

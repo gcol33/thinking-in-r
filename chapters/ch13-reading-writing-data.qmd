@@ -1,0 +1,372 @@
+# Reading and writing data {#sec-reading-writing-data}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+Analysis doesn't start with a function call. It starts with finding the file. This chapter covers the plumbing: how to get data into R and back out again. CSV, Excel, databases, and binary formats. Along the way, two things that silently break imports: file paths and encodings.
+
+
+## File paths {#sec-file-paths}
+
+Every R session has a working directory. All relative paths start here:
+
+```{r}
+#| eval: false
+getwd()
+```
+
+If your data is in `data/penguins.csv` and your working directory is the project root, `read.csv("data/penguins.csv")` works. If your working directory is somewhere else, it doesn't.
+
+::: callout-tip
+## Opinion
+Don't use `setwd()`. It hard-wires your script to one machine, one folder structure. Use RStudio projects or the `here` package instead.
+:::
+
+The `here` package builds paths relative to the project root, regardless of which subdirectory your script lives in:
+
+```{r}
+#| eval: false
+here::here("data", "penguins.csv")
+```
+
+`here::here()` finds the project root (by looking for `.Rproj` files, `.git` directories, or other markers) and constructs the path from there. It works on any machine, any OS, any subdirectory. Every file path in this chapter uses `here::here()`.
+
+Forward slashes work on Windows in R: `"data/penguins.csv"` is valid everywhere. Backslashes need escaping (`"data\\penguins.csv"`), which is easy to forget. Just use forward slashes.
+
+Before reading a file, check that it exists. A clear error you write yourself is better than a cryptic one from `read.csv()`:
+
+```{r}
+#| eval: false
+path <- here::here("data", "penguins.csv")
+if (!file.exists(path)) stop("File not found: ", path)
+```
+
+`dir.exists()` does the same for directories.
+
+
+### Exercises {.unnumbered}
+
+1. Run `getwd()` in your console. What does it return?
+2. Install the `here` package (`install.packages("here")`). Run `here::here()`. What directory does it point to?
+3. Why is `here::here("data", "file.csv")` more portable than `"C:/Users/me/project/data/file.csv"`?
+
+
+## Reading CSV files {#sec-reading-csv}
+
+Reading a file is a function: give it a path, get back a data frame. You could write the type signature as `read_csv :: FilePath -> DataFrame`. In a purely functional world, the same path would always produce the same data frame, but I/O breaks that guarantee: someone could edit the file between calls. R doesn't track this in its type system; the function looks pure but isn't. Haskell solves this by wrapping I/O in a monad (`readFile :: FilePath -> IO String`), making the side effect visible in the type. R trusts you to know the difference.
+
+Comma-separated values date to the 1970s on IBM mainframes. There is still no real standard: RFC 4180 (2005) tried, but Excel, R, Python, and most tools disagree on quoting rules, newlines inside fields, and encoding. "My CSV won't load" is a universal experience.
+
+Base R reads CSVs with `read.csv()`:
+
+```{r}
+#| eval: false
+df <- read.csv(here::here("data", "penguins.csv"))
+```
+
+It works, but the defaults are quirky. In older versions of R, `read.csv()` converted strings to factors automatically (`stringsAsFactors = TRUE`), the same pain point from @sec-data-frames. Since R 4.0, the default is `FALSE`, but you may still encounter old code or old advice that assumes otherwise.
+
+The tidyverse alternative is `readr::read_csv()`:
+
+```{r}
+#| eval: false
+library(readr)
+df <- read_csv(here::here("data", "penguins.csv"))
+```
+
+`read_csv()` has better defaults: it never converts strings to factors, it's faster on large files, it prints the column types it guessed, and it returns a tibble (@sec-tibbles) instead of a plain data frame. For most work, `read_csv()` is the better choice.
+
+Key arguments worth knowing:
+
+- `col_types`: specify column types explicitly instead of letting readr guess.
+- `na`: which strings should be treated as missing values (default: `c("", "NA")`).
+- `skip`: skip header lines before reading data.
+- `locale`: control decimal marks, encodings, and date formats.
+
+```{r}
+#| eval: false
+df <- read_csv(
+  here::here("data", "survey.csv"),
+  col_types = cols(
+    id = col_integer(),
+    name = col_character(),
+    score = col_double(),
+    date = col_date()
+  ),
+  na = c("", "NA", "missing")
+)
+```
+
+::: callout-tip
+## Opinion
+Specify `col_types` explicitly in any script you'll run more than once. readr guesses types from the first 1000 rows. This works until row 1001 has a string in a numeric column. Guessing is for exploration, not production.
+:::
+
+For European CSVs where `;` is the delimiter and `,` is the decimal mark, use `read_csv2()`. For tab-separated files, `read_tsv()`. For anything else, `read_delim()` lets you specify the delimiter:
+
+```{r}
+#| eval: false
+read_delim(here::here("data", "pipes.txt"), delim = "|")
+```
+
+
+### Exercises {.unnumbered}
+
+1. Read a CSV file (any file you have, or create one with a text editor). Use `read_csv()` and inspect the column types it prints.
+2. Read the same file with explicit `col_types`. What happens if you declare a character column as `col_integer()`?
+3. Create a small CSV where one value is the string `"NA"` and another is genuinely missing (empty cell). Read it with `read_csv()` and check the result with `is.na()`.
+
+
+## Writing CSV files {#sec-writing-csv}
+
+`readr::write_csv()` writes a data frame to disk:
+
+```{r}
+#| eval: false
+write_csv(df, here::here("output", "clean_data.csv"))
+```
+
+It always writes UTF-8 encoding and never adds row names. Both are good defaults.
+
+Base R's `write.csv()` adds row names by default, which usually just clutters the output:
+
+```{r}
+#| eval: false
+write.csv(df, here::here("output", "clean_data.csv"), row.names = FALSE)
+```
+
+The `row.names = FALSE` argument is easy to forget, which is one more reason to prefer `write_csv()`. Row names in CSV files connect back to the same problem from @sec-data-frames: they cause more confusion than they solve.
+
+CSV is the right format for small to medium data that needs to be human-readable or shared across tools. When CSV falls short (large files, complex types, preserving R-specific structure), other formats are better choices (@sec-binary-columnar).
+
+
+### Exercises {.unnumbered}
+
+1. Create a small data frame and write it with both `write_csv()` and `write.csv()`. Open both files in a text editor. What's different?
+2. Write a data frame with `write.csv()` and forget `row.names = FALSE`. Read it back with `read_csv()`. What happened to the row names?
+
+
+## Excel files {#sec-excel-files}
+
+The `readxl` package reads both `.xls` and `.xlsx` files with no external dependencies (no Java, no Perl):
+
+```{r}
+#| eval: false
+library(readxl)
+df <- read_excel(here::here("data", "survey.xlsx"))
+```
+
+Key arguments:
+
+- `sheet`: select a sheet by name or index.
+- `range`: read a specific cell range (e.g., `"B3:D15"`).
+- `col_types`, `na`, `skip`: same idea as readr.
+
+```{r}
+#| eval: false
+df <- read_excel(
+  here::here("data", "survey.xlsx"),
+  sheet = "raw_data",
+  range = "A1:F100",
+  na = c("", "N/A")
+)
+```
+
+When you don't know the structure of an Excel file, list the sheet names first:
+
+```{r}
+#| eval: false
+excel_sheets(here::here("data", "survey.xlsx"))
+```
+
+To read all sheets into a list of data frames:
+
+```{r}
+#| eval: false
+path <- here::here("data", "survey.xlsx")
+all_sheets <- purrr::map(excel_sheets(path), \(s) read_excel(path, sheet = s))
+```
+
+This uses `purrr::map()` to apply `read_excel()` to each sheet name, returning a list. You will see `map()` in depth in @sec-iteration-without-loops.
+
+For writing Excel files, `writexl::write_xlsx()` is lightweight and sufficient for most cases:
+
+```{r}
+#| eval: false
+writexl::write_xlsx(df, here::here("output", "results.xlsx"))
+```
+
+::: callout-tip
+## Opinion
+Excel is a fine data source. It's a terrible data format. Merged cells, multiple tables on one sheet, color-coded values: none of these survive the trip to R. Read from Excel, clean the data, save as CSV or Parquet for reproducibility.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. If you have an Excel file with multiple sheets, use `excel_sheets()` to list them, then read one sheet by name.
+2. Use the `range` argument to read only a subset of cells from a sheet.
+
+
+## Databases {#sec-databases}
+
+When data lives in a database, R connects to it through the DBI package. The pattern is always the same: connect, query, disconnect.
+
+```{r}
+#| eval: false
+library(DBI)
+
+con <- dbConnect(RSQLite::SQLite(), here::here("data", "example.sqlite"))
+result <- dbGetQuery(con, "SELECT * FROM measurements LIMIT 10")
+dbDisconnect(con)
+```
+
+`dbConnect()` takes a driver (here, SQLite) and connection parameters, `dbGetQuery()` sends SQL and returns a data frame, and `dbDisconnect()` closes the connection when you are done. This three-step pattern works with every database R supports: PostgreSQL, MySQL, SQL Server, DuckDB, and others. Only the driver and connection parameters change.
+
+SQLite is self-contained: one file, no server, no configuration. Good for learning and small projects:
+
+```{r}
+#| eval: false
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+dbWriteTable(con, "mtcars", mtcars)
+dbGetQuery(con, "SELECT mpg, cyl FROM mtcars WHERE cyl = 6")
+dbDisconnect(con)
+```
+
+DuckDB is the modern choice for local analytical work. It's columnar, fast on aggregations, and can read Parquet and CSV files directly:
+
+```{r}
+#| eval: false
+con <- dbConnect(duckdb::duckdb())
+result <- dbGetQuery(con, "SELECT * FROM read_parquet('data/big_table.parquet')")
+dbDisconnect(con, shutdown = TRUE)
+```
+
+The real power comes from combining databases with dplyr. Instead of writing SQL by hand, you can use dplyr verbs on a database table and let R translate them:
+
+```{r}
+#| eval: false
+con <- dbConnect(RSQLite::SQLite(), here::here("data", "example.sqlite"))
+tbl(con, "measurements") |>
+  filter(year > 2020) |>
+  summarise(mean_value = mean(value))
+```
+
+dplyr generates the SQL for you. The full treatment of database-backed dplyr is in @sec-databases.
+
+This section covers the basics. The rest comes from writing queries against your own data.
+
+
+### Exercises {.unnumbered}
+
+1. Create an in-memory SQLite database. Write the `iris` data frame to it, then query it with SQL.
+2. Use `dbListTables()` to see what tables exist in a connection.
+
+
+## Binary and columnar formats {#sec-binary-columnar}
+
+CSV is human-readable but slow and wasteful for large data. The reason is structural: CSV is row-oriented, storing each record together. This is fast for inserting one row but slow for scanning one column across millions of rows. Columnar formats (Parquet, DuckDB, Arrow) store each column together, making analytical queries that touch few columns but many rows dramatically faster. This row-vs-column distinction shapes every file format decision in data engineering. Several binary formats trade readability for speed and compression.
+
+`saveRDS()` and `readRDS()` serialize any R object to disk:
+
+```{r}
+#| eval: false
+saveRDS(df, here::here("cache", "processed.rds"))
+df <- readRDS(here::here("cache", "processed.rds"))
+```
+
+RDS is fast, compact, and preserves R types exactly (factors, dates, attributes, everything). The catch: it's R-only. Python can't read it, Excel can't read it. Use RDS for caching intermediate results in R-only workflows.
+
+For cross-language work, Parquet is the modern standard:
+
+```{r}
+#| eval: false
+library(arrow)
+write_parquet(df, here::here("data", "measurements.parquet"))
+df <- read_parquet(here::here("data", "measurements.parquet"))
+```
+
+Parquet files are columnar (each column is stored together), compressed, and readable by R, Python, Spark, DuckDB, and many other tools. They are typically much smaller than CSV and much faster to read.
+
+Arrow's Feather format is another option: faster than Parquet for read/write, but produces larger files. Use Parquet for storage and sharing, Feather for speed-critical intermediate files.
+
+```{r}
+#| eval: false
+write_feather(df, here::here("cache", "fast_cache.feather"))
+df <- read_feather(here::here("cache", "fast_cache.feather"))
+```
+
+When to use what:
+
+| Format  | Strengths                              | Weaknesses                        |
+|---------|----------------------------------------|-----------------------------------|
+| CSV     | Universal, human-readable              | Slow, large, lossy types          |
+| RDS     | Fast, preserves all R types            | R-only                            |
+| Parquet | Fast, compressed, cross-language       | Not human-readable                |
+| Feather | Very fast read/write                   | Larger than Parquet, less adopted  |
+
+::: callout-tip
+## Opinion
+If your CSV takes more than a few seconds to read, switch to Parquet. You'll wonder why you didn't sooner.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Save the `mtcars` data frame as CSV, RDS, and (if you have the `arrow` package) Parquet. Compare the file sizes with `file.size()`.
+2. Read each format back and verify the result is identical with `all.equal()`.
+3. Time reading the CSV and RDS versions with `system.time()`. Which is faster?
+
+
+## Encodings {#sec-encodings}
+
+An encoding is a mapping from bytes to characters. When the mapping is wrong, characters come out garbled: `"caf\xe9"` instead of `"cafe"` with an accent, broken umlauts, question marks where special characters should be.
+
+UTF-8 is the modern standard. It can represent every character in every language. Latin-1 (ISO-8859-1) is the old European standard. Windows-1252 is Windows' variant of Latin-1. All three agree on basic ASCII (English letters, digits, punctuation), but they disagree on everything else.
+
+`readr::read_csv()` assumes UTF-8. Base R's `read.csv()` assumes your system's default encoding, which on Windows is often not UTF-8. This is why the same CSV can load perfectly on one machine and produce garbled text on another.
+
+When you encounter garbled text, specify the encoding explicitly:
+
+```{r}
+#| eval: false
+df <- read_csv(
+  here::here("data", "european_data.csv"),
+  locale = locale(encoding = "latin1")
+)
+```
+
+For base R:
+
+```{r}
+#| eval: false
+df <- read.csv(here::here("data", "european_data.csv"), fileEncoding = "latin1")
+```
+
+The BOM (byte order mark) is another common problem. Excel sometimes adds three invisible bytes at the start of UTF-8 files. `read_csv()` handles this automatically. `read.csv()` sometimes doesn't, producing a garbled first column name (you'll see something like `X.U.FEFF.id` instead of `id`).
+
+::: callout-tip
+## Opinion
+Save everything as UTF-8. If you receive a file that isn't UTF-8, convert it once and move on. Life is too short to debug encoding issues more than once per file.
+:::
+
+You can check and convert encodings with base R:
+
+```{r}
+#| eval: false
+# Check encoding of a string
+Encoding(x)
+
+# Convert from Latin-1 to UTF-8
+x_utf8 <- iconv(x, from = "latin1", to = "UTF-8")
+```
+
+Encoding issues are covered in more depth in @sec-character-vectors, but the practical advice fits in two sentences: use `readr` (it assumes UTF-8), and when that doesn't work, specify the encoding explicitly.
+
+
+### Exercises {.unnumbered}
+
+1. Create a CSV file in a text editor with a non-ASCII character (an accented letter, an umlaut). Read it with `read_csv()`. Does it display correctly?
+2. What does `Encoding("hello")` return? What about `Encoding("\u00e9")`?

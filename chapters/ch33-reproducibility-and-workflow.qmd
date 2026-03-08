@@ -1,0 +1,395 @@
+# Reproducibility and workflow {#sec-reproducibility-and-workflow}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+Your analysis is reproducible when someone else can run your code on their machine and get the same results. That someone is usually you, six months from now, with no memory of what you did.
+
+This chapter is a guided tour, not a deep dive. Each tool (`here`, `renv`, Quarto, `targets`, Git) gets enough coverage to start using it today, with pointers to comprehensive references for when you need more. The goal is to show how the tools fit together into a reproducibility stack, not to replace their documentation.
+
+
+## What reproducibility means {#sec-what-reproducibility-means}
+
+Reproducibility: same code + same data = same results. This is referential transparency at the project level: your analysis script is an expression, and if it is reproducible, you can replace that expression with its value (the results) without changing meaning. A non-reproducible analysis is a function with hidden side effects; it depends on state you did not declare.
+
+This is not the same as replicability (same question, new data, similar conclusions). Reproducibility is the lower bar, and most analyses fail it.
+
+A 2016 Nature survey found that 70% of researchers had tried and failed to reproduce another scientist's experiment. A 2019 study found that only 26% of published R-based analyses could be independently reproduced from the provided code. The problem is not malice or incompetence. It is that reproducing work requires infrastructure, and most analysts do not build that infrastructure until it is too late.
+
+Why it breaks:
+
+- Hardcoded file paths (`"C:/Users/me/Desktop/data.csv"`).
+- Unrecorded package versions (dplyr 1.0 behaves differently from dplyr 1.1).
+- Manual steps between scripts ("run this, then open Excel, then paste the table...").
+- Random seeds not set.
+- Outputs separated from the code that produced them.
+
+The fix is structural, not behavioral. Do not rely on discipline ("I will remember to run script 3 first"). Build a system that makes the wrong thing hard. Each tool in this chapter eliminates a specific failure mode: `here` eliminates path problems, `renv` eliminates version problems, Quarto eliminates the code/output sync problem, `targets` eliminates the run-order problem, Git eliminates the "which version was it?" problem.
+
+::: callout-tip
+## Opinion
+If your analysis requires a README that says "run these scripts in this order, but skip step 4 on Tuesdays", it is not reproducible. It is a ritual.
+:::
+
+
+## Projects and file paths {#sec-projects-file-paths}
+
+An RStudio project (`.Rproj` file) defines a working directory. Everything is relative to it. When you open the project, the working directory is set automatically.
+
+`here::here()` builds paths relative to the project root:
+
+```{r}
+#| eval: false
+# Works regardless of where the script lives in the project
+data <- read.csv(here::here("data", "penguins.csv"))
+```
+
+`here::here("data", "penguins.csv")` produces something like `"C:/Users/me/projects/analysis/data/penguins.csv"`, but you never type that path. It works on any OS (forward slashes on Windows too), in any subdirectory, in Quarto documents, in test files, and in interactive sessions. It even works when you `source()` a script from a different directory, because it finds the project root, not the script's location.
+
+Don't use `setwd()`. It creates a hidden dependency on your computer's directory structure. Avoid absolute paths too; they break on every other machine. And don't use `source("C:/Users/me/Desktop/functions.R")`. It ties your code to one computer.
+
+The `here` package solves this by detecting the project root (the directory containing `.Rproj`, `.here`, or `.git`) and building paths relative to it:
+
+A clean project layout:
+
+```
+my_analysis/
+├── my_analysis.Rproj
+├── data/               # raw data (read-only)
+├── R/                  # functions
+├── analysis/           # scripts or Quarto documents
+├── output/             # results, figures, tables
+└── renv.lock           # dependency lockfile
+```
+
+Raw data is sacred: never modify it. Read it, transform it in code, write outputs elsewhere. If someone asks "where did this number come from?", you can trace it from the output file back through the code to the raw data.
+
+A common mistake is placing data-cleaning code in a different project from the analysis. Then reproducing the analysis requires finding and running a separate project first. Keep everything in one project, or use `targets` (@sec-targets) to formalize the dependency.
+
+Another common mistake: using `rm(list = ls())` at the top of a script to "clean up." This clears your workspace but does not restart R. Hidden state (loaded packages, modified options, changed working directories) persists. Instead, restart R (Ctrl+Shift+F10 in RStudio) for a true clean slate.
+
+::: callout-tip
+## Opinion
+If you would not email your project folder to a collaborator and expect it to work, it is not organized well enough.
+:::
+
+### Exercises {.unnumbered}
+
+1. Create an RStudio project with the layout above. Place a CSV file in `data/`. Write a script in `analysis/` that reads it using `here::here()`. Verify it works by opening the project fresh and running the script.
+2. Try `here::here("data", "penguins.csv")` from both the project root and a subdirectory. Does it return the same path?
+3. Open an old script of yours that uses `setwd()` or absolute paths. Rewrite it to use `here::here()`. Does it still work when you move the project to a different folder?
+
+
+## renv: locking dependencies {#sec-renv}
+
+`install.packages("dplyr")` today gives you a different version than six months from now. Your code might break. Your results might change. You will not know why, because nothing in your code changed.
+
+`renv` isolates your project's package library:
+
+```{r}
+#| eval: false
+renv::init()       # create a project-local library
+renv::snapshot()   # record exact versions in renv.lock
+renv::restore()    # install exactly the versions in the lockfile
+```
+
+`renv::init()` creates a private library for this project. Your package versions are isolated from every other project on your machine.
+
+`renv::snapshot()` writes `renv.lock`, a JSON file listing every package and its exact version. This is your dependency manifest. Commit it to Git.
+
+`renv::restore()` reads `renv.lock` and installs exactly those versions. A collaborator clones your repo, runs `renv::restore()`, and gets the same packages you used.
+
+The workflow: `init()` once, `snapshot()` after installing or updating packages, commit `renv.lock` to Git. That is all.
+
+renv does not version R itself. If the R version matters, document it. Docker solves this completely (see @sec-reproducibility-stack), but is beyond this book.
+
+A common question: should you commit `renv.lock` to Git? Yes, always. It is small (a few KB of JSON), and it is the entire point of renv. Without the lockfile in version control, a collaborator cannot restore your environment. The `renv/` directory itself (which contains the actual installed packages) is typically git-ignored.
+
+::: callout-tip
+## Opinion
+`renv.lock` is boring. That is the point. Boring is reproducible.
+:::
+
+One more practical detail: when you switch between projects that use renv, you do not need to do anything special. Each project has its own library. When you open a project with `renv`, it activates automatically. Packages installed in one project are invisible to another. This isolation prevents the classic problem of updating a package for one project and breaking another.
+
+### Exercises {.unnumbered}
+
+1. Run `renv::init()` in a project. Install a package with `install.packages()`. Run `renv::snapshot()`. Open `renv.lock` and find the package and its version number.
+2. Delete the package from your library (simulate a fresh machine). Run `renv::restore()`. Verify the package is back.
+3. Open `renv.lock` in a text editor. What information does it store besides package names and versions?
+
+
+## Quarto: code and prose together {#sec-quarto}
+
+Quarto documents (`.qmd`) combine narrative text, code chunks, and their output in a single document. When you render the document, the code runs and the results appear inline. The document is the analysis.
+
+```{r}
+#| eval: false
+---
+title: "Penguin Analysis"
+format: html
+---
+
+## Body mass by species
+
+```{r}
+library(palmerpenguins)
+library(ggplot2)
+penguins |>
+  ggplot(aes(species, body_mass_g)) +
+  geom_boxplot()
+```
+```
+
+There is no separate script that makes the figures and a Word document that describes them. They are one thing. If the data changes, re-render and everything updates.
+
+Quarto is the successor to R Markdown. The core idea, literate programming, dates back to Donald Knuth (1984): write programs as documents where the prose explains the code, not the other way around. The lineage runs from WEB (Pascal/TeX) through Sweave (2002), knitr (2012), R Markdown, to Quarto (2022). Better tooling, multi-language support. If you know R Markdown, you know Quarto. The main differences: Quarto uses `#|` for chunk options (instead of the chunk header), supports Python, Julia, and Observable in addition to R, and has better defaults for academic output (cross-references, citations, callouts).
+
+Output formats: HTML, PDF, Word, presentations, websites, books. This book is written in Quarto.
+
+Chunk options control behavior. Place them at the top of each chunk with the `#|` prefix:
+
+```{r}
+#| eval: false
+#| label: fig-mass
+#| fig-cap: "Body mass by species"
+#| echo: false
+penguins |>
+  ggplot(aes(species, body_mass_g)) +
+  geom_boxplot()
+```
+
+`echo: false` hides the code (shows only the output). `eval: false` shows the code but does not run it. `fig-cap` adds a caption. `cache: true` caches results so unchanged chunks do not re-run. These options give you fine control over what the reader sees.
+
+The key principle: the document is the analysis. Code, prose, and results live together. When they are separate, they drift apart. When they are together, they stay in sync.
+
+For academic writing, Quarto supports citations natively. Place a `.bib` file in your project and reference entries with `@key`:
+
+```{r}
+#| eval: false
+---
+title: "My Analysis"
+bibliography: references.bib
+---
+
+As shown by @wickham2019, tidy data principles simplify analysis.
+```
+
+The citation is rendered in the output and a reference list is appended automatically. No more manually typed reference sections that drift from the actual citations.
+
+### Exercises {.unnumbered}
+
+1. Create a `.qmd` file with a title, a code chunk that loads a dataset, and a code chunk that makes a plot. Render it to HTML. Change the data and re-render.
+2. Add `echo: false` to a code chunk. What changes in the rendered output?
+
+
+## targets: pipeline automation {#sec-targets}
+
+Problem: your analysis has multiple steps (clean data, fit model, make figures, render report). Running them in the right order is manual and error-prone. Changing the data means re-running everything, even steps whose inputs did not change.
+
+`targets` solves this. You define a pipeline: each step (target) is a function call with declared inputs and outputs. `targets` tracks what changed and only re-runs what is necessary.
+
+```{r}
+#| eval: false
+# _targets.R
+library(targets)
+
+tar_option_set(packages = c("dplyr", "ggplot2"))
+
+list(
+  tar_target(raw_data, read.csv(here::here("data", "penguins.csv"))),
+  tar_target(clean_data, clean_penguins(raw_data)),
+  tar_target(model, lm(body_mass_g ~ species, data = clean_data)),
+  tar_target(fig, plot_results(model))
+)
+```
+
+`tar_make()` runs the pipeline. `tar_visnetwork()` visualizes the dependency graph. `tar_read(model)` retrieves a cached result.
+
+Each target is a function call. Functions are the unit of computation (@sec-functions-are-values-chapter); targets are the unit of caching. If `raw_data` has not changed, `clean_data` does not re-run. If you change `plot_results()`, only `fig` re-runs.
+
+Not every project needs `targets`. A single Quarto document is fine for simple analyses. Use `targets` when you have long-running steps, many interdependent outputs, or pipelines that change frequently.
+
+The real power of `targets` shows when your pipeline is expensive. If a model takes an hour to fit, you do not want to re-fit it every time you tweak a plot. `targets` caches the model result and only re-fits when the model code or its inputs change. The plot target re-runs in seconds because it reads the cached model.
+
+`tar_visnetwork()` produces a dependency graph showing which targets are up to date (green), outdated (blue), or errored (red). This makes complex pipelines much easier to debug.
+
+::: callout-tip
+## Opinion
+`targets` is overkill for a homework assignment and essential for a thesis chapter. Know where your project falls.
+:::
+
+A key design principle: each target should be defined by a function, not raw code. Instead of writing the transformation inline, write a function in `R/` and call it from the target. This makes targets testable (you can test the function independently) and readable (the pipeline reads like a table of contents):
+
+```{r}
+#| eval: false
+# R/functions.R
+clean_penguins <- function(data) {
+  data[!is.na(data$body_mass_g), ]
+}
+
+plot_results <- function(model) {
+  plot(model, which = 1)
+}
+```
+
+```{r}
+#| eval: false
+# _targets.R
+source("R/functions.R")
+list(
+  tar_target(raw, read.csv(here::here("data", "penguins.csv"))),
+  tar_target(clean, clean_penguins(raw)),
+  tar_target(model, lm(body_mass_g ~ species, data = clean)),
+  tar_target(fig, plot_results(model))
+)
+```
+
+### Exercises {.unnumbered}
+
+1. Define a small `targets` pipeline with three steps: read data, compute a summary, make a plot. Run it with `tar_make()`. Change the summary function and run `tar_make()` again. Observe which targets re-run and which are skipped.
+2. Run `tar_visnetwork()` on your pipeline. What do the colors mean?
+
+
+## Version control with Git {#sec-git}
+
+Git tracks changes to files over time. Every change is recorded as a *commit*: a snapshot of your project at one moment, with a message describing what changed and why. You can go back to any previous snapshot, compare any two, and branch your work into parallel lines that merge back together.
+
+Why Git for data analysis:
+
+- **Undo mistakes without losing work.** Every commit is a checkpoint you can return to. Accidentally deleted a function? `git checkout -- file.R` brings it back. Broke your analysis and cannot figure out what changed? `git diff` shows exactly which lines differ from the last working state.
+- **Track the evolution of your analysis.** Three months from now, a reviewer asks why you removed a covariate. `git log` shows the commit where you removed it, with a message explaining the decision. Without Git, that reasoning is lost.
+- **Collaborate without emailing files back and forth.** Multiple people can work on the same project, each on their own *branch*, and Git merges their changes. Conflicts (two people editing the same line) are surfaced explicitly, not silently overwritten.
+- **Share and cite.** GitHub and GitLab give your project a permanent URL. Zenodo can mint a DOI for a specific release, making your code citable in papers.
+
+### The daily workflow {.unnumbered}
+
+Git has many commands. You need six:
+
+```{r}
+#| eval: false
+git status                              # what has changed?
+git add file.R                          # stage a file for the next commit
+git commit -m "Add bootstrap analysis"  # record the snapshot
+git log --oneline                       # see recent history
+git diff                                # see unstaged changes line by line
+git push                                # send commits to GitHub
+```
+
+The mental model: you make changes to files, `git add` selects which changes to include in the next snapshot, `git commit` takes the snapshot with a message, and `git push` sends it to a remote server. `git pull` does the reverse: it fetches commits from the remote and incorporates them into your local copy.
+
+RStudio has a built-in Git pane that shows modified files, lets you stage changes, write commit messages, and push to GitHub without touching the terminal. For setup, `usethis::use_git()` initializes a repository, and `usethis::use_github()` creates a remote on GitHub and pushes your code in one step.
+
+### Branching {.unnumbered}
+
+Branches let you try something without risking the main line of work:
+
+```{r}
+#| eval: false
+git branch try-new-model     # create a branch
+git checkout try-new-model   # switch to it
+# ... make changes, commit ...
+git checkout main            # switch back
+git merge try-new-model      # incorporate the branch's changes
+```
+
+If the experiment works, merge it. If it doesn't, delete the branch. The main branch is untouched either way. This is the functional programming principle applied to project management: branches are like closures that capture a state and let you explore without side effects on the original.
+
+### What belongs in Git {.unnumbered}
+
+**Commit**: code, documentation, `renv.lock`, `_targets.R`, `.gitignore`, small data files (under a few MB), Quarto source files.
+
+**Do not commit**: large data files, generated output (figures, HTML reports, `_targets/` cache), secrets and passwords, `.Rhistory`, `.RData`, `.DS_Store`.
+
+`.gitignore` tells Git what to skip. A good starting point for R projects:
+
+```{r}
+#| eval: false
+.Rhistory
+.RData
+.Rproj.user
+_targets/
+docs/
+*.html
+*.pdf
+```
+
+`usethis::use_git_ignore()` helps set it up.
+
+### Commit messages {.unnumbered}
+
+Write commit messages that describe *why* you changed something, not *what* you changed. Git already records what changed (every added and deleted line); your message adds the reasoning that the diff cannot show.
+
+Good: "Remove species interaction term (AIC worse by 4.2)."
+Bad: "Update analysis.R."
+Good: "Fix off-by-one in bootstrap loop causing n+1 resamples."
+Bad: "Bug fix."
+
+Your future self will search through `git log` when something breaks. Those messages are the only documentation of your decision-making process.
+
+### Going further {.unnumbered}
+
+This section covers enough Git to track your work, collaborate, and recover from mistakes. It does not cover rebasing, cherry-picking, bisecting, or other advanced operations. Jenny Bryan's *Happy Git and GitHub for the useR* (happygitwithr.com) is the comprehensive reference for R users and covers installation, SSH keys, merge conflicts, and common workflows in detail.
+
+
+## set.seed() and session info {#sec-seeds-sessions}
+
+Any analysis involving randomness (simulation, resampling, train/test splits) needs `set.seed()`:
+
+```{r}
+set.seed(42)
+sample(1:100, 5)
+```
+
+Without `set.seed()`, every run produces different numbers. With it, the same seed always produces the same sequence. Place it at the top of your script or Quarto document. The specific number does not matter (42, 123, 2024, anything), but it must be fixed and documented.
+
+Note: R 3.6.0 changed the default random number generator. Code using `set.seed()` before and after 3.6.0 may produce different sequences. If exact reproducibility across R versions matters, specify the RNG kind: `set.seed(42, kind = "Mersenne-Twister", normal.kind = "Inversion")`.
+
+At the end of reports, record your environment:
+
+```{r}
+#| eval: false
+sessionInfo()
+# or
+sessioninfo::session_info()
+```
+
+This captures R version, OS, package versions. If results differ on another machine, the session info is the first place to look.
+
+These are small things, but they make the difference between "I can reproduce this" and "I cannot."
+
+### Exercises {.unnumbered}
+
+1. Run the same `sample()` call twice without `set.seed()`. Do you get the same result? Now add `set.seed(123)` before each call. What changes?
+2. Run `sessionInfo()` and find: your R version, your operating system, and the version of a package you use frequently.
+
+
+## The reproducibility stack {#sec-reproducibility-stack}
+
+A summary of tools and when to use each:
+
+1. **RStudio projects + here**: always. Zero cost, immediate benefit.
+2. **Git**: always, for anything beyond a one-off exploration.
+3. **renv**: for any project that needs to produce the same results later.
+4. **Quarto**: for any analysis that produces a report or document.
+5. **targets**: for multi-step pipelines with long-running computations.
+6. **Docker**: for complete environment reproducibility (R version, system libraries). Beyond this book, but worth knowing it exists.
+
+You do not need all of these for every project. Start with projects + here + Git. Add renv when versions matter. Add Quarto when you write reports. Add targets when your pipeline grows.
+
+Here is a decision guide:
+
+| If your project... | You need |
+|---|---|
+| Has any R code at all | RStudio project + here |
+| Will exist for more than a week | Git |
+| Uses packages that update | renv |
+| Produces a report or paper | Quarto |
+| Has steps that take >30 seconds | targets |
+| Must run on a different OS | Docker |
+
+Each layer solves a specific failure mode. Together, they make "works on my machine" a non-issue. Beyond Docker, the Nix package manager (via the `rix` R package) treats packages as pure functions from inputs to outputs: fix all inputs, get deterministic output. Where `renv` captures R package versions, Nix captures the entire system stack, including R itself, system libraries, and the compiler. The principle is the same as referential transparency applied to builds.
+
+The common thread is automation. `here` automates path construction. `renv` automates dependency tracking. Quarto automates the link between code and output. `targets` automates pipeline execution. Git automates change tracking. None of these tools require heroic discipline. They require a one-time setup cost, and then they work silently in the background, preventing the mistakes you would otherwise make by hand.

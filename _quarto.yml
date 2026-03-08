@@ -1,0 +1,65 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Thinking in R"
+  reader-mode: true
+  site-url: https://gcol33.github.io/functional-r/
+  repo-url: https://github.com/gcol33/functional-r/
+  repo-branch: main
+  repo-actions: [edit, issue]
+  chapters:
+    - index.qmd
+    - part: "Part I: Foundations"
+      chapters:
+        - chapters/ch01-two-models.qmd
+        - chapters/ch02-family-tree.qmd
+        - chapters/ch03-expressions-names.qmd
+        - chapters/ch04-vectors.qmd
+        - chapters/ch05-first-function.qmd
+        - chapters/ch06-numerical-computing.qmd
+        - chapters/ch07-functions-are-values.qmd
+        - chapters/ch08-logic-control-flow.qmd
+        - chapters/ch09-complexity-and-algorithms.qmd
+    - part: "Part II: Working with data"
+      chapters:
+        - chapters/ch10-lists.qmd
+        - chapters/ch11-data-frames.qmd
+        - chapters/ch12-strings-factors-dates.qmd
+        - chapters/ch13-reading-writing-data.qmd
+        - chapters/ch14-data-transformation.qmd
+        - chapters/ch15-pipes-and-composition.qmd
+        - chapters/ch16-tidy-data.qmd
+        - chapters/ch17-visualization.qmd
+    - part: "Part III: Thinking functionally"
+      chapters:
+        - chapters/ch18-closures-and-scope.qmd
+        - chapters/ch19-iteration-without-loops.qmd
+        - chapters/ch20-function-factories.qmd
+        - chapters/ch21-reduce-and-accumulate.qmd
+        - chapters/ch22-recursion-and-fixed-points.qmd
+        - chapters/ch23-lazy-evaluation.qmd
+    - part: "Part IV: The type system"
+      chapters:
+        - chapters/ch24-s3-and-s7.qmd
+        - chapters/ch25-contracts-and-defensive-code.qmd
+        - chapters/ch26-metaprogramming.qmd
+        - chapters/ch27-building-a-dsl.qmd
+    - part: "Part V: Going further"
+      chapters:
+        - chapters/ch28-performance.qmd
+        - chapters/ch29-r-internals.qmd
+        - chapters/ch30-r-as-mathematics.qmd
+        - chapters/ch31-connecting-to-other-languages.qmd
+        - chapters/ch32-building-packages.qmd
+        - chapters/ch33-reproducibility-and-workflow.qmd
+    - chapters/afterword.qmd
+
+format:
+  html:
+    theme: cosmo
+    callout-appearance: simple
+    css: custom.css
+
+editor: source

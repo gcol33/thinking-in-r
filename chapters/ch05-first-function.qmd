@@ -1,0 +1,516 @@
+# Your first function {#sec-first-function}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+You have been calling functions since Chapter 3. `sqrt(9)`, `c(1, 2, 3)`, `sum(x > 70)`: each one takes arguments and returns a value. Now you make your own.
+
+
+## Anatomy of a function {#sec-anatomy-function}
+
+A function in R has three parts: a name, arguments, and a body.
+
+```{r}
+double <- function(x) x * 2
+```
+
+`function(x)` declares one argument called `x`. `x * 2` is the body, the expression R evaluates when you call the function. `double` is the name you're binding this function to (the same way `x <- 3` binds a name to a number).
+
+Call it:
+
+```{r}
+double(5)
+```
+
+```{r}
+double(c(1, 2, 3))
+```
+
+The second call works because `*` is vectorized (@sec-vectorized-ops). `double` doesn't need a loop to handle vectors; the body `x * 2` already works element by element. You get vectorization for free.
+
+A function with a longer body uses curly braces:
+
+```{r}
+describe <- function(x) {
+  n <- length(x)
+  m <- mean(x)
+  paste("n =", n, ", mean =", round(m, 2))
+}
+
+describe(c(72, 85, 61, 90, 78))
+```
+
+The body is a block of expressions. R evaluates them in order and returns the value of the last one. This is the same rule from @sec-expressions-all-the-way: a block in curly braces is an expression, and its value is the value of the last line.
+
+
+### Exercises {.unnumbered}
+
+1. Write a function `square` that takes a number and returns its square.
+2. Write a function `to_celsius` that converts a Fahrenheit temperature to Celsius (formula: `(f - 32) * 5/9`). Test it with `to_celsius(212)`.
+3. Does `to_celsius(c(32, 72, 212))` work? Why?
+
+
+## Arguments and defaults {#sec-arguments-defaults}
+
+Functions can have multiple arguments, and some can have default values:
+
+```{r}
+greet <- function(name, greeting = "Hello") {
+  paste(greeting, name)
+}
+```
+
+`name` is required. `greeting` is optional; if you don't provide it, R uses `"Hello"`:
+
+```{r}
+greet("R")
+```
+
+```{r}
+greet("R", "Hey")
+```
+
+You can also pass arguments by name, in any order:
+
+```{r}
+greet(greeting = "Bonjour", name = "R")
+```
+
+This is the same positional-versus-named distinction from @sec-calling-functions, when we used `log(8, base = 2)`. The rule is the same everywhere because function calls all work the same way.
+
+Some functions accept a variable number of arguments using `...` (pronounced "dot-dot-dot"):
+
+```{r}
+shout <- function(...) {
+  words <- c(...)
+  toupper(paste(words, collapse = " "))
+}
+
+shout("hello", "world")
+```
+
+`...` collects all the arguments you pass, however many there are. `c(...)` combines them into a vector. This is a surprisingly deep idea. In Church's lambda calculus (@sec-church), a function takes exactly one argument. If you want two arguments, you write a function that returns another function:
+
+```
+λx. λy. x + y
+```
+
+This reads: "a function that takes `x` and returns *another function* that takes `y` and returns `x + y`." To add 3 and 5, you apply it twice: `(λx. λy. x + y)(3)(5)` = `(λy. 3 + y)(5)` = `3 + 5` = `8`. Each application replaces one argument, one step at a time. This is called *currying*, and R can do it too (@sec-function-factories). `...` is R's practical alternative: instead of nesting functions, you let a single function accept any number of arguments and decide what to do with them inside. `c()`, `paste()`, `sum()`: they all use `...`, which is why `c(1, 2, 3)` and `c(1, 2, 3, 4, 5, 6, 7)` both work. More on `...` in @sec-lazy-evaluation.
+
+
+### Exercises {.unnumbered}
+
+1. Write a function `power` with arguments `x` and `n = 2` that computes `x^n`. Test it with `power(3)` and `power(3, 3)`.
+2. What happens if you call `greet()` with no arguments? Read the error message.
+3. Rewrite `power` so the default exponent is 3. What does `power(2)` return now?
+
+
+## Return values {#sec-return-values}
+
+R returns the value of the last expression in the body. No special keyword needed:
+
+```{r}
+add_one <- function(x) x + 1
+add_one(10)
+```
+
+The body is `x + 1`. R evaluates it and returns the result. Compare this to languages like Python or Java, where you must write `return` explicitly. In R, the last expression *is* the return value. This is, once again, the lambda calculus: a function is an expression that evaluates to a value.
+
+And when you call `add_one(10)`, something specific happens: R substitutes `10` for `x` in the body, turning `x + 1` into `10 + 1`, then evaluates it. This substitution is called *beta reduction* in lambda calculus. `(λx. x + 1)(10)` reduces to `10 + 1`. Every function call you write in R is a beta reduction: plug in the argument, simplify the body. The name sounds technical, but you have been doing it since the first chapter.
+
+R does have a `return()` function, and it's useful for early exits:
+
+```{r}
+safe_log <- function(x) {
+  if (any(x <= 0)) return(NA)
+  log(x)
+}
+
+safe_log(5)
+safe_log(-1)
+```
+
+If `x` has any non-positive values, the function exits immediately and returns `NA`. Otherwise, it falls through to `log(x)`.
+
+::: callout-tip
+## Opinion
+Use `return()` only for early exits like `safe_log` above. If the function runs to the end, let the last expression be the return value. Writing `return(x)` on the last line adds nothing; just write `x`.
+:::
+
+One subtlety: assignment returns its value invisibly. When a function's last line is an assignment, R returns the value but doesn't print it:
+
+```{r}
+quiet <- function(x) {
+  result <- x + 1
+}
+
+quiet(5)
+```
+
+Nothing printed. The function returned 6, but invisibly. If you want to see it:
+
+```{r}
+(quiet(5))
+```
+
+Or store it:
+
+```{r}
+y <- quiet(5)
+y
+```
+
+The general rule: if you want your function to show a result, make sure the last expression is the value itself, not an assignment.
+
+
+### Exercises {.unnumbered}
+
+1. What does this function return? Predict, then check:
+
+    ```r
+    mystery <- function(x) {
+      a <- x + 1
+      b <- a * 2
+      b
+    }
+    mystery(3)
+    ```
+
+2. What about this one?
+
+    ```r
+    mystery2 <- function(x) {
+      a <- x + 1
+      b <- a * 2
+    }
+    mystery2(3)
+    ```
+
+3. Write a function `clamp` that takes a value `x`, a `lo`, and a `hi`, and returns `lo` if `x < lo`, `hi` if `x > hi`, and `x` otherwise. Use `return()` for the early exits.
+
+
+## Functions are just values {#sec-functions-are-values}
+
+In @sec-calling-functions, you saw that typing `sqrt` without parentheses prints the function itself. That's because a function is a value, the same kind of thing as a number or a string. You can assign it, put it in a list, or check its type:
+
+```{r}
+f <- double
+f(5)
+```
+
+```{r}
+is.function(double)
+```
+
+```{r}
+typeof(double)
+```
+
+`double` is a name bound to a value, and that value happens to be a function. `f <- double` gives the same function a second name. This is exactly what happened in @sec-names-binding when `y <- x` gave the number 3 a second name.
+
+You can even create a function without giving it a name:
+
+```{r}
+(function(x) x + 1)(10)
+```
+
+`function(x) x + 1` creates a function. The parentheses around it and `(10)` immediately call it with the argument 10. This is an *anonymous function*: a function with no name. It's the R equivalent of Church's lambda notation, `λx. x + 1` applied to 10 (@sec-church). You won't write anonymous functions often at this stage, but they become important when you pass functions to other functions in @sec-iteration-without-loops.
+
+You can do anything with a function that you can do with a number: store it in a variable, pass it to another function, return it as a result. This is what McCarthy built into Lisp in 1958 (@sec-lisp), and R inherits it directly.
+
+
+### Exercises {.unnumbered}
+
+1. Assign `sqrt` to a new name `s`. Does `s(16)` work?
+2. What does `is.function(42)` return? What about `is.function(is.function)`?
+3. Run `(function(a, b) a + b)(3, 4)`. What happens?
+
+
+## Scope: a first look {#sec-scope-first-look}
+
+What happens to variables created inside a function?
+
+```{r}
+add_ten <- function(x) {
+  y <- 10
+  x + y
+}
+
+add_ten(5)
+```
+
+`y` was created inside `add_ten`. Can you access it from outside?
+
+```{r}
+#| error: true
+y
+```
+
+`y` doesn't exist outside the function. Variables created inside a function live in the function's own local environment and disappear when the function finishes. This is what makes functions safe to use: they don't leak their internal state into your workspace.
+
+What about the other direction? Can a function see variables from outside?
+
+```{r}
+multiplier <- 3
+
+scale <- function(x) {
+  x * multiplier
+}
+
+scale(10)
+```
+
+Yes. `scale` found `multiplier` in the workspace because it wasn't defined inside the function. R looks for names first in the function's local environment, then in the environment where the function was defined. This is lexical scoping, the idea R inherited from Scheme (@sec-scheme).
+
+But a function cannot *change* a variable outside itself:
+
+```{r}
+n <- 0
+
+increment <- function() {
+  n <- n + 1
+  n
+}
+
+increment()
+n
+```
+
+`increment` created its own local `n`, set it to 1, and returned it. The `n` in the workspace is still 0. The function read the outer `n` but didn't modify it; it created a new local binding with the same name. This is R's copy-on-modify philosophy: values don't change; you create new values.
+
+This section is just a first look. Scope, environments, and closures get a full treatment in @sec-closures-and-scope. For now, the practical rule is that what happens inside a function stays inside the function.
+
+
+### Exercises {.unnumbered}
+
+1. Predict the output, then run it:
+
+    ```r
+    x <- 100
+    f <- function() {
+      x <- 1
+      x
+    }
+    f()
+    x
+    ```
+
+2. What does this return?
+
+    ```r
+    x <- 10
+    g <- function(x) {
+      x + 1
+    }
+    g(20)
+    ```
+
+    Is it 11 or 21? Why?
+
+3. Can a function call another function you've defined? Try it: write `triple <- function(x) x * 3`, then write `triple_and_add <- function(x) triple(x) + 1`. Does `triple_and_add(5)` work?
+
+
+## Guarding your inputs {#sec-guarding-inputs}
+
+What happens when someone passes the wrong type to your function?
+
+```{r}
+#| error: true
+to_celsius <- function(f) (f - 32) * 5/9
+to_celsius("hot")
+```
+
+The error says `non-numeric argument to binary operator`. That's true, but it's not helpful: you have to read the function body to figure out what went wrong. Better to catch the problem at the door:
+
+```{r}
+#| error: true
+to_celsius <- function(f) {
+  stopifnot(is.numeric(f))
+  (f - 32) * 5/9
+}
+
+to_celsius("hot")
+```
+
+`stopifnot()` checks a condition and stops with an error if it's `FALSE`. The message now tells you exactly what failed: `is.numeric(f)` is not TRUE. You can add multiple checks:
+
+```{r}
+#| error: true
+safe_divide <- function(x, y) {
+  stopifnot(is.numeric(x), is.numeric(y), y != 0)
+  x / y
+}
+
+safe_divide(10, 0)
+```
+
+This is a small habit with a large payoff. A function that fails immediately with a clear message is worth ten functions that silently produce garbage. @sec-contracts-and-defensive-code covers this in depth; for now, `stopifnot()` at the top of your functions is enough.
+
+
+### Exercises {.unnumbered}
+
+1. Add a `stopifnot()` to your `power` function that checks `x` is numeric and `n` is numeric.
+2. What happens if you write `stopifnot(is.numeric(x), length(x) == 1)` and pass a vector? Try it.
+
+
+## Recursion {#sec-recursion}
+
+A function can call other functions. Can a function call *itself*?
+
+```{r}
+factorial <- function(n) {
+  if (n == 0) return(1)
+  n * factorial(n - 1)
+}
+
+factorial(5)
+```
+
+`factorial(5)` calls `factorial(4)`, which calls `factorial(3)`, and so on, until `factorial(0)` returns 1. Then the chain collapses back:
+
+```
+factorial(5)
+= 5 * factorial(4)
+= 5 * 4 * factorial(3)
+= 5 * 4 * 3 * factorial(2)
+= 5 * 4 * 3 * 2 * factorial(1)
+= 5 * 4 * 3 * 2 * 1 * factorial(0)
+= 5 * 4 * 3 * 2 * 1 * 1
+= 120
+```
+
+This is *recursion*: a function defined in terms of itself. Look at the unfolding. Each line replaces a function call with its value, the same term replacement from @sec-atomic-vectors. No variable is being updated; no counter is ticking. The answer was implicit in the original expression `factorial(5)`, and evaluation made it explicit.
+
+In lambda calculus notation, factorial looks like this:
+
+```
+fact = λn. if n = 0 then 1 else n * fact(n - 1)
+```
+
+Wait. In @sec-church, the lambda calculus had only three things: variables, functions, and application. Where did `if/then/else` come from? Church showed that you can encode true, false, and conditional branching as pure lambda functions:
+
+```
+TRUE  = λx. λy. x      # a function that takes two arguments and returns the first
+FALSE = λx. λy. y      # a function that takes two arguments and returns the second
+IF    = λcond. λthen. λelse. cond(then)(else)
+```
+
+`TRUE` is a function that picks its first argument. `FALSE` is a function that picks its second. `IF` just hands both options to the condition and lets it choose. So `IF(TRUE)(1)(2)` becomes `TRUE(1)(2)` becomes `(λx. λy. x)(1)(2)` becomes `1`. The entire conditional is built from functions choosing between arguments. The `if n = 0 then 1 else ...` notation above is shorthand for this encoding.
+
+The reduction works the same as before, one substitution at a time:
+
+```
+fact(3)                                     # apply fact with n = 3
+= (λn. if n=0 then 1 else n * fact(n-1))(3) # replace fact with its definition
+= if 3=0 then 1 else 3 * fact(3-1)          # substitute n = 3
+= 3 * fact(2)                               # 3≠0, so take the else branch
+= 3 * 2 * fact(1)                           # same pattern: n=2, substitute, reduce
+= 3 * 2 * 1 * fact(0)                       # n=1
+= 3 * 2 * 1 * 1                             # n=0, take the then branch: 1
+= 6
+```
+
+R's `function(n)` is `λn` with a different spelling. The reduction above is exactly what R does when you call `factorial(3)`: it substitutes 3 for `n`, evaluates the body, hits `factorial(2)`, substitutes again, and keeps going until it reaches the base case. Recursion is how Church's lambda calculus (@sec-church) handles repetition. There is no loop counter being incremented; the function just calls itself with a smaller argument until it stops.
+
+```{r}
+fibonacci <- function(n) {
+  if (n <= 1) return(n)
+  fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+fibonacci(10)
+```
+
+Recursion is elegant but not always practical. `fibonacci(30)` is already slow because it recomputes the same values many times. `fibonacci(10)` calls `fibonacci(9)` and `fibonacci(8)`, but `fibonacci(9)` also calls `fibonacci(8)`, so `fibonacci(8)` gets computed twice. Further down, `fibonacci(7)` gets computed three times, `fibonacci(6)` five times, and so on. The work grows exponentially.
+
+A smarter version avoids this by carrying the last two values forward as arguments:
+
+```{r}
+fibonacci_fast <- function(n, a = 0, b = 1) {
+  if (n == 0) return(a)
+  fibonacci_fast(n - 1, b, a + b)
+}
+
+fibonacci_fast(10)
+fibonacci_fast(50)
+```
+
+Instead of branching into two recursive calls, `fibonacci_fast` makes one call per step, passing the accumulated values along. Watch the reduction:
+
+```
+fibonacci_fast(4, 0, 1)
+= fibonacci_fast(3, 1, 1)    # n=4→3, a=0→1, b=1→0+1=1
+= fibonacci_fast(2, 1, 2)    # n=3→2, a=1→1, b=1→1+1=2
+= fibonacci_fast(1, 2, 3)    # n=2→1, a=1→2, b=2→1+2=3
+= fibonacci_fast(0, 3, 5)    # n=1→0, a=2→3, b=3→2+3=5
+= 3                           # n=0, return a
+```
+
+Each step is a single function call that replaces itself with another function call, carrying the state forward in the arguments. This is still pure term replacement: no variable is being mutated, each call just substitutes new values for `n`, `a`, and `b`. This form is called *tail recursion* because the recursive call is the last thing the function does. The first version couldn't compute `fibonacci(50)` in any reasonable time; this one handles it instantly.
+
+This is a general pattern: any function with multiple recursive calls can be rewritten as a single recursive call with extra arguments that carry the intermediate results. The trick is to figure out what state you need to pass forward. For Fibonacci, it's the last two numbers. For a tree traversal, it might be an accumulator list.
+
+R has a limit on how deep recursion can go (around 1000 calls by default). For most day-to-day R work, vectorized operations and functions like `map()` (@sec-iteration-without-loops) are better tools. But recursion is worth understanding because it connects programming to the deepest ideas in logic and mathematics, as the next section shows.
+
+
+### Exercises {.unnumbered}
+
+1. Trace through `factorial(3)` by hand, writing out each step like the example above.
+2. Write a recursive function `sum_to` that adds up all integers from 1 to `n`. Check: `sum_to(100)` should return 5050.
+3. What happens if you call `factorial(-1)`? Why? Add a `stopifnot()` to guard against it.
+
+
+## Programs and proofs {#sec-programs-and-proofs}
+
+Look at `factorial` again:
+
+```{r}
+#| eval: false
+factorial <- function(n) {
+  if (n == 0) return(1)
+  n * factorial(n - 1)
+}
+```
+
+This has two parts: a base case (when `n = 0`, return 1) and an inductive step (assume `factorial(n - 1)` gives the right answer, and use it to compute `factorial(n)`). If you have seen mathematical induction, this is the same structure. A proof by induction has a base case and an inductive step too. That's not a coincidence.
+
+In the 1930s and 1940s, the logician Haskell Curry (after whom the Haskell programming language is named, and from whom the term "currying" above comes) noticed something strange: the rules for combining types in a programming language looked identical to the rules for combining propositions in formal logic. A function that takes an `A` and returns a `B` had the same structure as a logical proof that "if A, then B." In 1969, William Howard made this precise: every type corresponds to a logical proposition, and every program of that type corresponds to a proof of that proposition. A recursive function that terminates is a proof by induction. This result is called the *Curry-Howard correspondence*.
+
+When you write `factorial`, you are constructing a proof by induction that the product `1 * 2 * ... * n` exists for every non-negative integer. When you transform the double-recursive `fibonacci` into the tail-recursive `fibonacci_fast`, you are doing the same thing a logician does when they strengthen an inductive hypothesis to make a proof go through. The extra arguments (`a` and `b`) *are* the stronger hypothesis. The result from proof theory (that double induction reduces to simple induction with stronger invariants) is the same result that lets you turn a slow recursive function into a fast one.
+
+Computation, proof, and mathematics are three perspectives on one subject. The logicians who discovered this (Church, Gödel, Curry, Turing) were all working in the 1930s, before computers existed. They were studying what could be *proved*, and they found that the answer was identical to what could be *computed*.
+
+Today, the Curry-Howard correspondence is the foundation of *formal verification*: software that proves other software is correct. Languages like Coq and Lean let you write a program and a mathematical proof that the program does what you claim, and the compiler checks both. Here is a proof in Lean that adding zero to any natural number gives back the same number:
+
+```
+theorem add_zero (n : Nat) : n + 0 = n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp [Nat.add_succ, ih]
+```
+
+The structure is identical to `factorial`: a base case (`zero`), an inductive step (`succ n`), and the result from the smaller case (`ih`, the induction hypothesis). If the proof is wrong, the code doesn't compile. The proof *is* a program, and the program *is* a proof.
+
+The definition of `factorial` says that `factorial(n)` and `n * factorial(n - 1)` are the same expression for arbitrary `n`. That equivalence holds by term replacement alone; you do not need to evaluate either side. It is true by definition. The base case says `factorial(0)` is `1`, also by definition. Those two statements are the entire proof. You show that the program in state `n` and the program in state `n - 1` are the same program up to one substitution, and that the chain has a starting point. That is a proof by induction, and it covers every natural number at once. In lambda calculus notation:
+
+```
+fact = λn. if n = 0 then 1 else n * fact(n - 1)
+```
+
+`fact` is the function. `fact(n)` is the function applied to some `n`. Replacing the name `fact` with its definition gives:
+
+```
+fact(n)
+= (λn. if n = 0 then 1 else n * fact(n - 1))(n)   # replace fact with its definition
+= if n = 0 then 1 else n * fact(n - 1)              # substitute n
+```
+
+You might think: of course they are the same, we just wrote the definition. But `fact` and `fact(n)` are not the same thing. `fact` is a definition: a rule that says what to do with an argument. `fact(n)` is that rule applied to a specific (but arbitrary) `n`. The reduction above shows what happens when you apply the rule: you get a term that contains `fact(n - 1)`, the same program applied to a smaller argument. That relationship between `fact(n)` and `fact(n - 1)` is not something we assumed or proved; it fell out of one substitution. A tautology. And yet that tautology, together with the base case, constitutes a proof by induction that `fact` produces the right answer for every natural number. When `n = 0`, the expression reduces to `1`. When `n ≠ 0`, it reduces to `n * fact(n - 1)`, which has the same structure as the original call but with a smaller argument. Base case plus one definitional equivalence, and the proof is done.
+
+This is what Curry-Howard means in practice. The Lean proof above has the same structure as `factorial`: a base case (`zero`), a step that relates `n` to `n - 1` by definitional equivalence (`succ n`), and nothing else. Both work because the equivalence of two program states is a tautology that requires only substitution.
+
+The seL4 microkernel (used in military helicopters and autonomous vehicles) has a machine-checked proof that certain classes of errors in its code cannot occur, for any input. Not "we haven't found a bug yet": a mathematical guarantee, verified by a computer. The CompCert C compiler has a similar proof that it will never miscompile your code. Both proofs were written as programs in Coq. Traditional testing covers a finite set of inputs; a proof by induction, because it operates on the structure of the program rather than on specific values, covers all of them.
+
+R doesn't enforce this connection the way Coq or Lean do. But the structure is there underneath. Every recursive function you write in R, with its base case and its inductive step, carries the same structure as a mathematical proof by induction.

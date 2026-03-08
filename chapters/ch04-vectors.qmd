@@ -1,0 +1,397 @@
+# Vectors {#sec-vectors}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+Type `42` in R. You think you made a number, but you made a vector.
+
+```{r}
+42
+```
+
+That `[1]` has been there since Chapter 1, and we've been ignoring it. It means "element number 1." R is telling you that `42` is not just a number; it is the first (and only) element of a *vector*.
+
+
+## There are no scalars {#sec-no-scalars}
+
+In most languages, a number is a number and a list of numbers is a different thing entirely. R makes no such distinction. Every value is a vector: `42` is a numeric vector of length 1, `"hello"` is a character vector of length 1, and `TRUE` is a logical vector of length 1.
+
+```{r}
+length(42)
+length("hello")
+length(TRUE)
+```
+
+This is a design choice from S (@sec-s-language). S was built for people who work with columns of data, not individual numbers. A temperature reading is rarely interesting on its own; you care about the whole column: all 365 days, all 50 stations, all 10 years. So S made the column the basic unit of computation, and R inherited that decision. There is no separate type for "one number" versus "many numbers." There are only vectors, and some of them happen to have length 1.
+
+Once you see this, half of R's behavior makes sense. `x * 2` works the same whether `x` has one element or a million, because `x` is always a vector. R doesn't need a special case for scalars; it just operates on vectors.
+
+
+## Atomic vectors {#sec-atomic-vectors}
+
+You make a vector with `c()`, short for "combine":
+
+```{r}
+temperatures <- c(72, 85, 61, 90, 78)
+temperatures
+```
+
+`c()` can combine vectors too:
+
+```{r}
+morning <- c(58, 62, 55)
+afternoon <- c(75, 80, 71)
+all_temps <- c(morning, afternoon)
+all_temps
+```
+
+It flattens everything into a single vector. There are no nested vectors in R; `c(c(1, 2), c(3, 4))` gives you `c(1, 2, 3, 4)`. Look at what's happening in `c(morning, afternoon)`:
+
+```
+c(morning, afternoon)
+= c(c(58, 62, 55), c(75, 80, 71))
+= c(58, 62, 55, 75, 80, 71)
+= [58, 62, 55, 75, 80, 71]
+```
+
+Each step replaces a name or function call with its value. `morning` becomes `c(58, 62, 55)`. The nested `c()` calls flatten into one. The last step is where the term replacement ends and the computer takes over: R allocates a contiguous block of memory, stores six numbers side by side, and the expression has been reduced to a value that lives in memory. This is term replacement, the logic at the heart of Church's lambda calculus (@sec-church): you have an expression, you replace each piece with its value until nothing is left to replace. In Chapter 1, `add(3, add(5, 10))` reduced step by step until only `18` remained. Here, `c(morning, afternoon)` reduces to a six-element vector. Even building a data structure is a function call that reduces to a value. (Term replacement is one of the oldest ideas in logic and a cornerstone of computer science. Mathematicians were studying it decades before electronic computers existed; it turns out that "replace an expression with its value" is enough to define all of computation.)
+
+::: callout-note
+## For the curious
+`c()` is associative: `c(c(1, 2), c(3, 4))` and `c(1, c(2, c(3, 4)))` both produce `c(1, 2, 3, 4)`. Grouping doesn't matter. And `c(x, NULL)` returns `x` unchanged, so `NULL` acts as an identity element. An associative operation with an identity element is called a *monoid*. Addition with 0 is a monoid. String concatenation with `""` is a monoid. `c()` with `NULL` is a monoid. The pattern will reappear throughout this book: in `paste0`, in function composition, in ggplot layers, and in `Reduce()`.
+:::
+
+A few shortcuts for common patterns:
+
+```{r}
+1:5
+```
+
+```{r}
+seq(0, 1, by = 0.25)
+```
+
+```{r}
+rep("hello", 3)
+```
+
+`1:5` generates integers from 1 to 5. `seq()` generates a sequence with a specified step size. `rep()` repeats a value.
+
+R has four types you'll use constantly, and two you'll rarely see:
+
+```{r}
+typeof(3.14)
+typeof(42L)
+typeof("hello")
+typeof(TRUE)
+```
+
+`double` is a decimal number (even `42` is stored as a double by default). `integer` needs an `L` suffix: `42L`. `character` is text. `logical` is `TRUE` or `FALSE`. The other two types, `complex` and `raw`, exist for specialized work; you can ignore them.
+
+Every element in a vector must be the same type. `typeof()` and `length()` answer the two most basic questions about any vector: what type are the elements, and how many are there.
+
+
+### Exercises {.unnumbered}
+
+1. What does `c(1, c(2, c(3, 4)))` produce? Predict, then check.
+2. Create a vector of the first 10 even numbers using `seq()`.
+3. What is `typeof(1)`? What about `typeof(1L)`?
+
+
+## Coercion {#sec-coercion}
+
+What happens when you mix types in a vector?
+
+```{r}
+c(1, "two", 3)
+```
+
+R converted the numbers to text. No warning, no error. This is called *coercion*, and R follows a fixed hierarchy: logical < integer < double < character. When you mix types, everything gets promoted to the most general one.
+
+```{r}
+c(TRUE, 1, "hello")
+```
+
+`TRUE` became `"1"` (first promoted to the integer 1, then to the string `"1"`), and `1` became `"1"`.
+
+This hierarchy explains a trick from Chapter 1. `sum(scores > 70)` works because `scores > 70` produces a logical vector, and `sum()` coerces the logicals to numbers: `TRUE` becomes 1, `FALSE` becomes 0. The count of `TRUE` values falls out automatically:
+
+```{r}
+x <- c(65, 82, 71, 90, 55, 78)
+x > 70
+sum(x > 70)
+```
+
+::: callout-tip
+## Opinion
+R will never warn you about coercion. `c(1, 2, "3")` quietly becomes all character, and your arithmetic breaks ten lines later with an error message that points nowhere near the real problem. Memorize the hierarchy: logical < integer < double < character.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. What does `TRUE + 1` return? What about `FALSE * 5`?
+2. What is `typeof(c(1L, 1.5))`? Which type won?
+3. What does `as.numeric("hello")` return? Read the warning.
+
+
+## Vectorized operations {#sec-vectorized-ops}
+
+Here is where vectors change how you think about code. If you want to convert five temperatures from Fahrenheit to Celsius in most languages, you write a loop: go through each element, apply the formula, store the result. In R:
+
+```{r}
+temperatures <- c(72, 85, 61, 90, 78)
+(temperatures - 32) * 5/9
+```
+
+One expression, no loop: the subtraction, multiplication, and division each apply to every element at once. This is a *vectorized operation*, and it is the default way of working in R.
+
+Comparisons are vectorized too:
+
+```{r}
+temperatures > 75
+```
+
+The result is a logical vector of the same length: `TRUE` where the condition holds, `FALSE` where it doesn't.
+
+You can combine comparisons with `&` (and) and `|` (or):
+
+```{r}
+temperatures > 60 & temperatures < 85
+```
+
+Arithmetic, comparisons, and most built-in functions all work this way. `sqrt()`, `log()`, `round()`, `abs()`: give them a vector and they return a vector of the same length.
+
+```{r}
+sqrt(c(1, 4, 9, 16, 25))
+```
+
+In lambda calculus (@sec-church), `sqrt` is a function `f = λx. √x`. Even `√` itself is not a primitive; it can be computed by repeated function application. You start with a rough guess and improve it over and over until it's close enough:
+
+```
+√x = iterate(λguess. (guess + x / guess) / 2, x)
+```
+
+Start with a guess, apply the refinement function `λguess. (guess + x / guess) / 2` repeatedly, and the result converges to `√x`. Square root reduces to division, addition, and repeated application of a lambda, which are themselves reducible further. At every level, the building blocks are functions applied to arguments.
+
+::: callout-note
+In practice, R calls C's `sqrt()`, which on modern CPUs maps to a hardware instruction. The chip uses a lookup table for a rough estimate, then refines it with the same `(guess + x / guess) / 2` step, finishing in 10-20 clock cycles.
+:::
+
+For our purposes, `f = λx. √x` is enough. R applies `f` to each element by term replacement:
+
+```
+f = λx. √x
+
+f(c(1, 4, 9, 16, 25))
+= c(f(1), f(4), f(9), f(16), f(25))          # distribute f over the vector
+= c((λx. √x)(1), (λx. √x)(4), ..., (λx. √x)(25))  # replace f with its definition
+= c(√1, √4, √9, √16, √25)                   # substitute each x
+= c(1, 2, 3, 4, 5)
+```
+
+R distributes the function over the vector automatically. You write one application; R performs five. This is Church's model extended to collections: a function applied to a vector produces a vector of results. `sqrt(c(1, 4, 9, 16, 25))` is a single function applied to a single argument; the fact that the argument contains five numbers is R's business, not yours.
+
+::: callout-note
+## For the curious
+This pattern has a name: a *functor*. A functor maps a function over a structure while preserving the structure's shape. `sqrt` applied to a five-element vector returns a five-element vector; the function changes the contents, the container stays intact. Vectors are functors. Lists are functors (via `lapply`). Data frame columns are functors (via `mutate`). The word comes from category theory, but the idea is concrete: apply inside, preserve outside. You will see it everywhere in this book, and by the end it will feel as natural as vectorization itself.
+:::
+
+
+### Recycling {#sec-recycling}
+
+What happens when you operate on two vectors of different lengths?
+
+```{r}
+c(1, 2, 3, 4) + c(10, 20)
+```
+
+R *recycled* the shorter vector, reusing `10, 20` to match the length of the longer one: `1+10, 2+20, 3+10, 4+20`. This is how `temperatures - 32` works: `32` is a vector of length 1, and R recycles it five times.
+
+When the lengths don't divide evenly, R warns you:
+
+```{r}
+c(1, 2, 3, 4, 5) + c(10, 20)
+```
+
+::: callout-tip
+## Opinion
+Recycling is useful when the shorter vector has length 1 (e.g., `x * 2`, `x > 0`). For anything else, match your vector lengths explicitly. A recycling warning almost always means a bug.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. What does `c(1, 2, 3) * c(0, 1)` produce? Does R warn you?
+2. Why does `x - mean(x)` work without a loop? (Hint: what length is `mean(x)`?)
+3. What does `c(TRUE, FALSE) + c(1, 2, 3, 4)` produce?
+
+
+## Indexing {#sec-indexing}
+
+You often need specific elements from a vector. The `[` operator extracts them. There are four ways to use it.
+
+**By position:**
+
+```{r}
+temperatures <- c(72, 85, 61, 90, 78)
+temperatures[1]
+temperatures[c(1, 3, 5)]
+```
+
+**By exclusion** (negative indices):
+
+```{r}
+temperatures[-2]
+```
+
+Everything except the second element.
+
+**By logical vector:**
+
+```{r}
+temperatures[temperatures > 75]
+```
+
+`temperatures > 75` produces `c(FALSE, TRUE, FALSE, TRUE, TRUE)`, and `[` keeps only the `TRUE` elements. You're asking a yes/no question of every element and keeping the ones that pass. This is filtering, and it will come back in a more powerful form when you learn `dplyr::filter()` (@sec-data-transformation).
+
+```{r}
+hot <- temperatures > 75
+temperatures[hot]
+```
+
+**By name:**
+
+```{r}
+scores <- c(alice = 92, bob = 78, carol = 85)
+scores["bob"]
+scores[c("alice", "carol")]
+```
+
+You can also use `[` to replace elements:
+
+```{r}
+x <- c(10, 20, 30)
+x[2] <- 99
+x
+```
+
+This looks like it's changing the vector in place, but R is actually making a copy with the new value and pointing the name `x` at the copy. The old vector (with 20 in position 2) is gone. This is copy-on-modify, the same idea from @sec-names-binding: values in R don't change; names get moved to point at new values.
+
+
+### Exercises {.unnumbered}
+
+1. Extract the last element of `temperatures` without hard-coding the position. (Hint: `length()`.)
+2. What does `temperatures[c(TRUE, FALSE)]` return? How does recycling interact with logical indexing?
+3. Create a named vector of three cities and their populations. Extract two by name.
+
+
+## Missing values {#sec-missing-values}
+
+Real data has gaps. A sensor fails, a patient skips a visit, a field is left blank. R represents missing data with `NA` ("Not Available"):
+
+```{r}
+readings <- c(23.1, NA, 22.5, 24.0, NA, 23.8)
+readings
+```
+
+`NA` is not zero. It is not an empty string. It means "I don't know." And `NA` is contagious: any computation involving an unknown value produces an unknown result.
+
+```{r}
+sum(readings)
+mean(readings)
+```
+
+R is being honest: if you don't know some of the values, you don't know the sum. If you want to ignore the missing values, say so explicitly:
+
+```{r}
+sum(readings, na.rm = TRUE)
+mean(readings, na.rm = TRUE)
+```
+
+`na.rm = TRUE` means "remove NAs before computing." Many R functions have this argument.
+
+Find which elements are missing with `is.na()`:
+
+```{r}
+is.na(readings)
+```
+
+Filter them out with `!` (not):
+
+```{r}
+readings[!is.na(readings)]
+```
+
+One common trap: you cannot test for `NA` with `==`.
+
+```{r}
+NA == NA
+```
+
+This returns `NA`, not `TRUE`. If you don't know what `x` is and you don't know what `y` is, you can't know whether they're equal. Always use `is.na()`.
+
+::: callout-note
+## For the curious
+`NA` propagation is not arbitrary; R is implementing a specific discipline. A value is either present or absent, and any operation on an absent value produces absence. In functional programming, this pattern is called *Maybe* (or *Option*): a value that might not exist. `1 + NA` returning `NA` is the same logic as Haskell's `Nothing >>= f` returning `Nothing`, or Rust's `None.map(f)` returning `None`. The mechanics differ but the rule is identical: if any input is unknown, the output is unknown. R threads this uncertainty through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. What does `c(1, NA, 3) > 2` return? What happens to the `NA`?
+2. How many missing values are in `readings`? (Hint: combine `sum()` and `is.na()`.)
+3. What does `NA | TRUE` return? What about `NA & FALSE`? One of each pair is not `NA`. Why?
+
+
+## Meet penguins {#sec-meet-penguins}
+
+R 4.5 and later includes a dataset called `penguins` (from the Palmer Archipelago in Antarctica), and it's a good place to try vectors on real data. If you're running an older version, install it with `install.packages("palmerpenguins")` and load it with `library(palmerpenguins)`.
+
+```{r}
+#| eval: false
+head(penguins)
+```
+
+`penguins` is a data frame (a table), and we'll learn about those properly in @sec-data-frames. For now, the important thing is that you can pull out a single column with `$`, and that column is a vector:
+
+```{r}
+#| eval: false
+bill <- penguins$bill_length_mm
+```
+
+Now you have a numeric vector of 344 bill length measurements, with some `NA`s. Everything from this chapter works:
+
+```{r}
+#| eval: false
+length(bill)
+typeof(bill)
+```
+
+```{r}
+#| eval: false
+mean(bill, na.rm = TRUE)
+range(bill, na.rm = TRUE)
+```
+
+```{r}
+#| eval: false
+sum(is.na(bill))
+```
+
+```{r}
+#| eval: false
+long_bills <- bill[bill > 50 & !is.na(bill)]
+length(long_bills)
+```
+
+How many penguins have a bill longer than 50 mm? Logical indexing filters the values, `is.na()` handles missing data, and `length()` counts the result. One line each, no loops.
+
+
+### Exercises {.unnumbered}
+
+1. What is the mean body mass (`penguins$body_mass_g`) of the penguins? Don't forget the `NA`s.
+2. How many penguins have a flipper length (`penguins$flipper_length_mm`) greater than 200?
+3. What is the shortest bill in the dataset? (Hint: `min()` with `na.rm = TRUE`.)

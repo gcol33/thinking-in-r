@@ -1,0 +1,345 @@
+# Tidy data {#sec-tidy-data}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+Most of data analysis isn't analysis. It's getting the data into a shape where analysis is possible. You learned data frames in @sec-data-frames, dplyr verbs in @sec-data-transformation, and pipes in @sec-pipes-and-composition. Those tools assume a specific data shape. This chapter defines that shape, teaches you how to get there, and shows you how to combine multiple tables when one isn't enough.
+
+
+## What tidy means {#sec-what-tidy-means}
+
+Hadley Wickham's 2014 paper "Tidy data" defines three rules:
+
+1. Each variable is a column.
+2. Each observation is a row.
+3. Each type of observational unit is a table.
+
+These sound obvious, but they aren't. Most real-world data breaks at least one rule. The rules themselves are a simplified version of database normalization: Edgar Codd defined normal forms (1NF through 5NF) in the 1970s to eliminate redundancy. Tidy data is roughly equivalent to third normal form (3NF), with no transitive dependencies and no repeating groups. Database designers have been solving the same structural problem since before R existed.
+
+Consider a table of population data with years spread across the column names:
+
+```{r}
+pop_wide <- data.frame(
+  country    = c("Norway", "Sweden", "Denmark"),
+  pop_2020   = c(5380, 10350, 5831),
+  pop_2021   = c(5391, 10380, 5840),
+  pop_2022   = c(5408, 10420, 5857)
+)
+pop_wide
+```
+
+What is the variable here? Year. But "year" doesn't appear as a column. It's encoded in the column names `pop_2020`, `pop_2021`, `pop_2022`. The data has three columns where it should have one. This is not tidy.
+
+The tidy version has three columns: `country`, `year`, and `population`. One variable per column.
+
+```{r}
+pop_tidy <- data.frame(
+  country    = rep(c("Norway", "Sweden", "Denmark"), each = 3),
+  year       = rep(2020:2022, times = 3),
+  population = c(5380, 5391, 5408, 10350, 10380, 10420, 5831, 5840, 5857)
+)
+pop_tidy
+```
+
+Now you can filter by year, group by country, plot year on the x-axis. Every dplyr verb and every ggplot2 aesthetic mapping works because each variable has its own column. The tools compose because the data has a consistent shape.
+
+
+### Exercises {.unnumbered}
+
+1. Look at this table. Which tidy-data rule does it break?
+
+```{r}
+#| eval: false
+data.frame(
+  student = c("Alice", "Bob"),
+  math_score = c(90, 85),
+  english_score = c(78, 92)
+)
+```
+
+2. Sketch (on paper or in a comment) what the tidy version of that table would look like. How many rows? How many columns?
+
+3. A data frame has columns `name`, `date`, and `temperature`. One row per city per day. Is this tidy? Why or why not?
+
+
+## `pivot_longer()`: columns to rows {#sec-pivot-longer}
+
+Reshaping `pop_wide` into `pop_tidy` by hand was tedious. `pivot_longer()` from the tidyr package does it in one call:
+
+```{r}
+library(tidyr)
+library(dplyr)
+
+pop_wide |>
+  pivot_longer(
+    cols      = pop_2020:pop_2022,
+    names_to  = "year",
+    values_to = "population"
+  )
+```
+
+Notice what reshaping preserves: the information content. Three countries, three years, nine population values. The wide and long forms encode the same data; only the structure changes. `pivot_longer()` and `pivot_wider()` are inverses: applying one and then the other returns you to where you started (up to column ordering). A pair of reversible transformations like this is called an *isomorphism*: two structures that contain the same information in different arrangements. Wide and long formats are isomorphic; neither is "more correct." In category theory, this kind of structure-preserving, reversible map between containers is called a *natural transformation*: it transforms how data is arranged inside the data-frame container without changing the information content, the same way `map()` transforms values inside a list without changing the list's length.
+
+The hard part is not the reshaping itself but deciding *what* to reshape. Given an arbitrary table with merged cells, hierarchical headers, and embedded metadata, determining the correct tidy structure requires human judgment about what constitutes a variable, an observation, and a value. Wickham's 2014 paper defines these three terms precisely to make that judgment tractable: once you answer "is year a variable or a value?", the reshaping follows mechanically.
+
+Three arguments control the transformation:
+
+- `cols`: which columns to pivot. Accepts tidy selection helpers like `starts_with()`, `where(is.numeric)`, or a range with `:`.
+- `names_to`: what to call the new column made from column names.
+- `values_to`: what to call the new column made from cell values.
+
+The column names still contain the `pop_` prefix, and `year` is character, not integer. Two more arguments fix that:
+
+```{r}
+pop_wide |>
+  pivot_longer(
+    cols            = pop_2020:pop_2022,
+    names_to        = "year",
+    names_prefix    = "pop_",
+    names_transform = list(year = as.integer),
+    values_to       = "population"
+  )
+```
+
+`names_prefix` strips the leading text. `names_transform` applies a function to the extracted names, here converting character years to integers.
+
+For more complex column names, `names_sep` and `names_pattern` let you split structured names into multiple new columns. If you had columns like `bill_length_mm` and `bill_depth_mm`, you could split on `_` to extract both the measurement and the unit. The tidyr pivoting vignette covers these cases in detail.
+
+
+### Exercises {.unnumbered}
+
+1. Create this data frame and pivot it to tidy form with columns `city`, `quarter`, and `sales`:
+
+```{r}
+#| eval: false
+quarterly <- data.frame(
+  city = c("Oslo", "Bergen"),
+  Q1   = c(120, 95),
+  Q2   = c(135, 110),
+  Q3   = c(150, 105),
+  Q4   = c(160, 130)
+)
+```
+
+2. Modify your pivot to strip the `Q` prefix from the quarter column and convert it to an integer.
+
+3. What happens if you set `values_to` to the name of an existing column? Try it.
+
+
+## `pivot_wider()`: rows to columns {#sec-pivot-wider}
+
+`pivot_wider()` is the inverse: values in a column become column names. It's less common than `pivot_longer()`, but you need it when data is too long.
+
+```{r}
+measurements <- data.frame(
+  site        = rep(c("A", "B"), each = 2),
+  measurement = rep(c("temperature", "humidity"), times = 2),
+  value       = c(22.1, 65, 19.8, 72)
+)
+measurements
+```
+
+Temperature and humidity are different variables. They belong in separate columns, not stacked in a single `value` column.
+
+```{r}
+measurements |>
+  pivot_wider(
+    names_from  = measurement,
+    values_from = value
+  )
+```
+
+Two arguments:
+
+- `names_from`: which column's values become the new column names.
+- `values_from`: which column's values fill the new cells.
+
+When some combinations don't exist in the data, `pivot_wider()` fills those cells with `NA`. The `values_fill` argument lets you choose a different default:
+
+```{r}
+incomplete <- data.frame(
+  site        = c("A", "A", "B"),
+  measurement = c("temperature", "humidity", "temperature"),
+  value       = c(22.1, 65, 19.8)
+)
+
+incomplete |>
+  pivot_wider(
+    names_from  = measurement,
+    values_from = value,
+    values_fill = 0
+  )
+```
+
+::: callout-tip
+## Opinion
+If you reach for `pivot_wider()` during analysis, pause and ask whether your downstream tool really needs wide data. Usually it doesn't. `pivot_wider()` is most useful for creating display tables and for feeding data into functions that expect matrix-like input.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Start with `pop_tidy` (the tidy population table from @sec-what-tidy-means). Use `pivot_wider()` to recreate the wide format, with one column per year.
+
+2. What happens if the combination of id columns isn't unique before widening? Create a data frame where two rows have the same `site` and `measurement` and try `pivot_wider()`. Read the warning.
+
+
+## When data isn't tidy (and that's fine) {#sec-when-not-tidy}
+
+Tidy data is for analysis. Not every use case is analysis.
+
+Wide tables are easier for humans to read. A table with countries as rows and years as columns fits on a screen; the same data in long form might have hundreds of rows. Wide format is also better for some matrix operations, correlation matrices, and certain model inputs that expect one column per predictor.
+
+Data entry is often easier in wide format too. If you're recording daily temperatures for three cities, a spreadsheet with cities as rows and dates as columns is natural. Nobody fills in a three-column long-form table by hand.
+
+The workflow is: receive data however it comes, reshape to tidy for analysis, reshape to wide for presentation if needed. This chapter teaches the transformation tools, not a religion. Tidy data is a means to easier analysis, not a goal in itself.
+
+
+## Joins: combining tables {#sec-joins}
+
+Real analysis rarely lives in a single table. You have customers and orders, species and observations, sites and measurements. Joins match rows from two tables by a shared key.
+
+```{r}
+bands <- data.frame(
+  name  = c("John", "Paul", "George", "Ringo"),
+  plays = c("guitar", "bass", "guitar", "drums")
+)
+
+albums <- data.frame(
+  name  = c("John", "Paul", "George", "Mick"),
+  album = c("Imagine", "Ram", "All Things Must Pass", "Some Girls")
+)
+```
+
+### Mutating joins {.unnumbered}
+
+Mutating joins add columns from the second table.
+
+`left_join()` keeps all rows from the left table and adds matching columns from the right. Unmatched rows get `NA`:
+
+```{r}
+bands |> left_join(albums, by = "name")
+```
+
+Ringo has no album in the `albums` table, so his `album` is `NA`. Mick has no row in `bands`, so he's dropped. This is the workhorse join: keep everything on the left, enrich with what you can from the right.
+
+`inner_join()` keeps only rows that match in both tables:
+
+```{r}
+bands |> inner_join(albums, by = "name")
+```
+
+Ringo and Mick are both gone. Only the three names that appear in both tables survive.
+
+When the key columns have different names, use `join_by()`:
+
+```{r}
+instruments <- data.frame(
+  musician   = c("John", "Paul", "George", "Ringo"),
+  instrument = c("guitar", "bass", "guitar", "drums")
+)
+
+albums |> left_join(instruments, by = join_by(name == musician))
+```
+
+### Filtering joins {.unnumbered}
+
+Filtering joins don't add columns. They filter rows.
+
+`semi_join()` keeps rows in the left table that have a match in the right:
+
+```{r}
+bands |> semi_join(albums, by = "name")
+```
+
+Same three rows as `inner_join()`, but without the `album` column. You're using `albums` as a filter, not as a source of data.
+
+`anti_join()` keeps rows in the left table that do *not* have a match in the right:
+
+```{r}
+bands |> anti_join(albums, by = "name")
+```
+
+Only Ringo: the one band member with no album in the `albums` table. `anti_join()` is the best tool for finding what's missing. Which customers have no orders? Which species have no observations? Which students didn't submit?
+
+::: callout-tip
+## Opinion
+Start with `left_join()`. Use `anti_join()` to debug. The others are situational. `right_join()` exists but rarely needed: just swap the table order and use `left_join()`. `full_join()` keeps everything from both sides, which sounds safe but usually means you haven't decided what your analysis unit is.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Create two small data frames: `students` with columns `id` and `name`, and `grades` with columns `id` and `score`. Give them overlapping but not identical `id` values. Use `left_join()` to combine them.
+
+2. Use `anti_join()` on the same tables to find students with no grades and grades with no student. (Hint: swap which table is on the left.)
+
+3. What is the difference between `semi_join(bands, albums, by = "name")` and `inner_join(bands, albums, by = "name") |> select(name, plays)`? Try both.
+
+
+## Other tidyr tools {#sec-other-tidyr}
+
+A few more tidyr functions solve common data-cleaning problems.
+
+### Separating and uniting columns {.unnumbered}
+
+`separate_wider_delim()` splits one column into several by a delimiter:
+
+```{r}
+dates <- data.frame(
+  id   = 1:3,
+  date = c("2024-03-15", "2024-07-22", "2024-11-01")
+)
+
+dates |>
+  separate_wider_delim(
+    cols  = date,
+    delim = "-",
+    names = c("year", "month", "day")
+  )
+```
+
+This replaces the older `separate()`, which used position-based splitting and was less predictable. For complex patterns, `separate_wider_regex()` lets you use regular expressions.
+
+`unite()` does the inverse, pasting columns together:
+
+```{r}
+data.frame(year = 2024, month = "03", day = 15) |>
+  unite(col = "date", year, month, day, sep = "-")
+```
+
+### Completing and filling {.unnumbered}
+
+`complete()` makes implicit missing values explicit. If your data has observations for some year/site combinations but not all, `complete()` adds rows for the missing combinations (filled with `NA`):
+
+```{r}
+obs <- data.frame(
+  year = c(2020, 2020, 2021),
+  site = c("A", "B", "A"),
+  count = c(5, 3, 7)
+)
+
+obs |> complete(year, site)
+```
+
+`fill()` propagates the last non-missing value downward (or upward), useful for data where labels are only written once:
+
+```{r}
+report <- data.frame(
+  group = c("Control", NA, NA, "Treatment", NA),
+  value = c(10, 12, 11, 20, 22)
+)
+
+report |> fill(group)
+```
+
+### Nesting {.unnumbered}
+
+`nest()` packs subsets of a data frame into list-columns, and `unnest()` unpacks them. This pattern shines when fitting models to groups, but it requires familiarity with list-columns and iteration. We return to it in @sec-purrr-map when you have those tools.
+
+
+## Summary {#sec-tidy-data-summary}
+
+Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. `pivot_longer()` turns columns into rows (the common direction). `pivot_wider()` turns rows into columns (the occasional direction). Joins combine tables: `left_join()` enriches, `anti_join()` finds gaps, and the rest are variations on the same theme. The deeper point is that these tools compose precisely because they all expect the same shape. Get the shape right, and the downstream code gets simpler. The connection between these tools and their mathematical foundations runs deep. Codd's relational algebra and the simply typed lambda calculus are both built on function application and composition over structured types, which is why the same ideas keep surfacing in R, SQL, and formal logic. In category theory, a join is a *pullback*: given two tables that each map to a shared key space, the join constructs the most general table that is consistent with both. Think of it as a Venn diagram for rows, where the overlap is determined by the key column. `inner_join` keeps only the overlap; `left_join` keeps everything on the left and fills gaps with `NA`.

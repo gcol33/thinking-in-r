@@ -1,0 +1,11 @@
+/.quarto/
+/_book/
+/_freeze/
+**/*.quarto_ipynb
+references/
+images/*.py
+images/*.R
+images/*.html
+fetch_*.py
+read_*.py
+chapters/*.md

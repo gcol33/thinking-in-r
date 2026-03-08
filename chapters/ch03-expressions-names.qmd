@@ -1,0 +1,258 @@
+# Expressions and names {#sec-expressions-names}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+Open R. Type `1 + 1` and press Enter.
+
+```{r}
+1 + 1
+```
+
+You just wrote a complete R program. It has no variables, no functions, no setup. It is an expression, and R evaluated it and printed the result. Every piece of R code you will ever write works this way: you give R an expression, R gives you back its value.
+
+This chapter teaches you three things: how R's interactive loop works, what expressions are, and how to give names to values so you can use them later.
+
+
+## The REPL {#sec-repl}
+
+When you open R, you see a prompt: `>`. R is waiting for you to type something. When you do, four things happen in sequence:
+
+1. R **reads** what you typed.
+2. R **evaluates** it (figures out the value).
+3. R **prints** the result.
+4. R **loops** back to step 1 and waits again.
+
+This is called a REPL (Read-Eval-Print Loop), and it is how you interact with R. There is no "compile" step, no "run" button. You type an expression, you see its value.
+
+In many programming languages (C, Java, Go), you write your entire program first, then run a separate tool called a *compiler* that translates the whole thing into machine code before you can see any results. If you make a typo on line 500, you don't find out until the compiler reaches it. R works differently: it reads and evaluates one expression at a time, immediately. Languages that work this way are called *interpreted* languages. Python and JavaScript are interpreted too. The tradeoff is speed: compiled languages produce faster programs because the compiler can optimize everything in advance. Interpreted languages let you experiment and see results instantly, which is why they dominate in data analysis and exploration.
+
+In practice, the line between compiled and interpreted is blurry. R itself is written in C, a compiled language. Many R functions are thin wrappers around compiled C or Fortran code that runs at full speed. You type `sum(x)` in R, but the actual arithmetic happens in compiled machine code. R gives you the interactive, exploratory interface; the compiled code does the heavy lifting. This is increasingly how modern languages work: you think and experiment in a high-level interpreted layer, and the performance-critical parts run in compiled code underneath.
+
+Try a few:
+
+```{r}
+42
+```
+
+```{r}
+"hello"
+```
+
+```{r}
+TRUE
+```
+
+```{r}
+sqrt(9)
+```
+
+Each of these is an expression. `42` is an expression whose value is 42. `"hello"` is an expression whose value is the text string "hello". `sqrt(9)` is an expression that calls the function `sqrt` with the argument `9` and returns 3. The `[1]` you see before each result is R telling you "this is the first element of the output." You can ignore it for now; it becomes useful when results have many elements (@sec-vectors).
+
+Notice what R is doing here: it is evaluating expressions and printing their values, exactly the way the calculator in Chapter 1 evaluated `3 + 5 + 2 + 8`. This is Church's model of computation (@sec-church), made interactive through the REPL loop.
+
+
+### Exercises {.unnumbered}
+
+1. Type `2 + 3 * 4` into R. What do you get? Does R follow the usual order of operations (multiplication before addition)?
+2. What happens when you type `"hello" + 1`? Read the error message. What is R telling you?
+3. Try `pi`. This is a name that R already knows. What value does it have?
+
+
+## Names and binding {#sec-names-binding}
+
+Expressions are useful, but you often want to keep a result around so you can use it later. In R, you do this by giving a value a name:
+
+```{r}
+x <- 3
+```
+
+The arrow `<-` is R's assignment operator. It binds the name `x` to the value `3`. After this line runs, typing `x` will give you back 3:
+
+```{r}
+x
+```
+
+You can then use `x` in other expressions:
+
+```{r}
+x + 10
+```
+
+```{r}
+x * x
+```
+
+It is tempting to think of `x` as a box that contains 3. This is how variables work in C or Python: the variable is a container, and assignment puts a value into it. R works differently. In R, `x <- 3` does not put 3 into a box. It attaches the label `x` to a value that already exists. The value 3 is out there; `x` is just a name for it.
+
+Why does this matter? Because multiple names can refer to the same value:
+
+```{r}
+y <- x
+```
+
+Now both `x` and `y` refer to 3. If you later write `x <- 7`, that changes what `x` points to, but `y` still points to 3:
+
+```{r}
+x <- 7
+x
+y
+```
+
+This "names are labels, not containers" model is a consequence of R's functional design. Values in R are immutable; when you "change" something, R creates a new value and moves the name to point at it. The old value is untouched (and gets cleaned up automatically when nothing points to it anymore; that's the garbage collection R inherited from Lisp, @sec-lisp).
+
+::: callout-tip
+## Opinion
+Use `<-` for assignment, not `=`. Both work, but `<-` is the convention in R. On the Bell Labs terminals where S was designed, there was a single key that typed `<-` (@sec-s-language). The convention stuck, and almost all R code uses it. `=` is reserved for naming arguments inside function calls, like `log(8, base = 2)`.
+:::
+
+
+### Exercises {.unnumbered}
+
+1. Predict what this code prints, then run it to check:
+
+    ```r
+    a <- 10
+    b <- a
+    a <- 20
+    b
+    ```
+
+2. What happens if you type a name that doesn't exist, like `zzz`? Read the error message.
+3. Names in R are case-sensitive. If you run `X <- 5`, can you get the value back by typing `x`?
+
+
+## Expressions all the way down {#sec-expressions-all-the-way}
+
+In most programming languages, there are two kinds of code: *expressions* (which produce a value) and *statements* (which do something but don't produce a value). In Python, `1 + 1` is an expression, but `if x > 0: print("yes")` is a statement.
+
+R has no statements; everything is an expression, and every expression returns a value.
+
+`if/else` returns a value:
+
+```{r}
+x <- 3
+result <- if (x > 0) "positive" else "non-positive"
+result
+```
+
+You can store the result of `if/else` in a name because `if/else` *is* an expression that evaluates to a value, just like `1 + 1`. In Python or C, you cannot do this because `if` is a statement.
+
+A block of code in curly braces `{ }` returns the value of its last expression:
+
+```{r}
+result <- {
+  a <- 2
+  b <- 3
+  a + b
+}
+result
+```
+
+The block evaluated three expressions. The value of the block is the value of the last one, `a + b`, which is 5.
+
+Even assignment returns a value (though R hides it). You can see it with parentheses:
+
+```{r}
+(z <- 42)
+```
+
+Without the parentheses, R assigns 42 to `z` and prints nothing. With them, R prints the value that the assignment expression returned.
+
+This "everything is an expression" rule comes directly from Church's lambda calculus (@sec-church). In the lambda calculus, there are only expressions. No instructions, no statements. R followed that design, and it means you can compose pieces of R code in ways that would be impossible in a language with statements.
+
+
+### Exercises {.unnumbered}
+
+1. What does this return? Predict first, then run it: `if (FALSE) 1 else 2`
+2. What value does this block produce? `{ 10; 20; 30 }`
+3. Can you store the result of `for (i in 1:3) i` in a name? Try it. What happens? (This is one of the very few places where R behaves more like a statement language.)
+
+
+## Calling functions {#sec-calling-functions}
+
+You have already called a function: `sqrt(9)`. Let's look at what that means.
+
+`sqrt` is a name bound to a function (the same way `x` was a name bound to 3). The parentheses `()` tell R to *call* the function, passing `9` as an argument. R evaluates the call and returns the result:
+
+```{r}
+sqrt(9)
+```
+
+What happens if you type `sqrt` without parentheses?
+
+```{r}
+sqrt
+```
+
+R prints the function itself. `sqrt` is a value, just like `3` or `"hello"`. The parentheses are what make R actually run it. This distinction (the function *itself* versus *calling* the function) will matter a lot when you start passing functions to other functions in later chapters.
+
+Functions can take multiple arguments. `log` computes a logarithm, and you can specify the base:
+
+```{r}
+log(8, base = 2)
+```
+
+`8` is a *positional* argument (R knows it's the first one). `base = 2` is a *named* argument (you're saying explicitly which parameter gets the value 2). Named arguments can go in any order:
+
+```{r}
+log(base = 2, x = 8)
+```
+
+To learn what arguments a function takes, use `?`:
+
+```{r}
+#| eval: false
+?log
+```
+
+This opens the help page for `log`, which lists its arguments, explains what they do, and gives examples.
+
+Functions in R can do things that might surprise you if you're coming from other languages. `+` is a function:
+
+```{r}
+`+`(3, 5)
+```
+
+So is `<-`:
+
+```{r}
+`<-`(w, 99)
+w
+```
+
+Everything that happens in R is a function call. When you write `3 + 5`, R translates it to `` `+`(3, 5) ``: a function called `+`, applied to two arguments. There is no special syntax for arithmetic; `+` is a function, and `3 + 5` is function application. In the lambda calculus, the only thing you can do is apply a function to an argument, and R took that idea literally.
+
+
+### Exercises {.unnumbered}
+
+1. Use `round()` to round 3.14159 to two decimal places. (Hint: check `?round` for the argument name.)
+2. What does `nchar("functional")` return? What about `nchar("")`?
+3. Try `sum(1, 2, 3, 4, 5)`. Now try `sum(1:5)`. Do they give the same result?
+
+
+## The workspace {#sec-workspace}
+
+Every name you create lives in your *workspace* (also called the global environment). You can see all the names you've defined with `ls()`:
+
+```{r}
+#| eval: false
+ls()
+```
+
+And you can remove a name with `rm()`:
+
+```{r}
+#| eval: false
+rm(x)
+```
+
+After `rm(x)`, the name `x` is gone. The value it pointed to gets cleaned up by garbage collection if nothing else refers to it.
+
+The workspace is simple for now, but there is more going on under the surface. Functions have their own local environments, and R looks up names by searching through a chain of environments. @sec-closures-and-scope covers this in detail. For now, it's enough to know that `ls()` shows you what's in your workspace and `rm()` removes things from it.
+
+::: callout-note
+When you quit R, it may ask whether to "save your workspace image." This saves all the names and values currently in your workspace to a file, so they reappear next time you open R. This was useful in the early days of R, when computations could take hours and you didn't want to rerun them every session. Today, most computations are fast enough that you can keep your work in a script file (`.R` or `.qmd`) and rerun it from scratch. That way, every value in your workspace has a line of code you can point to.
+:::
