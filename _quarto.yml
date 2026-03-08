@@ -5,8 +5,8 @@ project:
 book:
   title: "Thinking in R"
   reader-mode: true
-  site-url: https://gcol33.github.io/functional-r/
-  repo-url: https://github.com/gcol33/functional-r/
+  site-url: https://gcol33.github.io/thinking-in-r/
+  repo-url: https://github.com/gcol33/thinking-in-r/
   repo-branch: main
   repo-actions: [edit, issue]
   chapters:
@@ -58,7 +58,9 @@ book:
 
 format:
   html:
-    theme: cosmo
+    theme:
+      light: cosmo
+      dark: darkly
     callout-appearance: simple
     css: custom.css
 
