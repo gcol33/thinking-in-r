@@ -3,16 +3,17 @@
   order: -1;
 }
 
-/* Keep toggle visible outside hamburger menu on mobile */
+/* On mobile: keep toggle and search side by side, toggle on the left */
 @media (max-width: 991.98px) {
+  .navbar .quarto-color-scheme-toggle,
+  .navbar .type--hierarchical {
+    display: flex !important;
+  }
+
   .navbar .quarto-color-scheme-toggle {
     position: fixed;
-    top: 10px;
-    right: 50px;
+    top: 8px;
+    right: 90px;
     z-index: 1050;
-    background: var(--bs-body-bg);
-    border-radius: 50%;
-    padding: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   }
 }
