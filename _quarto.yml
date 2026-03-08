@@ -61,6 +61,7 @@ format:
     theme:
       light: cosmo
       dark: darkly
+    theme-toggle: true
     callout-appearance: simple
     css: custom.css
 
