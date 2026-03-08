@@ -1,15 +1,14 @@
-/* Keep theme toggle visible and fixed on mobile */
+/* Place theme toggle to the left of search */
 .navbar .quarto-color-scheme-toggle {
-  order: 999;
-  margin-left: auto;
+  order: -1;
 }
 
-/* Prevent toggle from collapsing into hamburger menu on mobile */
+/* Keep toggle visible outside hamburger menu on mobile */
 @media (max-width: 991.98px) {
   .navbar .quarto-color-scheme-toggle {
     position: fixed;
     top: 10px;
-    right: 10px;
+    right: 50px;
     z-index: 1050;
     background: var(--bs-body-bg);
     border-radius: 50%;
