@@ -3,17 +3,11 @@
 [![Book status](https://img.shields.io/badge/book-in%20progress-orange)](https://gillescolling.com/thinking-in-r/)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-**Learn R the way it was meant to be used.**
+A free, open-source book that teaches R as a functional programming language from scratch. Five parts, 33 chapters, from first function call to metaprogramming and package development.
 
-Most R books teach R as a statistics tool: load data, run a test, make a plot, copy-paste until it works. This book teaches R as a *language*, one built on functions, composition, and mathematical thinking. It starts from scratch but never talks down. By the end, you don't just use R; you understand it.
+R descends from lambda calculus through Scheme and S. This book follows that lineage: everything is an expression, every expression returns a value, functions are values. Understanding the design makes vectorization, pipes, tidyverse, and ggplot2 click into place.
 
-Read the book online at **[gillescolling.com/thinking-in-r](https://gillescolling.com/thinking-in-r/)**.
-
-## Why this book
-
-R is a functional programming language descended from Scheme. Everything in R is an expression, every expression returns a value, and functions are values. Once you see this, everything clicks: vectorization, pipes, formulas, tidyverse, ggplot2. They're not magic; they're consequences of the language's design.
-
-No existing free book takes you from zero to deep understanding of R as a language. [R for Data Science](https://r4ds.hadley.nz/) teaches tidyverse workflows, not the language itself. [Advanced R](https://adv-r.hadley.nz/) is a reference for experts, not accessible to beginners. This book fills the gap: standalone, no prerequisites, no assumed reading.
+**[Read the book online](https://gillescolling.com/thinking-in-r/)**
 
 ## Structure
 
