@@ -12,7 +12,7 @@ This chapter covers the practical side: how to call C, C++, Rust, Python, and Fo
 
 ## C via `.Call()` {#sec-call-c}
 
-`.Call()` is R's native foreign function interface. Every other approach (Rcpp, extendr) eventually produces code that R loads the same way. Understanding `.Call()` means understanding the foundation.
+`.Call()` is R's native foreign function interface. Every other approach (Rcpp, extendr) eventually produces code that R loads the same way. Understanding `.Call()` means understanding the foundation. @sec-three-roads in @sec-r-internals introduced the three mechanisms for calling compiled code (`.Primitive()`, `.Internal()`, `.Call()`); here we go deeper into `.Call()` with complete examples.
 
 A C function callable from R takes `SEXP` arguments and returns a `SEXP`. `SEXP` is a pointer to R's internal object representation (see @sec-r-internals). You must protect any R objects you allocate from the garbage collector using `PROTECT`, and release them with `UNPROTECT` before returning.
 

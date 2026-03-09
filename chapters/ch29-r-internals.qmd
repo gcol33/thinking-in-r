@@ -376,7 +376,7 @@ body(paste)
 
 The R-level function handles argument matching, default values, and error messages. The `.Internal()` call does the actual work in C.
 
-**`.Call()`** is the modern interface for R extensions. It passes R objects (SEXPs) directly to a C or C++ function in a shared library (a `.so` or `.dll` file). The C function receives SEXPs, manipulates them using R's C API, and returns a SEXP. This is what packages like data.table, Rcpp-based packages, and the tidyverse use for performance-critical code.
+**`.Call()`** is the modern interface for R extensions. It passes R objects (SEXPs) directly to a C or C++ function in a shared library (a `.so` or `.dll` file). The C function receives SEXPs, manipulates them using R's C API, and returns a SEXP. This is what packages like data.table, Rcpp-based packages, and the tidyverse use for performance-critical code. @sec-call-c in @sec-connecting-languages covers the `.Call()` interface in full detail with complete working examples; this section focuses on how it fits into R's internal architecture.
 
 ```c
 /* A .Call function signature */

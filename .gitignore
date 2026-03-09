@@ -2,10 +2,32 @@
 /_book/
 /_freeze/
 **/*.quarto_ipynb
+
+# Reference repos (cloned for research, not part of this book)
 references/
+
+# Image generation scripts
 images/*.py
 images/*.R
 images/*.html
+
+# Research and fetch scripts
 fetch_*.py
 read_*.py
+
+# Internal planning documents
+author-profile.md
+review.md
+
+# Intermediate markdown (generated from qmd)
 chapters/*.md
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor artifacts
+.Rhistory
+.Rdata
+*.swp
+*~

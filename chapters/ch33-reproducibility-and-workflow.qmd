@@ -388,8 +388,49 @@ Here is a decision guide:
 | Uses packages that update | renv |
 | Produces a report or paper | Quarto |
 | Has steps that take >30 seconds | targets |
-| Must run on a different OS | Docker |
+| Must run on a different OS | Docker or Nix |
 
-Each layer solves a specific failure mode. Together, they make "works on my machine" a non-issue. Beyond Docker, the Nix package manager (via the `rix` R package) treats packages as pure functions from inputs to outputs: fix all inputs, get deterministic output. Where `renv` captures R package versions, Nix captures the entire system stack, including R itself, system libraries, and the compiler. The principle is the same as referential transparency applied to builds.
+Each layer solves a specific failure mode. Together, they make "works on my machine" a non-issue.
 
 The common thread is automation. `here` automates path construction. `renv` automates dependency tracking. Quarto automates the link between code and output. `targets` automates pipeline execution. Git automates change tracking. None of these tools require heroic discipline. They require a one-time setup cost, and then they work silently in the background, preventing the mistakes you would otherwise make by hand.
+
+
+## Beyond renv: full-stack reproducibility {#sec-nix-docker}
+
+`renv` captures R package versions. It does not capture R itself, system libraries (libcurl, GDAL, libxml2), or the C compiler. When your code depends on any of these, `renv` alone is not enough.
+
+**Docker** solves this by bundling everything into a container: OS, R, system libraries, packages, your code. The Rocker project (rocker-project.org) provides pre-built R images:
+
+```{r}
+#| eval: false
+# Dockerfile
+FROM rocker/r-ver:4.4.0
+RUN install2.r dplyr ggplot2
+COPY . /analysis
+CMD ["Rscript", "analysis/main.R"]
+```
+
+A Dockerfile is a recipe that always produces the same environment. Build once, run anywhere. The trade-off is complexity: Docker adds a layer of tooling (images, containers, registries) that takes time to learn.
+
+**Nix** takes a different approach. Where Docker isolates by containerization, Nix isolates by functional purity. The Nix package manager treats every package as a pure function from its inputs (source code, dependencies, compiler flags) to its output (the built artifact). Fix all inputs, get a deterministic output. This is referential transparency applied to software builds, the same principle you saw in @sec-referential-transparency applied to R expressions.
+
+The `rix` R package makes Nix accessible from R:
+
+```{r}
+#| eval: false
+library(rix)
+
+rix(
+  r_ver = "4.4.0",
+  r_pkgs = c("dplyr", "ggplot2", "palmerpenguins"),
+  system_pkgs = NULL,
+  ide = "rstudio",
+  project_path = "."
+)
+```
+
+This generates a `default.nix` file that pins everything: R version, package versions, system libraries, even the C compiler. Running `nix-build` on any machine with Nix installed produces an identical environment. Where `renv.lock` captures one layer (R packages), `default.nix` captures all layers.
+
+The practical trade-off: Nix has a steep learning curve and limited Windows support (it runs natively on Linux and macOS, or via WSL on Windows). Docker is more widely adopted and better supported on all platforms. Both achieve full-stack reproducibility; they differ in mechanism and philosophy. Docker says "ship the whole machine." Nix says "describe the machine as a function and let anyone rebuild it."
+
+For most R users, `renv` is sufficient. Add Docker or Nix when your results depend on system-level components, when you need to guarantee reproducibility across operating systems, or when a collaborator reports "it doesn't work on my machine" and the problem is not an R package version.
