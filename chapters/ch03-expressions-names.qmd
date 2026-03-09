@@ -254,5 +254,6 @@ After `rm(x)`, the name `x` is gone. The value it pointed to gets cleaned up by 
 The workspace is simple for now, but there is more going on under the surface. Functions have their own local environments, and R looks up names by searching through a chain of environments. @sec-closures-and-scope covers this in detail. For now, it's enough to know that `ls()` shows you what's in your workspace and `rm()` removes things from it.
 
 ::: callout-note
+## Saving your workspace
 When you quit R, it may ask whether to "save your workspace image." This saves all the names and values currently in your workspace to a file, so they reappear next time you open R. This was useful in the early days of R, when computations could take hours and you didn't want to rerun them every session. Today, most computations are fast enough that you can keep your work in a script file (`.R` or `.qmd`) and rerun it from scratch. That way, every value in your workspace has a line of code you can point to.
 :::

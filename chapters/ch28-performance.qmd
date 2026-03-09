@@ -77,7 +77,7 @@ profvis::profvis(slow_analysis(5e4))
 
 The profile output shows where time is actually spent:
 
-![Flame graph of `slow_analysis()`: width is time. The `c()` tower on the left (the residual-copying loop) and the `lm` call stack on the right are the two hot spots. The `c()` loop takes roughly half the total time.](../images/flame_graph.png){#fig-flame-graph}
+![Flame graph of `slow_analysis()`: width is time. The `c()` tower on the left (the residual-copying loop) and the `lm` call stack on the right are the two hot spots. The `c()` loop takes roughly half the total time.](../images/flame_graph.png){#fig-flame-graph width=100%}
 
 Read from bottom to top: `slow_analysis` calls `lm` (right) and runs the residual-copying loop (left). Inside the loop, nearly all time goes to `c()`, the vector-growing bottleneck. Inside `lm`, the cost is in its internals (`model.frame`, `eval`, `lm.fit`). Without this graph, you might guess the model fitting is the bottleneck. The graph shows it's the `c()` loop.
 

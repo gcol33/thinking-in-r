@@ -177,6 +177,7 @@ In lambda calculus (@sec-church), `sqrt` is a function `f = λx. √x`. Even `�
 Start with a guess, apply the refinement function `λguess. (guess + x / guess) / 2` repeatedly, and the result converges to `√x`. Square root reduces to division, addition, and repeated application of a lambda, which are themselves reducible further. At every level, the building blocks are functions applied to arguments.
 
 ::: callout-note
+## Under the hood
 In practice, R calls C's `sqrt()`, which on modern CPUs maps to a hardware instruction. The chip uses a lookup table for a rough estimate, then refines it with the same `(guess + x / guess) / 2` step, finishing in 10-20 clock cycles.
 :::
 
