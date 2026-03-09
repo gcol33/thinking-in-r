@@ -49,8 +49,6 @@ Text: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) · C
 
 ## Support
 
-> "Software is like sex: it's better when it's free." — Linus Torvalds
-
 If this book helped you, buying me a coffee is a nice way to say thanks.
 
-[![Buy Me A Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/gcol33)
+<a href="https://buymeacoffee.com/gcol33"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="40"></a>
