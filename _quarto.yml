@@ -62,6 +62,5 @@ format:
       light: cosmo
       dark: darkly
     callout-appearance: simple
-    css: custom.css
 
 editor: source
