@@ -209,15 +209,9 @@ Sum   = A XOR B
 Carry = A AND B
 ```
 
-Two gates. This is a *half adder*. Before looking at the circuit, here are the standard symbols used in circuit diagrams:
+Two gates. This is a *half adder*. Before looking at the circuit, here are the standard symbols used in circuit diagrams. A filled dot where wires cross means they are connected (a junction); without the dot, wires simply cross without connecting.
 
-| Symbol | Gate | Meaning |
-|--------|------|---------|
-| Flat bottom, curved top (D-shape) | AND | Output is 1 only when *both* inputs are 1 |
-| Curved body (shield-shape) | OR | Output is 1 when *at least one* input is 1 |
-| Curved body with extra line at input | XOR | Output is 1 when inputs *differ* |
-| Triangle with a small circle at output | NOT | Flips the input: 1 becomes 0, 0 becomes 1 |
-| Small filled circle on a wire | Junction | The wire splits; the signal goes both ways |
+![Standard logic gate symbols. Inputs enter from the left, output exits to the right.](../images/gate_symbols.png){#fig-gate-symbols width=100%}
 
 ![A half adder: one XOR gate for the sum, one AND gate for the carry.](../images/half_adder.png){#fig-half-adder width=100% fig-alt="Circuit diagram of a half adder showing one XOR gate producing Sum and one AND gate producing Carry, with inputs A and B."}
 
