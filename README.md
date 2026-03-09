@@ -13,11 +13,11 @@ No programming experience is assumed.
 
 ## Structure
 
-- **Foundations** (ch. 1--9): computation models, vectors, functions, logic, algorithms
-- **Working with data** (ch. 10--17): lists, data frames, strings, I/O, dplyr, tidy data, ggplot2
-- **Thinking functionally** (ch. 18--23): closures, map/reduce, function factories, recursion, lazy evaluation
-- **The type system** (ch. 24--27): S3/S7 objects, contracts, metaprogramming, building a DSL
-- **Going further** (ch. 28--33): performance, R internals, C++/Rust/Python interop, packages, reproducibility
+- **Foundations** (ch. 1–9): computation models, vectors, functions, logic, algorithms
+- **Working with data** (ch. 10–17): lists, data frames, strings, I/O, dplyr, tidy data, ggplot2
+- **Thinking functionally** (ch. 18–23): closures, map/reduce, function factories, recursion, lazy evaluation
+- **The type system** (ch. 24–27): S3/S7 objects, contracts, metaprogramming, building a DSL
+- **Going further** (ch. 28–33): performance, R internals, C++/Rust/Python interop, packages, reproducibility
 
 ## Contributing
 
