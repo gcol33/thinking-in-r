@@ -1,5 +1,15 @@
 # Preface {.unnumbered}
 
+::: {.content-visible when-format="html"}
+*Last updated: {{< meta date >}}*
+
+<div class="book-cover-hero">
+  <img src="cover.svg" alt="Thinking in R book cover" />
+  <p class="buy-link">Print edition coming soon</p>
+  <a class="buy-coffee" href="https://buymeacoffee.com/gcol33">Buy me a coffee</a>
+</div>
+:::
+
 This is the website for **Thinking in R**.
 
 R descends from the lambda calculus, by way of Scheme and a Bell Labs language called S. That ancestry shaped every part of the language. All of it traces back to a single design decision made in the 1970s.

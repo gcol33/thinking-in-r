@@ -1,1 +1,107 @@
-% Empty - image sizing handled by Quarto fig-width
+% ============================================================
+%  Thinking in R — PDF Preamble
+%  KOMA-Script styling for scrbook
+% ============================================================
+
+% --- Packages ---
+\usepackage{scrlayer-scrpage}   % KOMA headers/footers
+\usepackage{epigraph}           % Chapter-opening quotes
+\usepackage{pgfornament}        % Decorative ornaments
+\usepackage{lettrine}           % Drop caps
+\usepackage{imakeidx}           % Back matter index
+
+% ============================================================
+%  DROP CAPS
+%  Usage: \dropcap{T}he first sentence...
+% ============================================================
+\setcounter{DefaultLines}{3}
+\renewcommand{\DefaultLoversize}{0.1}
+\renewcommand{\DefaultLhang}{0}
+\newcommand{\dropcap}[1]{\lettrine[findent=3pt, nindent=0pt]{#1}{}}
+
+% ============================================================
+%  BACK MATTER INDEX
+% ============================================================
+\makeindex[intoc, columnseprule]
+
+% ============================================================
+%  CHAPTER HEADINGS
+%  Clean serif style with a rule underneath
+% ============================================================
+\addtokomafont{chapter}{\normalfont\huge\scshape}
+\addtokomafont{section}{\normalfont\Large}
+\addtokomafont{subsection}{\normalfont\large}
+
+\renewcommand*{\chapterformat}{%
+  \mbox{\scalebox{2.5}{\thechapter}\hspace{12pt}%
+  \vrule width 0.5pt height 2.2cm depth 0pt\hspace{12pt}}%
+}
+
+% Rule after chapter title
+\renewcommand\chapterlineswithprefixformat[3]{%
+  #2#3\nobreak\vskip 4pt\nobreak
+  {\color{black!40}\rule{\textwidth}{0.4pt}}%
+  \vskip 8pt
+}
+
+% ============================================================
+%  PART TITLE PAGES
+%  Centered with ornamental divider
+% ============================================================
+\addtokomafont{part}{\normalfont\Huge\scshape}
+\addtokomafont{partprefix}{\normalfont\large\scshape}
+
+\renewcommand*{\partformat}{%
+  \partname~\thepart%
+}
+
+% Ornament between "Part N" and the title
+\renewcommand\partlineswithprefixformat[3]{%
+  \vspace*{3cm}%
+  \begin{center}
+    #2\vskip 10pt
+    \pgfornament[width=3cm]{88}\vskip 16pt
+    #3
+  \end{center}
+}
+
+% ============================================================
+%  RUNNING HEADERS & FOOTERS
+% ============================================================
+\clearpairofpagestyles
+\ohead[\pagemark]{\pagemark}              % page number outer
+\ihead[]{\headmark}                       % chapter/section inner
+\addtokomafont{pagehead}{\small\itshape}
+\addtokomafont{pagenumber}{\small}
+
+% Show chapter name in header (not section)
+\automark[chapter]{chapter}
+
+% ============================================================
+%  SECTION DIVIDERS
+%  Three small ornaments between major sections
+% ============================================================
+\newcommand{\sectionbreak}{%
+  \vspace{12pt}%
+  \begin{center}%
+    \pgfornament[width=0.6cm]{4}\quad
+    \pgfornament[width=0.6cm]{4}\quad
+    \pgfornament[width=0.6cm]{4}%
+  \end{center}%
+  \vspace{8pt}%
+}
+
+% ============================================================
+%  EPIGRAPHS
+%  Slightly indented, italic, right-aligned source
+% ============================================================
+\setlength{\epigraphwidth}{0.75\textwidth}
+\setlength{\epigraphrule}{0pt}
+\renewcommand{\epigraphflush}{flushleft}
+\renewcommand{\textflush}{flushleft}
+\renewcommand{\sourceflush}{flushright}
+
+% Convenience command: \chapterepigraph{quote}{source}
+\newcommand{\chapterepigraph}[2]{%
+  \epigraph{\itshape #1}{\textsc{#2}}%
+}
