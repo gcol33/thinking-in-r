@@ -5,13 +5,13 @@
 source(here::here("_common.R"))
 ```
 
-Pick up a calculator. Type `3 + 5 + 2 + 8` and press equals. You get 18. Simple enough. But try to explain to someone *how* the calculator got there, and something interesting happens: there are two very different ways to interpret the story.
+Pick up a calculator. Type `3 + 5 + 2 + 8` and press equals. You get 18. Simple enough. But try to explain to someone *how* the calculator got there, and something interesting happens: there are two different ways to interpret the story.
 
 Maybe the calculator kept a running total. It started at 0, added 3 to get 3, added 5 to get 8, added 2 to get 10, added 8 to get 18. The answer accumulated through a sequence of changes to a single number.
 
 Or maybe `3 + 5 + 2 + 8` already *is* 18. The two are different ways of writing the same number. From this point of view, the calculator didn't produce a result. It simplified an expression, the way you'd look up a word in a dictionary: swapping one representation for an equivalent one.
 
-Notice the difference. The first story has *time* in it: first this happened, then that happened, then this. There is a running total, and it changes. The second story has no time. There is an expression, and it has a value; no variable was modified because there was no variable to modify.
+The first story has *time* in it: first this happened, then that happened, then this. There is a running total, and it changes. The second story has no time. There is an expression, and it has a value; no variable was modified because there was no variable to modify.
 
 This difference turns out to be surprisingly deep. In 1936, there were no computers. No transistors, no screens, no keyboards. But two mathematicians, working independently, each found a way to describe what "computation" means in precise mathematical terms. Both models turned out to be equally powerful (anything one can compute, the other can too), but the programming languages that grew out of them decades later look and feel completely different. Most programming languages grew out of the first model. R grew out of the second, and that is what this book is about.
 
