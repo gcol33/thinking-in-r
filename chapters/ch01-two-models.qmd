@@ -18,7 +18,7 @@ This difference turns out to be surprisingly deep. In 1936, there were no comput
 
 ## Instructions and state {#sec-turing}
 
-Alan Turing, a graduate student at Cambridge who would go on to break the Enigma code in World War II and become the father of modern computing, imagined computation as a machine operating on a tape. The machine reads a symbol from a cell, writes a new one, shifts left or right, and moves to a new internal state. Then it does it again. Turing proved that this simple device, given the right set of rules, can carry out any computation that can be precisely described.
+Alan Turing, a graduate student at Cambridge who would go on to break the Enigma code (the German military cipher) in World War II and become the father of modern computing, imagined computation as a machine operating on a tape. The machine reads a symbol from a cell, writes a new one, shifts left or right, and moves to a new internal state. Then it does it again. Turing proved that this simple device, given the right set of rules, can carry out any computation that can be precisely described. This is what we now call a computer.
 
 What makes the Turing machine interesting for us is not the tape or the rules; it's the picture of computation they imply. A Turing machine *does* things: it reads, writes, moves, changes. It has memory (the tape), and that memory changes over time. A program, in this view, is a sequence of instructions that progressively modify stored values until the answer emerges.
 
