@@ -31,7 +31,7 @@ for each number in [3, 5, 2, 8]:
 return total
 ```
 
-Watch `total`. It starts at 0, becomes 3, becomes 8, becomes 10, becomes 18. The variable *varies*; the answer lives in its final state. If you have written code in C or Python, this probably feels natural. It should: both languages were designed around exactly this view of computation.
+Watch `total`. It starts at 0, becomes 3, becomes 8, becomes 10, becomes 18. The variable *varies*; the answer lives in its final state. This pattern, mutating a variable step by step until the answer appears, became the dominant way to think about computation itself.
 
 C came out of Bell Labs in the early 1970s. Dennis Ritchie and Ken Thompson were building Unix, a new operating system, and they needed a language that stayed close to the hardware. Ritchie designed C so that the programmer allocates memory, reads from it, writes to it, and frees it when done. The language does not manage any of this for you. This directness made C enormously influential: Unix spread, C spread with it, and most operating systems, databases, and compilers written since have been written in C. R itself is written in C. The picture of computation that C embodies, a program as a sequence of instructions modifying stored values, became the default mental model for a generation of programmers.
 
