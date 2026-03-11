@@ -12,7 +12,7 @@ Open R. Type `1 + 1` and press Enter.
 1 + 1
 ```
 
-You just wrote a complete R program. No variables, no functions, no setup: it is an expression, and R evaluated it and printed the result. Every piece of R code you will ever write, from a one-line calculator to a thousand-line analysis pipeline, works exactly this way. You give R an expression; R gives you back its value.
+You just wrote a complete R program. It has no variables, no functions, no setup. It is an expression, and R evaluated it and printed the result. Every piece of R code you will ever write works this way: you give R an expression, R gives you back its value.
 
 What makes this work? Three things: R's interactive loop, expressions themselves, and a mechanism for giving names to values so you can use them later.
 
@@ -28,9 +28,9 @@ When you open R, you see a prompt: `>`. R is waiting. When you type something an
 
 This is called a REPL (Read-Eval-Print Loop). There is no "compile" step, no "run" button; you type an expression, you see its value immediately.
 
-In many programming languages (C, Java, and Go, which Google created in 2009 because even their best engineers were waiting too long for C++ to compile), you write your entire program first, then run a separate tool called a *compiler* that translates the whole thing into machine code before you can see any results. If you make a typo on line 500, you don't find out until the compiler reaches it. R works differently: it reads and evaluates one expression at a time, immediately. Languages that work this way are called *interpreted* languages. Python and JavaScript are interpreted too. The tradeoff is speed: compiled languages produce faster programs because the compiler can optimize everything in advance, while interpreted languages let you experiment and see results instantly, which is why they dominate in data analysis and exploration.
+In compiled languages (C, Java, and Go, which Google created in 2009 because even their best engineers were waiting too long for C++ to compile), you write the whole program first, then a compiler translates it into machine code before anything runs. R is *interpreted*: it reads and evaluates one expression at a time, immediately. Python and JavaScript work the same way. The tradeoff is speed: a compiler can optimize the whole program in advance, so compiled code runs faster. But interpreted languages let you experiment and see results as you go, which is why they dominate in data analysis.
 
-In practice, the line between compiled and interpreted is blurry. R itself is written in C, a compiled language, and many R functions are thin wrappers around compiled C or Fortran code that runs at full speed. You type `sum(x)` in R, but the actual arithmetic happens in compiled machine code underneath. R gives you the interactive, exploratory interface; the compiled code does the heavy lifting. This is increasingly how modern languages work: you think and experiment in a high-level interpreted layer, and the performance-critical parts run in compiled code below.
+In practice, the line between compiled and interpreted is blurry. R itself is written in C, and many R functions are thin wrappers around compiled C or Fortran code. When you type `sum(x)`, the actual arithmetic happens in compiled machine code underneath. You get the interactive interface; the heavy computation still runs at full speed.
 
 Try a few:
 

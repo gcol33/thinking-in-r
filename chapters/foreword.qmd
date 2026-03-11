@@ -1,0 +1,20 @@
+# Foreword {.unnumbered}
+
+```{r}
+#| include: false
+source(here::here("_common.R"))
+```
+
+> "You know, people think mathematics is complicated. Mathematics is the simple bit. It's the stuff we can understand. It's cats that are complicated."
+>
+> --- John Horton Conway
+
+When people teach you R, they usually hand you a list of commands. Load this file, make that plot, run this test. The language disappears behind the commands, the way a piano disappears behind scales, and after a while you can do many things correctly without understanding any of them. You learn that `TRUE + TRUE` equals `2`, and it works, so you stop asking why.
+
+This book asks why.
+
+Because the simple things get simpler when you see what holds them up. R has a logic underneath it, quiet and surprisingly consistent, and once you see that logic, the things that seemed arbitrary become inevitable. Functions are values you can pass around like numbers; operators are functions wearing a disguise; expressions have types, and types decide what makes sense. These are ideas from the lambda calculus, a notation a mathematician named Alonzo Church invented in the 1930s, before computers existed, carried through Lisp, through Scheme, through S, and into the language sitting on your screen right now. Waiting.
+
+I wrote this book for people who have never programmed before. But I refused, from the first page, to separate the *how* from the *why*, because they are the same thing. Understanding why R works the way it does is what makes you fast, in R and in any language you pick up next. The ideas here (closures, immutability, composition, lazy evaluation) are older than R, older than computers, and they show up everywhere.
+
+R is where I first met them. I think you will like it here.

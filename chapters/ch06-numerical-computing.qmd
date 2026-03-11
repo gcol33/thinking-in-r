@@ -11,7 +11,7 @@ Type `0.1 + 0.2 == 0.3` in R. It returns `FALSE`.
 0.1 + 0.2 == 0.3
 ```
 
-Not a bug. Every number you type into R is an approximation, a closest-available point in a finite grid of 64-bit floating-point values, and operations on those approximations do not always behave the way pencil-and-paper arithmetic does. You have already used numbers in vectors (@sec-atomic-vectors) and arithmetic (@sec-vectorized-ops) without worrying about this, because most of the time the approximation is so good that you never notice it. This chapter shows you the cases where it matters, how to recognize the traps, and how to work with R's matrix algebra tools. The first four sections (storage, traps, cancellation, integers) are for every R user. The rest covers numerical stability and matrix algebra; a callout box marks where you can skip ahead if you are new to R.
+This is not a bug. Every number you type into R is an approximation, and operations on those approximations do not always behave the way real arithmetic does. Most of the time the approximation is so good that you never notice it. This chapter shows you the cases where it matters, how to recognize the traps, and how to work with R's matrix algebra tools. The first four sections (storage, traps, cancellation, integers) are for every R user. The rest covers numerical stability and matrix algebra; a callout box marks where you can skip ahead if you are new to R.
 
 
 ## How R stores numbers {#sec-how-r-stores-numbers}
@@ -149,7 +149,7 @@ The naive formula returns a wildly wrong answer (possibly negative, depending on
 
 R's built-in `var()` uses a numerically stable one-pass algorithm that avoids this trap. The lesson: mathematically equivalent expressions are not numerically equivalent. Prefer formulations that avoid subtracting nearly equal quantities. When you see unexpected negative values for something that should be positive (a variance, a squared distance), suspect cancellation.
 
-Another classic: computing `sqrt(x^2 + 1) - 1` for small `x`. As `x` approaches zero, `sqrt(x^2 + 1)` rounds to 1, and the subtraction gives 0, even though the true answer is a small positive number. The algebraically equivalent form `x^2 / (sqrt(x^2 + 1) + 1)` avoids the cancellation entirely:
+The same problem appears when computing `sqrt(x^2 + 1) - 1` for small `x`. As `x` approaches zero, `sqrt(x^2 + 1)` rounds to `1`, and the subtraction gives `0`, even though the true answer is a small positive number. The algebraically equivalent form `x^2 / (sqrt(x^2 + 1) + 1)` avoids the cancellation:
 
 ```{r}
 x <- 1e-8
@@ -259,12 +259,9 @@ The error can be many orders of magnitude larger than machine epsilon. The matri
 
 ### Forward and backward stability
 
-Two notions of stability matter in numerical linear algebra:
+A *forward-stable* algorithm produces answers close to the true answer. A *backward-stable* algorithm does something subtler: it produces the exact answer to a slightly perturbed problem. The computed solution $\hat{x}$ satisfies $(A + \delta A)\hat{x} = b + \delta b$ where $\delta A$ and $\delta b$ are small.
 
-- A *forward-stable* algorithm produces answers close to the true answer.
-- A *backward-stable* algorithm produces the exact answer to a slightly perturbed problem. That is, the computed solution $\hat{x}$ satisfies $(A + \delta A)\hat{x} = b + \delta b$ where $\delta A$ and $\delta b$ are small.
-
-Most LAPACK routines (which R calls internally for `solve()`, `qr()`, `svd()`, `chol()`) are backward-stable. This is the best you can ask for: when the problem itself is well-conditioned, backward stability guarantees accurate results. When the problem is ill-conditioned, no algorithm can save you, but you can sometimes reformulate the problem so that it becomes well-conditioned.
+Most LAPACK routines (which R calls internally for `solve()`, `qr()`, `svd()`, `chol()`) are backward-stable. For well-conditioned problems, backward stability guarantees accurate results. For ill-conditioned problems, no algorithm can save you, but you can sometimes reformulate the problem so that it becomes well-conditioned.
 
 ### Polynomial fitting: a practical demonstration
 

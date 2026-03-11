@@ -5,12 +5,12 @@
 source(here::here("_common.R"))
 ```
 
-You have already seen a clue hiding in plain sight. In @sec-coercion, `TRUE` became 1 and `FALSE` became 0 whenever R needed a number, a quiet conversion that most people ignore and never think about again. But that conversion is the tip of something larger: logical values are not convenient shorthands bolted onto the language as an afterthought; they are a full type with their own operators, and every decision your code will ever make passes through them. This chapter takes you from logical vectors through comparisons, boolean operators, and `if/else`, where you will discover that R treats `if/else` not as a traffic cop directing execution but as an expression that returns a value, just like `+` or `sqrt()`.
+In @sec-coercion, you saw that `TRUE` becomes 1 and `FALSE` becomes 0 when R needs a number. That was a hint. Logical values are not second-class citizens in R; they are a full type with their own operators, and they drive every decision your code makes. This chapter covers logical vectors, comparisons, boolean operators, and `if/else`. In R, `if/else` is an expression that returns a value, not a statement that directs traffic.
 
 
 ## Logical vectors {#sec-logical-vectors}
 
-`TRUE` and `FALSE` are R's logical values, and you already met them in @sec-atomic-vectors as one of the four main types (double, integer, character, logical).
+`TRUE` and `FALSE` are R's logical values. You already met them in @sec-atomic-vectors as one of the four main types (double, integer, character, logical).
 
 ```{r}
 x <- c(TRUE, FALSE, TRUE, TRUE, FALSE)

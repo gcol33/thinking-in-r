@@ -291,7 +291,7 @@ In @sec-recursion, we previewed fixed-point combinators. Now the full constructi
 
 A recursive function refers to itself by name, but in lambda calculus, there are no names. There is no `<-`. So how do you define factorial? You need a way to express recursion using only anonymous functions.
 
-The tool is the *fixed-point combinator*. A fixed point of a function `g` is a value `x` such that `g(x) = x`. If `g` is a "template" for a recursive function (a function that takes *itself* as an argument and returns the recursive body), then finding its fixed point gives you the recursive function you wanted.
+The trick is the *fixed-point combinator*. A fixed point of a function `g` is a value `x` such that `g(x) = x`. If `g` is a "template" for a recursive function (a function that takes *itself* as an argument and returns the recursive body), then finding its fixed point gives you the recursive function you wanted.
 
 The Y combinator does this in lazy languages like Haskell:
 

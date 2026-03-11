@@ -5,7 +5,7 @@
 source(here::here("_common.R"))
 ```
 
-You have been borrowing other people's work. `sqrt(9)`, `c(1, 2, 3)`, `sum(x > 70)`: every piece of R code you have written so far calls a function that someone else defined, tested, and packaged for you. At some point the problems you need to solve will stop fitting neatly into the functions that already exist. What does it take to write your own?
+`sqrt(9)`, `c(1, 2, 3)`, `sum(x > 70)`: every piece of R code so far has relied on functions that someone else wrote. The obvious next question is what it takes to write one yourself.
 
 
 ## Anatomy of a function {#sec-anatomy-function}
@@ -116,9 +116,9 @@ add_one <- function(x) x + 1
 add_one(10)
 ```
 
-The body is `x + 1`; R evaluates it and hands back the result. Compare this to Python or Java, where you must write `return` explicitly. In R, the last expression *is* the return value, which is, once again, the lambda calculus at work: a function is an expression that evaluates to a value.
+The body is `x + 1`. R evaluates it and returns the result. In Python or Java you would need to write `return` explicitly, but R treats the last expression as the return value. A function is an expression that evaluates to a value, the same idea from the lambda calculus in @sec-lisp.
 
-When you call `add_one(10)`, something specific happens: R substitutes `10` for `x` in the body, turning `x + 1` into `10 + 1`, then evaluates it. This substitution is called *beta reduction* in lambda calculus, where `(λx. x + 1)(10)` reduces to `10 + 1`. Every function call you write in R is a beta reduction: plug in the argument, simplify the body. The name sounds technical, but you have been doing it since the first chapter.
+When you call `add_one(10)`, R substitutes `10` for `x` in the body, turning `x + 1` into `10 + 1`, then evaluates it. Lambda calculus calls this *beta reduction*: `(λx. x + 1)(10)` reduces to `10 + 1`. Every function call in R is a beta reduction.
 
 R does have a `return()` function, and it is useful for early exits:
 
@@ -216,7 +216,7 @@ You can even create a function without giving it a name at all:
 (function(x) x + 1)(10)
 ```
 
-`function(x) x + 1` creates a function; the parentheses around it and `(10)` immediately call it with the argument 10. This is an *anonymous function*, the R equivalent of Church's lambda notation `λx. x + 1` applied to 10 (@sec-church). You will not write anonymous functions often at this stage, but they become indispensable when you start passing functions to other functions in @sec-iteration-without-loops.
+`function(x) x + 1` creates a function; the parentheses around it and `(10)` immediately call it with the argument `10`. This is an *anonymous function*: `λx. x + 1` applied to `10` (@sec-church). @sec-iteration-without-loops uses them heavily.
 
 You can do anything with a function that you can do with a number: store it in a variable, pass it to another function, return it as a result. This is what McCarthy built into Lisp in 1958 (@sec-lisp), and R inherits it directly. So functions are values, and values live somewhere. Where do the variables inside a function live?
 
@@ -410,7 +410,7 @@ fact(3)                                     # apply fact with n = 3
 = 6
 ```
 
-R's `function(n)` is `λn` with a different spelling. The reduction above is exactly what R does when you call `factorial(3)`: it substitutes 3 for `n`, evaluates the body, hits `factorial(2)`, substitutes again, and keeps going until it reaches the base case. Recursion is how Church's lambda calculus (@sec-church) handles repetition, not by updating a counter but by having the function call itself with a smaller argument until it stops.
+R's `function(n)` is the same as `λn`. The reduction above is what R does when you call `factorial(3)`: substitute `3` for `n`, evaluate the body, hit `factorial(2)`, substitute again, keep going until the base case. Recursion is how Church's lambda calculus (@sec-church) handles repetition. There is no loop counter; the function calls itself with a smaller argument until it stops.
 
 ```{r}
 fibonacci <- function(n) {
@@ -446,9 +446,9 @@ fibonacci_fast(4, 0, 1)
 = 3                           # n=0, return a
 ```
 
-Each step is a single function call that replaces itself with another function call, carrying the state forward in the arguments. This is still pure term replacement: no variable is being mutated; each call just substitutes new values for `n`, `a`, and `b`. This form is called *tail recursion* because the recursive call is the last thing the function does. The naive version could not compute `fibonacci(50)` in any reasonable time; this one handles it instantly.
+No variable is being mutated; each call just substitutes new values for `n`, `a`, and `b` and hands them to the next call. This form is called *tail recursion* because the recursive call is the last thing the function does. The naive version cannot compute `fibonacci(50)` in any reasonable time. This one handles it instantly:
 
-This is a general pattern. Any function with multiple recursive calls can be rewritten as a single recursive call with extra arguments that carry the intermediate results. The trick is to figure out what state you need to pass forward: for Fibonacci, it is the last two numbers; for a tree traversal, it might be an accumulator list.
+Any function with multiple recursive calls can be rewritten as a single recursive call with extra arguments that carry the intermediate results. For Fibonacci, the state to pass forward is the last two numbers; for a tree traversal, it might be an accumulator list.
 
 R has a limit on how deep recursion can go (around 1000 calls by default), and for most day-to-day R work, vectorized operations and functions like `map()` (@sec-iteration-without-loops) are better tools. But there is something strange about `factorial` that has nothing to do with performance: its base case and inductive step look exactly like a proof by mathematical induction.
 
@@ -476,15 +476,15 @@ Two parts: a base case (when `n = 0`, return 1) and an inductive step (assume `f
 
 In the 1930s and 1940s, the logician Haskell Curry (after whom the Haskell programming language is named, and from whom the term "currying" above comes) noticed something strange: the rules for combining types in a programming language looked identical to the rules for combining propositions in formal logic. A function that takes an `A` and returns a `B` had the same structure as a logical proof that "if A, then B." In 1969, William Howard made this precise: every type corresponds to a logical proposition, and every program of that type corresponds to a proof of that proposition. A recursive function that terminates is a proof by induction. This result is called the *Curry-Howard correspondence*.
 
-When you write `factorial`, you are constructing a proof by induction that the product `1 * 2 * ... * n` exists for every non-negative integer. When you transform the double-recursive `fibonacci` into the tail-recursive `fibonacci_fast`, you are doing the same thing a logician does when they strengthen an inductive hypothesis to make a proof go through: the extra arguments (`a` and `b`) *are* the stronger hypothesis. The result from proof theory (that double induction reduces to simple induction with stronger invariants) is the same result that lets you turn a slow recursive function into a fast one.
+Writing `factorial` constructs a proof by induction that the product `1 * 2 * ... * n` exists for every non-negative integer. The transformation from double-recursive `fibonacci` to tail-recursive `fibonacci_fast` is the same move a logician makes when they strengthen an inductive hypothesis to make a proof go through: the extra arguments (`a` and `b`) *are* the stronger hypothesis. Double induction reduces to simple induction with stronger invariants, which is why the same trick turns a slow recursive function into a fast one.
 
 Computation, proof, and mathematics are three perspectives on one subject. The logicians who discovered this (Church, Godel, Curry, Turing) were all working in the 1930s, before computers existed; they were studying what could be *proved*, and they found that the answer was identical to what could be *computed*.
 
 Today, the Curry-Howard correspondence is the foundation of *formal verification*: software that proves other software is correct.
 
-The first practical tool to exploit this idea was Coq, developed at INRIA, the French national computer science institute, starting in the late 1980s. Thierry Coquand and Gerard Huet designed it around a type theory called the Calculus of Constructions (the "C-o-C" that gives Coq part of its name). In Coq, every program must come with a machine-checkable proof that it does what its type signature claims; if the proof has a gap, the code does not compile. There is no override, no flag to skip the check. This makes Coq painful for ordinary programming but powerful for building software where correctness matters more than convenience.
+The first practical tool to exploit this idea was Coq, developed at INRIA, the French national computer science institute, starting in the late 1980s. Thierry Coquand and Gerard Huet designed it around a type theory called the Calculus of Constructions (the "C-o-C" that gives Coq part of its name). In Coq, every program must come with a machine-checkable proof that it does what its type signature claims; if the proof has a gap, the code does not compile. This makes Coq painful for ordinary programming but powerful for building software where correctness matters more than convenience.
 
-In 2013, Leonardo de Moura at Microsoft Research started Lean, a newer proof assistant with a more accessible syntax and a growing library of formalized mathematics called Mathlib. Where Coq grew out of theoretical computer science, Lean has attracted a broader community of mathematicians who are formalizing results from analysis, algebra, and number theory. Both are *proof assistants*: part programming language, part theorem prover. Here is a proof in Lean that adding zero to any natural number gives back the same number:
+In 2013, Leonardo de Moura at Microsoft Research started Lean, a newer *proof assistant* with a more accessible syntax and a growing library of formalized mathematics called Mathlib. Coq grew out of theoretical computer science; Lean has attracted a broader community of mathematicians who are formalizing results from analysis, algebra, and number theory. In Lean, a proof that adding zero to any natural number gives back the same number looks like this:
 
 ```
 theorem add_zero (n : Nat) : n + 0 = n := by
@@ -509,7 +509,7 @@ fact(n)
 = if n = 0 then 1 else n * fact(n - 1)              # substitute n
 ```
 
-You might think: of course they are the same, we just wrote the definition. But `fact` and `fact(n)` are not the same thing. `fact` is a definition, a rule that says what to do with an argument; `fact(n)` is that rule applied to a specific (but arbitrary) `n`. The reduction above shows what happens when you apply the rule: you get a term that contains `fact(n - 1)`, the same program applied to a smaller argument. That relationship between `fact(n)` and `fact(n - 1)` is not something we assumed or proved; it fell out of one substitution. A tautology. And yet that tautology, together with the base case, constitutes a proof by induction that `fact` produces the right answer for every natural number. When `n = 0`, the expression reduces to `1`. When `n` is not 0, it reduces to `n * fact(n - 1)`, which has the same structure as the original call but with a smaller argument. Base case plus one definitional equivalence, and the proof is done.
+You might think: of course they are the same, we just wrote the definition. But `fact` and `fact(n)` are not the same thing. `fact` is a definition, a rule that says what to do with an argument; `fact(n)` is that rule applied to a specific (but arbitrary) `n`. The reduction above shows what happens when you apply the rule: you get a term that contains `fact(n - 1)`, the same program applied to a smaller argument. That relationship between `fact(n)` and `fact(n - 1)` is not something we assumed or proved; it fell out of one substitution. A tautology. And yet that tautology, together with the base case, constitutes a proof by induction that `fact` produces the right answer for every natural number. When `n = 0`, the expression reduces to `1`. The substitution gives you the step from `n - 1` to `n`.
 
 This is what Curry-Howard means in practice. The Lean proof above has the same structure as `factorial`: a base case (`zero`), a step that relates `n` to `n - 1` by definitional equivalence (`succ n`), and nothing else. Both work because the equivalence of two program states is a tautology that requires only substitution.
 

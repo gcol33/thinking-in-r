@@ -334,7 +334,7 @@ The ordering from @sec-optimization-checklist still applies: pure R first, vecto
 
 ::: callout-tip
 ## Opinion
-The fact that R makes it straightforward to call C, C++, Rust, and Python is one of its greatest strengths. Many languages treat foreign function interfaces as an afterthought. R was designed from the start to sit on top of compiled code. Use that design.
+R was designed from the start to sit on top of compiled code. The foreign function interface is the architecture, not a feature bolted on later.
 :::
 
 
@@ -363,7 +363,7 @@ Real-world packages show how these interfaces work at scale, and each of the fol
 - `tensorflow` and `keras3`: use reticulate to call TensorFlow/Keras. The R API mirrors the Python API closely.
 - `spacyr`: wraps spaCy for natural language processing.
 
-The pattern across all of these is the same: R provides the user-facing API (function names, argument handling, documentation, S3/S4 dispatch), while the compiled backend provides the computation. The interface layer is thin. This division of labor, a high-level language for expressiveness orchestrating a low-level language for speed, is not a compromise or a workaround. It is the architecture R was built for. And it is the reason that, decades after its creation, R remains one of the most effective languages for data analysis: not because it does everything fast, but because it makes it simple to call the things that do.
+The pattern across all of these is the same: R provides the user-facing API (function names, argument handling, documentation, S3/S4 dispatch), while the compiled backend provides the computation. The interface layer is thin. A high-level language for expressiveness orchestrating a low-level language for speed: that is the architecture R was built for. What happens when you apply the same principle not to a single function but to an entire project?
 
 
 ## References and sources

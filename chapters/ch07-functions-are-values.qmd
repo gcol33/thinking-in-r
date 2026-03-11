@@ -5,9 +5,7 @@
 source(here::here("_common.R"))
 ```
 
-You have probably written the same loop a dozen times: iterate over a vector, do something to each element, store the result. The skeleton is always identical, only the "something" changes. What if you could rip out the operation, hand it to someone else, and let them handle the iteration?
-
-In @sec-functions-are-values, you saw that a function is a value, that you can assign `sqrt` to a new name and call it just as you would with a number or a string. That single fact opens a door to everything in this chapter: passing functions to other functions, storing them in lists, and building functions that manufacture new functions on demand.
+In @sec-functions-are-values, you saw that a function is a value: you can assign `sqrt` to a new name and call it, the same way you'd assign a number. If functions are values, you can pass them to other functions, store them in lists, and build functions that create new functions.
 
 
 ## Passing functions to functions {#sec-passing-functions}
@@ -39,9 +37,9 @@ sapply = λxs. λf. [f(xs₁), f(xs₂), ..., f(xsₙ)]
 sapply([1,2,3,4,5])(sqrt) = [sqrt(1), sqrt(2), sqrt(3), sqrt(4), sqrt(5)]
 ```
 
-The function `sapply` takes a list and a function, then produces a new list by applying the function to each element, the same term replacement from @sec-atomic-vectors where you replace each `f(xsᵢ)` with its value and the expression reduces to a vector of results. A function that takes another function as an argument is called a *higher-order function*. `sapply` is one; most of R's expressive power flows from others.
+The function `sapply` takes a list and a function, and produces a new list by applying the function to each element. This is the same term replacement from @sec-atomic-vectors: replace each `f(xsᵢ)` with its value, and the expression reduces to a vector of results. A function that takes another function as an argument is called a *higher-order function*. `sapply` is one; most of R's power comes from others.
 
-The structure of `sapply` is the functor pattern from @sec-vectorized-ops: take a container (a vector or list), apply a function to each element, return a container of the same shape with transformed contents. In @sec-vectorized-ops, R did this implicitly through vectorization (`sqrt(c(1,4,9))`), while here `sapply` does it explicitly, letting you choose the function while it handles the mapping. The abstraction is the same; only the interface differs. So if `sapply` can accept any named function, what happens when the function you need doesn't exist yet?
+The structure of `sapply` is the functor pattern from @sec-vectorized-ops: take a container (a vector or list), apply a function to each element, return a container of the same shape with transformed contents. In @sec-vectorized-ops, R did this implicitly with vectorization (`sqrt(c(1,4,9))`). Here, `sapply` does it explicitly: you choose the function, and `sapply` handles the mapping.
 
 
 ### Exercises {.unnumbered}
@@ -79,7 +77,7 @@ sapply(c(10, 20, 30), \(x) x / sum(c(10, 20, 30)))
 sapply(c("alice", "bob"), \(name) paste("Hello,", name))
 ```
 
-When the function stretches beyond one line, or when you find yourself reaching for it in more than one place, give it a name. A function called `normalize` reads more clearly than an anonymous function that divides by the sum, and a function called `greet` is easier to maintain than a lambda copy-pasted into three different `sapply` calls. But where do you draw the line between "too trivial to name" and "complex enough to deserve one"?
+When the function gets longer than one line, or when you need it in more than one place, give it a name. A function called `normalize` is easier to read than an anonymous function that divides by the sum. A function called `greet` is easier to maintain than a lambda pasted into three different `sapply` calls.
 
 ::: callout-tip
 ## Opinion
@@ -110,9 +108,9 @@ transforms$triple(5)
 transforms$negate(5)
 ```
 
-`transforms` is a list of three functions, accessed with `$` the same way you would access any named list element.
+`transforms` is a list of three functions, accessed with `$` like any named list element.
 
-Now imagine you have data that needs different processing depending on a column type. Instead of writing a chain of `if` / `else if` branches, you store the processing functions in a named list and look up the right one:
+If you have data that needs different processing depending on a column type, you can store the processing functions in a named list and look up the right one:
 
 ```{r}
 summarizers <- list(
@@ -126,7 +124,7 @@ summarizers$character(c("a", "b", "a", "c"))
 summarizers$logical(c(TRUE, FALSE, TRUE, TRUE))
 ```
 
-The list acts as a dispatch table: given a type name, it returns the appropriate function. Package internals, Shiny applications, and testing frameworks all use lists of functions to select behavior at runtime. A dispatch table stores functions that already exist, but what if you need to create new functions on the fly, with specific values baked in?
+The list acts as a dispatch table: given a type name, it returns the appropriate function. Package internals, Shiny applications, and testing frameworks all use lists of functions to select behavior at runtime. The dispatch table stores functions that already exist, but you can also create new functions on the fly.
 
 
 ### Exercises {.unnumbered}
@@ -160,7 +158,7 @@ add10(3)
 
 `add5` and `add10` are both functions, built by `make_adder` with different values of `n`, and each one remembers the value it was created with. `add5` remembers 5; `add10` remembers 10. How?
 
-When `make_adder(5)` runs, it creates a local environment where `n = 5`. The returned function `function(x) x + n` was defined inside that environment, so when you later call `add5(3)`, R looks for `n` in the function's own environment, fails to find it, then looks in the environment where the function was defined (the one created by `make_adder(5)`) and there discovers `n = 5`. This is the same lexical scoping from @sec-scope-first-look, taken one step further: the function carries its birthplace with it.
+When `make_adder(5)` runs, it creates a local environment where `n = 5`. The returned function `function(x) x + n` was defined inside that environment. When you later call `add5(3)`, R finds `n` through lexical scoping (@sec-scope-first-look): it looks in the environment where the function was defined and finds `n = 5`.
 
 A function that travels with its creation environment is called a *closure*. Every function in R is technically a closure, but the term earns its weight when a function returned by another function captures variables from the enclosing scope. Closures are powerful enough to deserve their own chapter (@sec-closures-and-scope); the mechanism that makes `make_adder` work has consequences far beyond adding numbers.
 
@@ -171,9 +169,7 @@ make_adder = λn. λx. x + n
 make_adder(5) = (λn. λx. x + n)(5) = λx. x + 5
 ```
 
-Replacing `n` with 5 gives a new function, `λx. x + 5`, which is `add5`. The returned function is a partially applied version of the original, with one argument already filled in. This is currying: fixing one argument to produce a simpler function.
-
-In lambda calculus terms, `make_adder(5)` is a beta reduction: `(λn. λx. x + n)(5)` reduces to `λx. x + 5`, where the outer lambda absorbs its argument and disappears, leaving a simpler function behind. Every time you call a function factory in R, you are performing a beta reduction; the returned function is the reduced term, with one variable already bound.
+Replacing `n` with `5` gives a new function, `λx. x + 5`, which is `add5`. The returned function is a partially applied version of the original, with one argument already filled in. This is currying: fixing one argument to produce a simpler function. Every call to a function factory is a beta reduction; the returned function is the reduced term.
 
 ```{r}
 make_multiplier <- function(factor) {
@@ -228,7 +224,7 @@ John Chambers, the creator of S (@sec-s-language), summarized R's design with tw
 
 > "Everything that exists is an object. Everything that happens is a function call."
 
-The first rule says that numbers, strings, vectors, functions, and even `NULL` are all objects. The second says that addition, comparison, indexing, assignment, and control flow are all function calls. Together with the fact that functions are values (and therefore objects too, covered by the first rule), these two statements define what it means for R to be a functional language.
+Numbers, strings, vectors, functions, even `NULL` are all objects. Addition, comparison, indexing, assignment, and control flow are all function calls. And since functions are values, they are objects too, which closes the loop: R is functional because everything reduces to objects and function calls on those objects.
 
 You can even override built-in operators. (This is a demonstration, not a recommendation.)
 
@@ -242,7 +238,7 @@ rm(`+`)
 2 + 3
 ```
 
-After redefining `+` to mean multiplication, `2 + 3` returns 6. Calling `rm()` removes the custom definition and restores the original. The fact that you *can* redefine `+` reveals that it really is just a name bound to a function, like any other name: R's entire syntax is built on function calls, and those functions are values you can inspect, replace, and pass around. If everything that happens in R is a function call, and functions are values, then the language itself is something you can take apart and reassemble.
+After redefining `+` to mean multiplication, `2 + 3` returns 6. `rm()` removes the custom definition and restores the original. The fact that you *can* redefine `+` shows that it really is just a name bound to a function, like any other name. R's entire syntax is built on function calls, and those functions are values you can inspect, replace, and pass around.
 
 ::: callout-tip
 ## Opinion

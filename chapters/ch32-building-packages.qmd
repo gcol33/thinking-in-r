@@ -378,7 +378,7 @@ usethis::use_github_action("check-standard")
 
 This adds a GitHub Actions workflow that runs `R CMD check` on Linux, macOS, and Windows every time you push. If the check fails, GitHub shows a red X next to the commit; if it passes, you get a green checkmark and a badge for your README. The real value is catching platform-specific bugs you would never find on your own machine: path separators (Windows uses `\`, everything else uses `/`), case-sensitive file systems (Linux is case-sensitive, macOS and Windows are not), and system library availability.
 
-Remember the colleague who couldn't run your script? A package with CI, documentation, and a one-line install command turns that two-day email chain into a single `pak::pak()` call. The structure does the work.
+Remember the colleague who couldn't run your script? A package with CI, documentation, and a one-line install command turns that two-day email chain into a single `pak::pak()` call. The structure that remains is reproducibility, and that problem has its own tools.
 
 ### Exercises {.unnumbered}
 
