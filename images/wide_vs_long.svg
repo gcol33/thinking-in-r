@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 524" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <style>
+    .cell { fill: none; stroke: #111; stroke-width: 1.0; }
+    .hdr { fill: #f4f4f4; stroke: #111; stroke-width: 1.0; }
+    .ct { font-size: 16px; font-family: 'Courier New', monospace; fill: #111; text-anchor: middle; }
+    .ch { font-size: 16px; font-family: 'Courier New', monospace; fill: #111; text-anchor: middle; font-weight: bold; }
+    .sub { font-size: 18px; font-family: 'Courier New', monospace; fill: #111; font-weight: bold; }
+    .note { font-size: 15px; fill: #555; font-style: italic; text-anchor: middle; }
+    .ann { font-size: 15px; fill: #777; font-style: italic; }
+  </style>
+
+  <!-- WIDE TABLE -->
+  <text x="20" y="24" class="sub">pop_wide</text>
+
+  <g transform="translate(20,38)">
+    <!-- Header -->
+    <rect class="hdr" x="0"   y="0" width="90" height="30"/>
+    <text x="45"  y="21" class="ch">country</text>
+    <rect class="hdr" x="90"  y="0" width="90" height="30"/>
+    <text x="135" y="21" class="ch">pop_2020</text>
+    <rect class="hdr" x="180" y="0" width="90" height="30"/>
+    <text x="225" y="21" class="ch">pop_2021</text>
+    <rect class="hdr" x="270" y="0" width="90" height="30"/>
+    <text x="315" y="21" class="ch">pop_2022</text>
+
+    <!-- Norway -->
+    <rect class="cell" x="0"   y="30" width="90" height="30"/>
+    <text x="45"  y="51" class="ct">Norway</text>
+    <rect class="cell" x="90"  y="30" width="90" height="30"/>
+    <text x="135" y="51" class="ct">5380</text>
+    <rect class="cell" x="180" y="30" width="90" height="30"/>
+    <text x="225" y="51" class="ct">5391</text>
+    <rect class="cell" x="270" y="30" width="90" height="30"/>
+    <text x="315" y="51" class="ct">5408</text>
+
+    <!-- Sweden -->
+    <rect class="cell" x="0"   y="60" width="90" height="30"/>
+    <text x="45"  y="81" class="ct">Sweden</text>
+    <rect class="cell" x="90"  y="60" width="90" height="30"/>
+    <text x="135" y="81" class="ct">10350</text>
+    <rect class="cell" x="180" y="60" width="90" height="30"/>
+    <text x="225" y="81" class="ct">10380</text>
+    <rect class="cell" x="270" y="60" width="90" height="30"/>
+    <text x="315" y="81" class="ct">10420</text>
+
+    <!-- Denmark -->
+    <rect class="cell" x="0"   y="90" width="90" height="30"/>
+    <text x="45"  y="111" class="ct">Denmark</text>
+    <rect class="cell" x="90"  y="90" width="90" height="30"/>
+    <text x="135" y="111" class="ct">5831</text>
+    <rect class="cell" x="180" y="90" width="90" height="30"/>
+    <text x="225" y="111" class="ct">5840</text>
+    <rect class="cell" x="270" y="90" width="90" height="30"/>
+    <text x="315" y="111" class="ct">5857</text>
+  </g>
+
+  <!-- Arrows between tables -->
+  <line x1="165" y1="162" x2="165" y2="210" stroke="#111" stroke-width="1.2"/>
+  <polygon points="165,220 160,210 170,210" fill="#111"/>
+  <text x="140" y="195" class="ann" text-anchor="end">pivot_longer()</text>
+
+  <line x1="205" y1="220" x2="205" y2="172" stroke="#111" stroke-width="1.2"/>
+  <polygon points="205,162 200,172 210,172" fill="#111"/>
+  <text x="230" y="195" class="ann">pivot_wider()</text>
+
+  <!-- LONG TABLE -->
+  <text x="20" y="238" class="sub">pop_tidy</text>
+
+  <g transform="translate(20,252)">
+    <!-- Header -->
+    <rect class="hdr" x="0"   y="0" width="90" height="28"/>
+    <text x="45"  y="20" class="ch">country</text>
+    <rect class="hdr" x="90"  y="0" width="70" height="28"/>
+    <text x="125" y="20" class="ch">year</text>
+    <rect class="hdr" x="160" y="0" width="100" height="28"/>
+    <text x="210" y="20" class="ch">population</text>
+
+    <!-- Norway -->
+    <rect class="cell" x="0"   y="28" width="90" height="22"/>
+    <text x="45"  y="44" class="ct">Norway</text>
+    <rect class="cell" x="90"  y="28" width="70" height="22"/>
+    <text x="125" y="44" class="ct">2020</text>
+    <rect class="cell" x="160" y="28" width="100" height="22"/>
+    <text x="210" y="44" class="ct">5380</text>
+
+    <rect class="cell" x="0"   y="50" width="90" height="22"/>
+    <text x="45"  y="66" class="ct">Norway</text>
+    <rect class="cell" x="90"  y="50" width="70" height="22"/>
+    <text x="125" y="66" class="ct">2021</text>
+    <rect class="cell" x="160" y="50" width="100" height="22"/>
+    <text x="210" y="66" class="ct">5391</text>
+
+    <rect class="cell" x="0"   y="72" width="90" height="22"/>
+    <text x="45"  y="88" class="ct">Norway</text>
+    <rect class="cell" x="90"  y="72" width="70" height="22"/>
+    <text x="125" y="88" class="ct">2022</text>
+    <rect class="cell" x="160" y="72" width="100" height="22"/>
+    <text x="210" y="88" class="ct">5408</text>
+
+    <!-- Sweden -->
+    <rect class="cell" x="0"   y="94" width="90" height="22"/>
+    <text x="45"  y="110" class="ct">Sweden</text>
+    <rect class="cell" x="90"  y="94" width="70" height="22"/>
+    <text x="125" y="110" class="ct">2020</text>
+    <rect class="cell" x="160" y="94" width="100" height="22"/>
+    <text x="210" y="110" class="ct">10350</text>
+
+    <rect class="cell" x="0"   y="116" width="90" height="22"/>
+    <text x="45"  y="132" class="ct">Sweden</text>
+    <rect class="cell" x="90"  y="116" width="70" height="22"/>
+    <text x="125" y="132" class="ct">2021</text>
+    <rect class="cell" x="160" y="116" width="100" height="22"/>
+    <text x="210" y="132" class="ct">10380</text>
+
+    <rect class="cell" x="0"   y="138" width="90" height="22"/>
+    <text x="45"  y="154" class="ct">Sweden</text>
+    <rect class="cell" x="90"  y="138" width="70" height="22"/>
+    <text x="125" y="154" class="ct">2022</text>
+    <rect class="cell" x="160" y="138" width="100" height="22"/>
+    <text x="210" y="154" class="ct">10420</text>
+
+    <!-- Denmark -->
+    <rect class="cell" x="0"   y="160" width="90" height="22"/>
+    <text x="45"  y="176" class="ct">Denmark</text>
+    <rect class="cell" x="90"  y="160" width="70" height="22"/>
+    <text x="125" y="176" class="ct">2020</text>
+    <rect class="cell" x="160" y="160" width="100" height="22"/>
+    <text x="210" y="176" class="ct">5831</text>
+
+    <rect class="cell" x="0"   y="182" width="90" height="22"/>
+    <text x="45"  y="198" class="ct">Denmark</text>
+    <rect class="cell" x="90"  y="182" width="70" height="22"/>
+    <text x="125" y="198" class="ct">2021</text>
+    <rect class="cell" x="160" y="182" width="100" height="22"/>
+    <text x="210" y="198" class="ct">5840</text>
+
+    <rect class="cell" x="0"   y="204" width="90" height="22"/>
+    <text x="45"  y="220" class="ct">Denmark</text>
+    <rect class="cell" x="90"  y="204" width="70" height="22"/>
+    <text x="125" y="220" class="ct">2022</text>
+    <rect class="cell" x="160" y="204" width="100" height="22"/>
+    <text x="210" y="220" class="ct">5857</text>
+  </g>
+
+  <text x="250" y="510" class="note">No information gained or lost — the pivot is an isomorphism</text>
+</svg>

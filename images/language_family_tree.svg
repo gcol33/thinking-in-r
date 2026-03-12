@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 560" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <style>
+    .box { fill: none; stroke: #111; stroke-width: 1.3; rx: 4; }
+    .name { font-size: 18px; font-weight: bold; fill: #111; text-anchor: middle; }
+    .year { font-size: 13px; fill: #777; font-family: 'Courier New', monospace; text-anchor: middle; }
+    .ann { font-size: 13px; fill: #444; font-style: italic; }
+  </style>
+
+  <!-- Church  y=15..71 -->
+  <rect class="box" x="105" y="15" width="240" height="56"/>
+  <text x="225" y="40" class="name">Church's λ-calculus</text>
+  <text x="225" y="58" class="year">1936</text>
+
+  <!-- arrow DOWN: stem y=71..110, head y=110..120 -->
+  <line x1="225" y1="71" x2="225" y2="110" stroke="#111" stroke-width="1.2"/>
+  <polygon points="225,120 220,110 230,110" fill="#111"/>
+  <text x="245" y="97" class="ann">expressions, functions, application</text>
+
+  <!-- Lisp  y=120..176 -->
+  <rect class="box" x="135" y="120" width="180" height="56"/>
+  <text x="225" y="145" class="name">Lisp</text>
+  <text x="225" y="163" class="year">1958</text>
+
+  <!-- arrow DOWN -->
+  <line x1="225" y1="176" x2="225" y2="215" stroke="#111" stroke-width="1.2"/>
+  <polygon points="225,225 220,215 230,215" fill="#111"/>
+  <text x="245" y="202" class="ann">functions as data, code as data, GC</text>
+
+  <!-- Scheme  y=225..281 -->
+  <rect class="box" x="135" y="225" width="180" height="56"/>
+  <text x="225" y="250" class="name">Scheme</text>
+  <text x="225" y="268" class="year">1975</text>
+
+  <!-- arrow DOWN -->
+  <line x1="225" y1="281" x2="225" y2="320" stroke="#111" stroke-width="1.2"/>
+  <polygon points="225,330 220,320 230,320" fill="#111"/>
+  <text x="245" y="307" class="ann">lexical scoping, minimalism</text>
+
+  <!-- S  y=330..386 -->
+  <rect class="box" x="160" y="330" width="130" height="56"/>
+  <text x="225" y="355" class="name">S</text>
+  <text x="225" y="373" class="year">1976</text>
+
+  <!-- arrow DOWN -->
+  <line x1="225" y1="386" x2="225" y2="425" stroke="#111" stroke-width="1.2"/>
+  <polygon points="225,435 220,425 230,425" fill="#111"/>
+  <text x="245" y="411" class="ann">vectorization, REPL, &lt;- , copy-on-modify</text>
+
+  <!-- R  y=435..491 -->
+  <rect class="box" x="160" y="435" width="130" height="56"/>
+  <text x="225" y="460" class="name">R</text>
+  <text x="225" y="478" class="year">1993</text>
+
+  <text x="225" y="525" class="ann" text-anchor="middle">packages (CRAN), open-source community</text>
+</svg>

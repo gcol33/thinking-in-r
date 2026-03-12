@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 420" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <style>
+    .box { fill: none; stroke: #111; stroke-width: 1.3; rx: 4; }
+    .boxhl { fill: #f4f4f4; stroke: #111; stroke-width: 2.2; rx: 4; }
+    .diamond { fill: none; stroke: #111; stroke-width: 1.3; }
+    .fn { font-size: 15px; font-family: 'Courier New', monospace; fill: #111; text-anchor: middle; }
+    .fnb { font-size: 15px; font-family: 'Courier New', monospace; fill: #111; text-anchor: middle; font-weight: bold; }
+    .sm { font-size: 13px; font-family: 'Courier New', monospace; fill: #111; text-anchor: middle; }
+    .title { font-size: 17px; font-weight: bold; fill: #111; text-anchor: middle; }
+    .lbl { font-size: 13px; fill: #555; font-style: italic; }
+    .yn { font-size: 13px; fill: #111; font-weight: bold; }
+    .note { font-size: 13px; fill: #555; font-style: italic; text-anchor: middle; }
+  </style>
+
+  <text x="250" y="24" class="title">S3 dispatch: how R finds the right method</text>
+
+  <!-- Step 1: call generic -->
+  <rect class="box" x="135" y="44" width="230" height="36"/>
+  <text x="250" y="68" class="fnb">print(x)</text>
+
+  <!-- Arrow down -->
+  <line x1="250" y1="80" x2="250" y2="90" stroke="#111" stroke-width="1.2"/>
+  <polygon points="250,100 245,90 255,90" fill="#111"/>
+
+  <!-- Step 2: inspect class -->
+  <rect class="box" x="135" y="100" width="230" height="36"/>
+  <text x="250" y="124" class="fn">class(x) → "Date"</text>
+
+  <!-- Arrow down -->
+  <line x1="250" y1="136" x2="250" y2="146" stroke="#111" stroke-width="1.2"/>
+  <polygon points="250,156 245,146 255,146" fill="#111"/>
+
+  <!-- Step 3: construct method name -->
+  <rect class="box" x="115" y="156" width="270" height="36"/>
+  <text x="250" y="180" class="fn">paste0("print", ".", "Date")</text>
+
+  <!-- Arrow down -->
+  <line x1="250" y1="192" x2="250" y2="202" stroke="#111" stroke-width="1.2"/>
+  <polygon points="250,212 245,202 255,202" fill="#111"/>
+
+  <!-- Step 4: diamond — exists? -->
+  <polygon class="diamond" points="250,212 340,250 250,288 160,250"/>
+  <text x="250" y="246" class="sm">print.Date</text>
+  <text x="250" y="262" class="sm">exists?</text>
+
+  <!-- YES branch (left): curved path from diamond to box -->
+  <text x="138" y="242" class="yn">yes</text>
+  <path d="M160,250 L105,250 L105,286" fill="none" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="105,296 100,286 110,286" fill="#111"/>
+
+  <rect class="boxhl" x="15" y="296" width="180" height="36"/>
+  <text x="105" y="320" class="fnb">print.Date(x)</text>
+
+  <!-- NO branch (right): curved path from diamond to box -->
+  <text x="362" y="242" class="yn">no</text>
+  <path d="M340,250 L395,250 L395,286" fill="none" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/>
+  <polygon points="395,296 390,286 400,286" fill="#111"/>
+
+  <rect class="box" x="305" y="296" width="180" height="36"/>
+  <text x="395" y="320" class="fn">print.default(x)</text>
+
+  <!-- Labels -->
+  <text x="105" y="348" class="lbl" text-anchor="middle">specialized method</text>
+  <text x="395" y="348" class="lbl" text-anchor="middle">fallback</text>
+
+  <!-- Bottom note -->
+  <text x="250" y="390" class="note">Methods belong to generics, not to classes.</text>
+  <text x="250" y="406" class="note">Anyone can add a method for any class to any generic.</text>
+</svg>

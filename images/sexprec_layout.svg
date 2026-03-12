@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 220" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <style>
+    .cell { stroke: #111; stroke-width: 1.2; }
+    .hdr { fill: #f7f7f7; }
+    .dat { fill: #eaeaea; }
+    .fn { font-size: 13px; font-family: 'Courier New', monospace; font-weight: bold; fill: #111; text-anchor: middle; }
+    .fs { font-size: 11px; fill: #777; text-anchor: middle; font-style: italic; }
+    .title { font-size: 18px; font-weight: bold; fill: #111; text-anchor: middle; }
+    .brl { font-size: 13px; fill: #555; font-style: italic; text-anchor: middle; }
+    .note { font-size: 14px; fill: #444; text-anchor: middle; }
+    .det { font-size: 13px; fill: #777; font-style: italic; text-anchor: middle; }
+  </style>
+
+  <text x="250" y="24" class="title">SEXPREC  (R's internal vector representation)</text>
+
+  <!-- Single row: header fields then data cells -->
+  <g transform="translate(10,44)">
+    <!-- Header fields -->
+    <rect class="cell hdr" x="0"   y="0" width="70" height="46"/>
+    <text x="35"  y="18" class="fn">sxpinfo</text>
+    <text x="35"  y="36" class="fs">type, gc</text>
+
+    <rect class="cell hdr" x="70"  y="0" width="60" height="46"/>
+    <text x="100" y="18" class="fn">attrib</text>
+    <text x="100" y="36" class="fs">SEXP →</text>
+
+    <rect class="cell hdr" x="130" y="0" width="60" height="46"/>
+    <text x="160" y="18" class="fn">length</text>
+    <text x="160" y="36" class="fs">R_xlen_t</text>
+
+    <!-- Data cells -->
+    <rect class="cell dat" x="190" y="0" width="60" height="46"/>
+    <text x="220" y="30" class="fn">d[0]</text>
+
+    <rect class="cell dat" x="250" y="0" width="60" height="46"/>
+    <text x="280" y="30" class="fn">d[1]</text>
+
+    <rect class="cell dat" x="310" y="0" width="60" height="46"/>
+    <text x="340" y="30" class="fn">d[2]</text>
+
+    <rect class="cell dat" x="370" y="0" width="60" height="46"/>
+    <text x="400" y="30" class="fn">d[3]</text>
+
+    <rect class="cell dat" x="430" y="0" width="40" height="46"/>
+    <text x="450" y="30" class="fn" fill="#999">…</text>
+  </g>
+
+  <!-- Brace: header -->
+  <line x1="10" y1="98" x2="200" y2="98" stroke="#888" stroke-width="0.8"/>
+  <line x1="105" y1="98" x2="105" y2="106" stroke="#888" stroke-width="0.8"/>
+  <text x="105" y="122" class="brl">header (fixed size)</text>
+
+  <!-- Brace: data -->
+  <line x1="200" y1="98" x2="480" y2="98" stroke="#888" stroke-width="0.8"/>
+  <line x1="340" y1="98" x2="340" y2="106" stroke="#888" stroke-width="0.8"/>
+  <text x="340" y="122" class="brl">data[] (contiguous)</text>
+
+  <!-- Arrow -->
+  <line x1="120" y1="150" x2="390" y2="150" stroke="#111" stroke-width="1.2"/>
+  <polygon points="400,150 390,145 390,155" fill="#111"/>
+  <text x="260" y="170" class="note">sequential access → cache-friendly</text>
+
+  <text x="250" y="208" class="det">x + y walks two data[] arrays in lockstep — no pointer chasing</text>
+</svg>
