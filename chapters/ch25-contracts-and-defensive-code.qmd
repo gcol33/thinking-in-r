@@ -409,5 +409,5 @@ The best validation is the kind you don't have to write. A function with a clear
 
 ## Summary
 
-We opened with a silent failure: a function that returns the wrong answer without telling anyone. Every tool in this chapter, from `stop()` to `tryCatch()` to `match.arg()` to S7 typed properties, exists to prevent that silence. Validate at the boundary. Write error messages that say what was expected and what was received. Catch errors only when you have a recovery plan. And design interfaces that make misuse difficult in the first place, so the validation you do write is a safety net, not the only thing holding the bridge up.
+Silent failures are the worst kind of bug: the function returns an answer, and the answer is wrong, and nothing tells you. Validate at the boundary. Write error messages that say what was expected and what was received. Catch errors only when you have a recovery plan. And design interfaces that make misuse difficult in the first place, so the validation you write covers less ground.
 
