@@ -179,7 +179,7 @@ trampoline(factorial_thunk, 1000)
 
 That second call churns through 1,000 iterations without growing the stack at all; each "recursive" step returns a closure, and the `while` loop in `trampoline` calls it, bouncing like a ball on a trampoline (hence the name). Stack depth stays at O(1) no matter how deep the logical recursion goes.
 
-The pattern works for any tail-recursive function: rewrite the tail call as a thunk and let the trampoline do the looping. The cost is one closure allocation per step, which is cheap. The CRAN package `trampoline` provides a polished implementation with better error handling, but the core idea is exactly this `while` loop.
+The pattern works for any tail-recursive function: rewrite the tail call as a thunk and let the trampoline do the looping. The cost is one closure allocation per step, which is cheap. The CRAN package `trampoline` provides a polished implementation with better error handling, but the core idea is exactly this `while` loop. The trampoline frees recursion from the stack, but notice that `factorial_thunk` still refers to itself by name inside the returned closure. What if you wanted recursion without even that?
 
 ::: callout-tip
 ## Opinion
@@ -254,7 +254,9 @@ binary_search(1:100, 73)
 
 ## Recursive list processing {#sec-recursive-lists}
 
-Nested lists are R's tree structure, and recursion is the natural way to walk them. Suppose you need to extract all numeric values buried somewhere inside an arbitrarily nested list, but you don't know how deep the nesting goes or where the numbers hide:
+Nested lists are R's tree structure, and recursion is the natural way to walk them. You might think `unlist()` already handles this, but `unlist()` flattens blindly: it discards the nesting, coerces everything to a common type, and gives you no control over which elements to keep or transform. When the tree has mixed types or you need to preserve structure while operating on selected leaves, hand-written recursion recovers what `unlist()` throws away.
+
+Suppose you need to extract all numeric values buried somewhere inside an arbitrarily nested list, but you don't know how deep the nesting goes or where the numbers hide:
 
 ```{r}
 find_numbers <- function(x) {
@@ -293,7 +295,7 @@ With `how = "replace"`, the nesting is preserved: character elements are upperca
 
 ## Mutual recursion {#sec-mutual-recursion}
 
-Two functions can call each other, passing control back and forth like a conversation. The classic (if deliberately silly) example:
+Two functions can call each other, passing control back and forth. Mutual recursion appears naturally in recursive descent parsers, where each grammar rule becomes a function that may call functions for other rules, and in state machines, where each state is a function that transitions by calling another state's function. The pattern is easier to see, though, in a stripped-down example:
 
 ```{r}
 is_even <- function(n) {
@@ -310,9 +312,9 @@ is_even(4)
 is_odd(7)
 ```
 
-Each function delegates to the other, peeling off one layer at a time. Nobody would check parity this way in practice, but mutual recursion appears naturally in recursive descent parsers (where each grammar rule becomes a function that may call functions for other rules) and in state machines (where each state is a function that transitions by calling another state's function).
+Each function delegates to the other, peeling off one layer at a time. Nobody would check parity this way, but the structure is identical to what a parser does when an expression rule calls a term rule that calls an expression rule again.
 
-The stack cost is the same as ordinary recursion, doubled: each round trip consumes two frames. For deep mutual recursion, trampolining works identically; just have both functions return thunks instead of calling each other directly.
+The stack cost is the same as ordinary recursion, doubled: each round trip consumes two frames. For deep mutual recursion, trampolining works identically; just have both functions return thunks instead of calling each other directly. But mutual recursion raises a subtler question than stack depth: both `is_even` and `is_odd` refer to each other by name. The trampoline removed the stack constraint; can anything remove the naming constraint?
 
 
 ## Fixed-point combinators {#sec-fixed-point-combinators}

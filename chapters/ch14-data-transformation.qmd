@@ -126,7 +126,9 @@ You can rename columns inside `select()`:
 select(penguins, species, mass = body_mass_g)
 ```
 
-This selects `species` and `body_mass_g`, renaming the latter to `mass`. If you want to rename without dropping columns, use `rename()`:
+This selects `species` and `body_mass_g`, renaming the latter to `mass`. But notice what happened: every other column is gone. Renaming inside `select()` is really selection-with-renaming, not renaming-with-selection. If you want a new name but need the other six columns to survive, you have to decide: do you list every column you want to keep, or do you use a different verb entirely? That trade-off between concision and preservation comes up constantly.
+
+If you want to rename without dropping columns, use `rename()`:
 
 ```{r}
 #| results: hide
@@ -167,7 +169,7 @@ mutate(
 )
 ```
 
-`mass_lb` uses `mass_kg`, which was defined one line above; dplyr evaluates them in order, top to bottom.
+`mass_lb` uses `mass_kg`, which was defined one line above; dplyr evaluates them in order, top to bottom. This is actually surprising. R normally evaluates function arguments independently of each other. If you called a plain function with two arguments, the second could not refer to the first. `mutate()` breaks that expectation: it processes columns sequentially, so each expression can see everything defined above it. Reverse the order and `mass_lb` would fail, because `mass_kg` would not exist yet.
 
 Any function that works on vectors works inside `mutate()`: `log()`, `sqrt()`, `cumsum()`, `lag()`, `lead()`, `percent_rank()`. The conditional functions from @sec-vectorized-conditionals work here too:
 
@@ -433,6 +435,17 @@ The reason dplyr pipelines compose so cleanly is that every verb has the same ty
 ## Opinion
 Learn the base R equivalents. You will encounter them in other people's code, in Stack Overflow answers, in older packages. But write dplyr in your own work, because the verbs compose, the names communicate intent, and the argument order is consistent. When you read `filter(penguins, species == "Adelie")`, the operation is the function name. When you read `penguins[penguins$species == "Adelie", ]`, you have to parse the indexing to understand what's happening. That parsing cost, multiplied across every line of a script, is exactly the kind of friction Codd's algebra was designed to remove.
 :::
+
+Now you have every verb you need to answer the question from the start of the chapter:
+
+```{r}
+penguins |>
+  filter(!is.na(body_mass_g)) |>
+  group_by(species) |>
+  summarise(mean_mass = mean(body_mass_g))
+```
+
+Gentoo penguins average roughly 5,076 grams; Adelie average 3,706. The answer was always in the data. Getting to it required four verbs and five lines.
 
 
 ### Exercises {.unnumbered}

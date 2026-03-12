@@ -167,7 +167,7 @@ six  <- succ(five)
 to_int(six)
 ```
 
-Now arithmetic. Addition: `add(m)(n)` means "apply `f` `m` times, then `n` more times."
+Successor is straightforward. You might expect addition to follow the same logic, just doing `succ` repeatedly. But look at how it actually works:
 
 ```{r}
 add <- function(m) function(n) function(f) function(x) m(f)(n(f)(x))
@@ -409,13 +409,13 @@ The Curry-Howard correspondence (named for Haskell Curry, who noticed the connec
 
 ## Functors, monoids, and friends {#sec-category-connections}
 
-Category theory provides a vocabulary for patterns that recur across different mathematical structures. Three of those patterns have already appeared in this book.
+Three patterns have appeared repeatedly in this book, and they all have names that sound intimidating. The names are beside the point. What matters is that these patterns are not coincidences. Category theory provides a vocabulary for patterns that recur across different mathematical structures, and once you see the vocabulary, you start noticing that R's functional design has been using these structures all along.
 
-**Functors.** A functor is a mapping between categories that preserves structure. In programming terms: if you have a container and a function, a functor lets you apply the function to the contents without changing the container's shape. `map(my_list, sqrt)` applies `sqrt` inside the list, preserving the list structure. `mutate(df, x = sqrt(x))` applies a function inside a data frame, preserving the data frame structure. `lapply()` from @sec-lapply-sapply is a functor. So is `map()`.
+**Functors.** A functor is a mapping between categories that preserves structure. In programming terms: if you have a container and a function, a functor lets you apply the function to the contents without changing the container's shape. `map(my_list, sqrt)` applies `sqrt` inside the list, preserving the list structure. `mutate(df, x = sqrt(x))` applies a function inside a data frame, preserving the data frame structure. `lapply()` from @sec-lapply-sapply is a functor. So is `map()`. What makes them trustworthy is that they all obey the same two laws (identity and composition). A function that mapped elements but scrambled their relationships would be useless for pipelines. Functors preserve structure, and that constraint is exactly why `map |> map |> map` chains work reliably.
 
-**Monoids.** A monoid is a set with an associative binary operation and an identity element. Addition on numbers: `(a + b) + c = a + (b + c)`, identity is 0. Multiplication: identity is 1. String concatenation: identity is `""`. `Reduce()` works on any monoid (@sec-reduce-and-accumulate), and that is not an accident; `Reduce()` *is* the monoid pattern. It needs associativity so the folding direction doesn't matter, and it needs an identity element to handle the empty case.
+**Monoids.** A monoid is a set with an associative binary operation and an identity element. Addition on numbers: `(a + b) + c = a + (b + c)`, identity is 0. Multiplication: identity is 1. String concatenation: identity is `""`. `Reduce()` works on any monoid (@sec-reduce-and-accumulate), and that is not an accident; `Reduce()` *is* the monoid pattern. It needs associativity so the folding direction doesn't matter, and it needs an identity element to handle the empty case. But not every binary operation qualifies. Subtraction does not, because `(5 - 3) - 1` is not `5 - (3 - 1)`. The operations that fold cleanly are precisely the monoids, and the operations `Reduce()` fails on are the ones that violate the monoid laws.
 
-**Natural transformations.** A natural transformation converts one functor into another while preserving the relationships between elements. `pivot_longer()` and `pivot_wider()` (@sec-pivot-longer, @sec-pivot-wider) transform the shape of a data frame without losing information: the data can be recovered by applying the inverse transformation. That reversibility is precisely what makes them natural transformations rather than arbitrary reshaping operations.
+**Natural transformations.** A natural transformation converts one functor into another while preserving the relationships between elements. `pivot_longer()` and `pivot_wider()` (@sec-pivot-longer, @sec-pivot-wider) transform the shape of a data frame without losing information: the data can be recovered by applying the inverse transformation. That reversibility is precisely what makes them natural transformations rather than arbitrary reshaping operations. If pivoting destroyed information, you would not be able to pivot back.
 
 None of this requires learning category theory. But these patterns keep showing up because they reflect mathematical structure, and R's functional design makes them visible. Church encodings prove this at the foundational level. For day-to-day work, R has practical tools that put mathematical computation within reach.
 
@@ -429,7 +429,7 @@ None of this requires learning category theory. But these patterns keep showing 
 
 ## Practical mathematics in R {#sec-practical-math}
 
-Church encodings demonstrate the foundations. For day-to-day mathematical computation, R has practical tools.
+Church encodings prove R can do mathematics from nothing. But can it do mathematics that matters? Symbolic algebra, arbitrary precision, number theory: each requires capabilities that most R users never discover, because the packages that provide them sit outside the usual statistical workflow.
 
 **Symbolic mathematics.** The `Ryacas` package connects R to the Yacas computer algebra system:
 

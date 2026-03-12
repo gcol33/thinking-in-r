@@ -26,7 +26,7 @@ It was the same number.
 
 ## Instructions and state {#sec-turing}
 
-Alan Turing, a graduate student at Cambridge who would go on to break the Enigma code (the German military cipher) in World War II and become the father of modern computing, imagined computation as a machine operating on a tape. The machine reads a symbol from a cell, writes a new one, shifts left or right, and moves to a new internal state. Then it does it again. Turing proved that this device, given the right set of rules, can carry out any computation that can be precisely described. This is what we now call a computer.
+Alan Turing, a graduate student at Cambridge who would go on to break the Enigma code (the German military cipher) in World War II and become the father of modern computing, imagined computation as a machine operating on a tape. The machine reads a symbol from a cell, writes a new one, shifts left or right, and moves to a new internal state. Then it does it again. Turing proved that this device, given the right set of rules, can carry out any computation that can be precisely described. This is what we now call a computer -- but the important thing is not the machine itself.
 
 What matters is the picture of computation the tape implies. A Turing machine *does* things: it reads, writes, moves, changes. It has memory (the tape), and that memory changes over time. A program, in this view, is a sequence of instructions that progressively modify stored values until the answer emerges.
 
@@ -54,7 +54,7 @@ Alonzo Church, who happened to be Turing's doctoral advisor at Princeton, was wo
 2. Functions: `λx. x + 1` (take `x`, return `x + 1`)
 3. Application: `(λx. x + 1)(5)` gives `6`
 
-There is no tape, no memory, no state that changes over time. You write an expression and simplify it by applying functions to arguments until you reach a value that can't be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing's machine. The equivalence (known as the Church-Turing thesis) was one of the foundational results of twentieth-century mathematics.
+There is no tape, no memory, no state that changes over time. You write an expression and simplify it by applying functions to arguments until you reach a value that can't be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing's machine. The equivalence, known as the Church-Turing thesis, meant that memory and instructions were never necessary for computation in the first place. Everything a Turing machine can do, pure expression can do without a single mutable cell.
 
 What does the same sum look like in this world?
 

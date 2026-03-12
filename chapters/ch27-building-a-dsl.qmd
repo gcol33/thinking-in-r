@@ -18,7 +18,7 @@ Peter Landin described the idea in 1966: instead of forcing programmers to think
 
 The test of a DSL is not cleverness of syntax but consistency of mapping: every domain concept corresponds to a language construct, and the correspondence holds without exceptions that the user must memorize. R's existing DSLs each take a different approach to achieving this.
 
-**Formulas.** `y ~ x1 + x2` is R's oldest DSL. The `~` operator creates a formula object storing two expressions (the left- and right-hand sides) plus the environment where it was created; it computes nothing. Inside the formula, `+` does not mean addition but "include this term," `*` means "include main effects and their interaction," and `:` means "interaction only." This is code that means something completely different from its usual meaning, interpreted not by R's evaluator but by `model.matrix()`. You explored this in @sec-formulas-as-expressions.
+**Formulas.** `y ~ x1 + x2` is R's oldest DSL. The `~` operator creates a formula object storing two expressions (the left- and right-hand sides) plus the environment where it was created; it computes nothing. Inside the formula, `+` does not mean addition but "include this term," `*` means "include main effects and their interaction," and `:` means "interaction only." This is code that means something completely different from its usual meaning, interpreted not by R's evaluator but by `model.matrix()`. You explored this in @sec-formulas-as-expressions. But formulas freeze structure at definition time. What if you want to build structure incrementally, adding pieces one at a time?
 
 **ggplot2.** The `+` operator for ggplot objects does not add numbers. It layers graphical components:
 
@@ -29,9 +29,9 @@ ggplot(mtcars, aes(x = wt, y = mpg)) +
   geom_smooth(method = "lm")
 ```
 
-`aes()` captures column names as expressions without evaluating them, while `+.gg` (the S3 method for `+` on ggplot objects) takes the existing plot and attaches the new layer. The plot builds incrementally, one `+` at a time, accumulating a list of layers, scales, and coordinates. This is an expression builder pattern: each `+` returns a new (or modified) plot object, and the final object is rendered only when printed.
+`aes()` captures column names as expressions without evaluating them, while `+.gg` (the S3 method for `+` on ggplot objects) takes the existing plot and attaches the new layer. The plot builds incrementally, one `+` at a time, accumulating a list of layers, scales, and coordinates. This is an expression builder pattern: each `+` returns a new (or modified) plot object, and the final object is rendered only when printed. Incremental building solves the formula problem, but it introduces a new one: every `+` is a standalone layer, with no awareness of what the other layers are doing. What if the verbs themselves need to know about the data?
 
-**dplyr.** `filter(penguins, species == "Adelie")` captures `species == "Adelie"` as an expression and evaluates it against the data frame using data masking (@sec-capture-evaluate). The pipe operator chains verbs together, each doing one thing: filter rows, select columns, create new columns, summarize groups. Because the verbs are S3 generics, they dispatch on the data source. `filter.data.frame` works on data frames; `filter.tbl_lazy` generates SQL. Same syntax, different backend.
+**dplyr.** `filter(penguins, species == "Adelie")` captures `species == "Adelie"` as an expression and evaluates it against the data frame using data masking (@sec-capture-evaluate). The pipe operator chains verbs together, each doing one thing: filter rows, select columns, create new columns, summarize groups. Because the verbs are S3 generics, they dispatch on the data source. `filter.data.frame` works on data frames; `filter.tbl_lazy` generates SQL. Same syntax, different backend. That generality comes at a cost, though: each verb is a separate function call, and the pipe threading them together is syntactic, not semantic. Could you collapse the whole pipeline into a single expression?
 
 **data.table.** `DT[i, j, by]` overloads the `[` operator so that all three arguments are captured by `substitute()` and evaluated in the data.table's scope. No pipe, no chain of function calls. Everything happens inside `[`, which is both concise and dense.
 
@@ -54,7 +54,7 @@ mapping <- ggplot2::aes(x = wt, y = mpg, color = cyl)
 mapping
 ```
 
-What comes back is a list of quosures, each pairing an expression (`wt`, `mpg`, `cyl`) with the environment where it was written. The column names were never evaluated; they were captured and stored for later.
+What comes back is a list of quosures, each pairing an expression (`wt`, `mpg`, `cyl`) with the environment where it was written. The column names were never evaluated; they were captured and stored for later. But capturing is only half the problem. The expression still has to find the right data at the right time, and the quosure's environment is the user's environment, not the data frame.
 
 ```{r}
 mapping$x
@@ -319,11 +319,11 @@ A DSL is an interface, and the same mistakes that make function APIs hard to use
 
 **Make errors readable.** When units do not match, the error says "cannot add m and s." When a conversion does not exist, it says "no conversion from m to min." Good error messages name the things the user wrote, not the implementation details, which is @sec-contracts-and-defensive-code applied to DSL design.
 
-**Make it composable.** Every expression in the DSL should return something usable as input to the next expression. `meters(5) + meters(3)` returns a `unit_val` that you can pass to `to()` or combine with more values; ggplot2's `+` returns a plot object ready for more layers. Composability comes from consistent types: operations on `unit_val` always return `unit_val`.
+**Make it composable.** Every expression in the DSL should return something usable as input to the next expression. `meters(5) + meters(3)` returns a `unit_val` that you can pass to `to()` or combine with more values; ggplot2's `+` returns a plot object ready for more layers. Composability comes from consistent types: operations on `unit_val` always return `unit_val`. Notice the tension with "keep the surface small": real composability often demands more operators, not fewer. If you can add unit values but not multiply them, the DSL is small but users will hit a wall the moment they need to compute velocity from distance and time. You have to decide which wall is worse: the cognitive load of a larger surface, or the frustration of an expressive dead end. There is no universal answer; the domain decides.
 
 **Do not surprise.** If your DSL overloads `+`, it should still be associative: `(a + b) + c` should equal `a + (b + c)`. If it redefines `*`, users will expect it to distribute over `+`. Violating mathematical expectations creates confusion even when the behavior is internally consistent.
 
-**Document the grammar.** A DSL has a grammar: what expressions are valid, what they mean, how they compose. Write it down, even informally. "A `unit_val` can be combined with `+` or `-` if units match. Use `to()` to convert between units. Constructors: `meters()`, `seconds()`, `kg()`." Five sentences. That is the complete grammar, and a user who reads it can write any valid expression in the DSL without further instruction.
+**Document the grammar.** A DSL has a grammar: what expressions are valid, what they mean, how they compose. Write it down, even informally. "A `unit_val` can be combined with `+` or `-` if units match. Use `to()` to convert between units. Constructors: `meters()`, `seconds()`, `kg()`." Five sentences. That is the complete grammar, and a user who reads it can write any valid expression in the DSL without further instruction. Whether five sentences will still be enough after your DSL has lived in production for a year is a different question.
 
 
 ## Putting it all together {#sec-dsl-together}

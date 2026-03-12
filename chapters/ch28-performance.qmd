@@ -1,5 +1,7 @@
 
-So here is where you stand: you can find bottlenecks, eliminate unnecessary copies, hand tight loops to compiled code, and split independent work across cores. But the single most effective optimization, the one that pays dividends in every program you will ever write, remains the one at the top of the list. Measure first. The profile never lies, even when your intuition does.# Performance {#sec-performance}
+So here is where you stand: you can find bottlenecks, eliminate unnecessary copies, hand tight loops to compiled code, and split independent work across cores. But the optimization that actually matters most is still the one at the top of the list. Measure first. Your profiler will catch things your intuition misses every time.
+
+# Performance {#sec-performance}
 
 ```{r}
 #| include: false
@@ -266,7 +268,7 @@ dt <- as.data.table(sales)
 dt[year == 2024, .(total = sum(revenue)), by = region]
 ```
 
-Both produce the same result. The data.table version is more compact and typically faster on large data; the dplyr version is more readable if you think in pipes. Neither is wrong. But both share a limitation that matters once your ambitions outgrow your RAM: they operate entirely in memory.
+Both produce the same result. The data.table version is more compact and typically faster on large data; the dplyr version is more readable if you think in pipes. Neither is wrong. But both share a limitation that matters once your ambitions outgrow your RAM: they operate entirely in memory. However fast data.table is, it still loads the entire dataset into RAM before it touches a single row.
 
 ### Exercises {.unnumbered}
 
@@ -277,6 +279,8 @@ Both produce the same result. The data.table version is more compact and typical
 ## Columnar engines: Arrow and DuckDB {#sec-columnar-engines}
 
 What happens when your data no longer fits in memory, or when it does fit but you want analytics that finish before your coffee cools?
+
+You have probably already hit the wall. A grouped `summarise()` on 50 million rows takes minutes and turns your laptop fan into a jet engine. `read.csv()` on a 10 GB file eats all available RAM and crashes the session without producing a single result. The data is not even big by industry standards; R just was not designed to hold it all at once and churn through it.
 
 **Arrow** (`arrow` package) reads Parquet and Feather files and processes them with dplyr syntax. Operations are lazy: they build a query plan, then execute it in a single pass, loading only the columns and rows you actually need:
 
@@ -387,6 +391,8 @@ fn sum_rust(x: &[f64]) -> f64 {
 
 ::: callout-tip
 ## Opinion
+The three options are not interchangeable items on a menu; they sit at different points on a genuine trade-off. Rcpp gives you the deepest ecosystem and the smoothest on-ramp, but nothing stops you from writing a buffer overrun that corrupts memory silently and crashes R ten minutes later. Rust catches those errors at compile time, before your code ever runs, but its R integration is younger and the community smaller, so you will find fewer examples and hit more rough edges. Raw C gives you total control and zero dependencies at the cost of managing every allocation yourself.
+
 Start with Rcpp. It has the largest community, the most examples, and the gentlest on-ramp. Consider Rust if you want compile-time safety guarantees. Consider raw C only if you need zero dependencies.
 :::
 

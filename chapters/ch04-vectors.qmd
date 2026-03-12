@@ -24,7 +24,7 @@ length("hello")
 length(TRUE)
 ```
 
-Why would a language erase the distinction between "one thing" and "many things"? Because S (@sec-s-language), the language R descends from, was built for people who work with columns of data, not individual numbers. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale.
+Why would a language erase the distinction between "one thing" and "many things"? Because S (@sec-s-language), the language R descends from, was built for people who work with columns of data, not individual numbers. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale, which means every operation you write, from arithmetic to comparison, has to reckon with that choice.
 
 `x * 2` works the same whether `x` has one element or a million, because `x` is always a vector and R doesn't need a special case for scalars; it just operates on vectors. But how do you build them?
 
@@ -79,7 +79,7 @@ rep("hello", 3)
 
 `1:5` generates integers from 1 to 5, `seq()` generates a sequence with a specified step size, and `rep()` repeats a value.
 
-R has four types you'll use constantly, and two you'll rarely see:
+R has four atomic types you will use constantly, and every one of them follows a pecking order that R enforces behind your back. Two more exist but rarely matter:
 
 ```{r}
 typeof(3.14)
@@ -342,7 +342,7 @@ One consequence: in Haskell, the possibility of absence is built into the type s
 
 Rust adopted the same idea for different reasons. Graydon Hoare started Rust at Mozilla in 2006 because C and C++ gave you direct control over memory but no protection against the bugs that come with it: buffer overflows, use-after-free, data races. He borrowed heavily from Haskell's type system, and Rust's equivalent of `Maybe` is called `Option`: a value is `Some(42)` or `None`, and `None.map(f)` returns `None`. The compiler rejects any code that forgets to check whether a value is present.
 
-R's approach is looser: nothing stops you from ignoring `NA`, and you will not find out until your results look wrong. But the underlying rule is the same. If any input is unknown, the output is unknown. R threads this uncertainty through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point.
+R's approach is looser: nothing stops you from ignoring `NA`, and you will not find out until your results look wrong. But the underlying rule is the same. If any input is unknown, the output is unknown. R threads this uncertainty through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point. The question is what this contagion looks like when you have 344 measurements and a handful of gaps.
 
 
 ### Exercises {.unnumbered}

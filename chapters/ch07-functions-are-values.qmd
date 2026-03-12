@@ -59,6 +59,8 @@ sapply(1:5, function(x) x^2)
 
 `function(x) x^2` creates a function right where it is needed, with no name and no assignment; it exists only for this one call to `sapply`, and then it vanishes. This is an *anonymous function*, and you already saw a brief example in @sec-functions-are-values.
 
+The `function(x)` prefix is verbose enough that many R programmers avoided anonymous functions for years, defaulting to named helpers even for throwaway operations. The language eventually responded.
+
 R 4.1 introduced a shorter syntax:
 
 ```{r}
@@ -94,7 +96,9 @@ If you use a function twice, name it. Anonymous functions belong inside `sapply`
 
 ## Storing functions in lists {#sec-functions-in-lists}
 
-If functions are values, they should fit anywhere a value fits, including inside a list:
+Consider a data frame with mixed column types: some numeric, some character, some logical. You want a one-number summary of each column, but `mean` is meaningless for character data and `length(unique(...))` is meaningless for logicals. The brute-force solution is a chain of `if`/`else if` blocks that checks each column's type and calls the right function. It works for three types. It gets ugly at six. At twelve, it is unreadable, and every new type means hunting through the chain to find the right insertion point.
+
+The problem is not the logic; it is that the logic is tangled with the control flow. If functions are values, you can separate the two: store the logic in a list, keyed by type, and let a single lookup replace the entire chain.
 
 ```{r}
 transforms <- list(
@@ -108,9 +112,9 @@ transforms$triple(5)
 transforms$negate(5)
 ```
 
-`transforms` is a list of three functions, accessed with `$` like any named list element.
+`transforms` is a list of three functions, accessed with `$` like any named list element. A list of functions keyed by name is a *dispatch table*: given a key, it returns the function you need, no conditionals required.
 
-If you have data that needs different processing depending on a column type, you can store the processing functions in a named list and look up the right one:
+Here is the column-summary problem solved with a dispatch table:
 
 ```{r}
 summarizers <- list(
@@ -124,7 +128,9 @@ summarizers$character(c("a", "b", "a", "c"))
 summarizers$logical(c(TRUE, FALSE, TRUE, TRUE))
 ```
 
-The list acts as a dispatch table: given a type name, it returns the appropriate function. Package internals, Shiny applications, and testing frameworks all use lists of functions to select behavior at runtime. The dispatch table stores functions that already exist, but you can also create new functions on the fly.
+Adding a new type means adding one entry to the list. No `if`/`else` to restructure, no risk of breaking the branches above or below. Package internals, Shiny applications, and testing frameworks all use this pattern to select behavior at runtime.
+
+The dispatch table stores functions that already exist. But what if you need to manufacture a function that does not exist yet?
 
 
 ### Exercises {.unnumbered}
@@ -158,7 +164,7 @@ add10(3)
 
 `add5` and `add10` are both functions, built by `make_adder` with different values of `n`, and each one remembers the value it was created with. `add5` remembers 5; `add10` remembers 10. How?
 
-When `make_adder(5)` runs, it creates a local environment where `n = 5`. The returned function `function(x) x + n` was defined inside that environment. When you later call `add5(3)`, R finds `n` through lexical scoping (@sec-scope-first-look): it looks in the environment where the function was defined and finds `n = 5`.
+When `make_adder(5)` runs, it creates a local environment where `n = 5`. The returned function `function(x) x + n` was defined inside that environment. When you later call `add5(3)`, R finds `n` through lexical scoping (@sec-scope-first-look): it looks in the environment where the function was defined and finds `n = 5`. But that environment was created during a function call that has already returned. The call is gone. So where does the environment live?
 
 A function that travels with its creation environment is called a *closure*. Every function in R is technically a closure, but the term earns its weight when a function returned by another function captures variables from the enclosing scope. Closures are powerful enough to deserve their own chapter (@sec-closures-and-scope); the mechanism that makes `make_adder` work has consequences far beyond adding numbers.
 
