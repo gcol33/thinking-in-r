@@ -5,7 +5,6 @@ project:
 book:
   title: "Thinking in R"
   date: "2026-03-08"
-  date-modified: today
   date-format: "MMMM D, YYYY"
   reader-mode: true
   site-url: https://gillescolling.com/thinking-in-r/

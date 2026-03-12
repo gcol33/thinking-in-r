@@ -1,7 +1,7 @@
 # Preface {.unnumbered}
 
 ::: {.content-visible when-format="html"}
-*Last updated: {{< meta date-modified >}}*
+*Last updated: {{< meta date >}}*
 
 <div class="book-cover-hero">
   <img src="cover.svg" alt="Thinking in R book cover" />
