@@ -5,13 +5,13 @@
 source(here::here("_common.R"))
 ```
 
-Suppose you write `y ~ x1 + x2` and R does not add anything. The plus sign, which in every other context means addition, now means "include this predictor in the model." The tilde computes nothing; it freezes two expressions into an object for later interpretation. You have been using this notation since your first linear regression, probably without asking the obvious question: how does R let ordinary operators mean something completely different depending on context? The answer runs through everything you have learned so far, and it opens a door to something much stranger than model fitting.
+Suppose you write `y ~ x1 + x2` and R does not add anything. The plus sign, which in every other context means addition, now means "include this predictor in the model." The tilde computes nothing; it freezes two expressions into an object for later interpretation. You have been using this notation since your first linear regression, probably without asking the obvious question: how does R let ordinary operators mean something completely different depending on context? The answer runs through everything you have learned so far: non-standard evaluation, operator overloading, and S3 dispatch combine to let you rewrite what R's syntax means.
 
-`quote()` captures code as data (@sec-code-is-data). `substitute()` captures the caller's code (@sec-capture-evaluate). S3 dispatch selects behavior by type (@sec-dispatch). Operators are just functions (@sec-operators-are-functions). This chapter puts those pieces together: you will dissect DSLs you already use, then build one from scratch.
+You already have the pieces. `quote()` captures code as data (@sec-code-is-data), `substitute()` captures the caller's code (@sec-capture-evaluate), S3 dispatch selects behavior by type (@sec-dispatch), and operators are just functions (@sec-operators-are-functions). This chapter puts them together: you will dissect DSLs you already use, then build one from scratch.
 
 A domain-specific language, or DSL, is a small language designed for one task. SQL queries data. Regular expressions match text. HTML structures documents. These are *external* DSLs with their own parsers, their own syntax, their own tooling. R excels at something different: *internal* DSLs, mini-languages embedded inside R itself, using R's own syntax but giving it new meaning. The formula interface, ggplot2's grammar of graphics, dplyr's verb chains, data.table's `[i, j, by]` notation: each lives inside R and plays by R's rules (mostly). What makes R unusually good at this is non-standard evaluation and operator overloading: the ability to capture user expressions without evaluating them, reinterpret what operators mean, and dispatch behavior through S3.
 
-Peter Landin described the idea in 1966: instead of forcing programmers to think in the language's terms, let them build "a language appropriate to the problem." Guy Steele's 1998 keynote "Growing a Language" made the same case from the implementor's side, arguing that a good language is one users can extend with new vocabulary so it grows to fit the domain rather than the other way around. R's formula interface dates to the S language in the 1980s, long before either paper was widely cited, but the principle is identical. So what does it look like in practice?
+By the mid-1960s, programmers were drowning in general-purpose syntax that forced every domain into the same mold. Peter Landin argued in 1966 that they should be able to build "a language appropriate to the problem." Three decades later, Guy Steele's keynote "Growing a Language" made the same case from the other side: a good language is one that users can extend until it fits the domain. R's formula interface, which dates to S in the 1980s, predates both papers, but the instinct is the same: capture code, give it new meaning.
 
 
 ## R's existing DSLs {#sec-existing-dsls}
@@ -282,7 +282,7 @@ eval(parse(text = paste0("mtcars$", col_name)))
 
 It constructs R code as a string, parses it into an expression, and evaluates it. It works. It is also almost always wrong.
 
-The problems are concrete and immediate. First, injection attacks: if `col_name` comes from user input, a malicious string like `"mpg; system('rm -rf /')"` gets parsed and executed. Second, debugging becomes a nightmare because when the generated code errors, the error message refers to the parsed text rather than your source file, making the traceback useless. Third, tooling breaks: static analysis, linting, and IDE autocompletion cannot see inside a string.
+The problems are concrete. First, injection: if `col_name` comes from user input, a string like `"mpg; system('rm -rf /')"` gets parsed and executed. Second, debugging: when the generated code errors, the traceback points at the parsed text, not your source file. Third, tooling: static analysis, linting, and IDE autocompletion cannot see inside a string.
 
 The alternative is to work with expressions as data structures, not strings. Everything you learned in @sec-metaprogramming avoids `eval(parse(text = ...))`:
 
@@ -315,7 +315,7 @@ If you find yourself writing `eval(parse(text = ...))`, stop and ask whether the
 
 A DSL is an interface, and the same mistakes that make function APIs hard to use make DSLs worse because the user has fewer escape hatches when things go sideways.
 
-**Keep the surface small.** A DSL with fifty special operators is not a DSL; it is a burden. The formula interface has about six operators (`~`, `+`, `*`, `:`, `-`, `I()`). ggplot2 has a handful of geom types and a `+`. Resist adding syntax, because each new operator is a concept the user must internalize before they can read anyone else's code.
+**Keep the surface small.** A DSL with fifty special operators is a burden, not a language. The formula interface has about six operators (`~`, `+`, `*`, `:`, `-`, `I()`). ggplot2 has a handful of geom types and a `+`. Resist adding syntax, because each new operator is a concept the user must internalize before they can read anyone else's code.
 
 **Make errors readable.** When units do not match, the error says "cannot add m and s." When a conversion does not exist, it says "no conversion from m to min." Good error messages name the things the user wrote, not the implementation details, which is @sec-contracts-and-defensive-code applied to DSL design.
 
@@ -338,7 +338,7 @@ The chapter's DSL used five ingredients:
 
 A more ambitious DSL would add NSE to capture column names or expressions, use S3 generics to dispatch across backends, and build expression objects that defer evaluation. ggplot2 uses all of these. The progression from "simple class with overloaded operators" to "full expression-builder DSL with lazy evaluation and multiple backends" is a continuum, and you do not need the full machinery for every problem. Start with the simplest technique that makes your interface read naturally; add complexity only when the domain demands it.
 
-Remember the formula interface from the opening of this chapter, where `+` stopped meaning addition and started meaning "include this predictor"? You now know exactly how that trick works: an S3 class, a method for `+`, and a function that interprets the captured expression in a new context. R gave the formula system no special privileges. The same tools are available to you. When you find yourself writing repetitive, mechanical code, consider whether a small DSL, even just a class with a few overloaded operators, would let you express the same ideas more directly. That is what Landin meant by "a language appropriate to the problem," and it is what R, more than most languages, makes practical. The question is not whether you can reshape R's syntax around your domain; it is what domain you will choose.
+Remember the formula interface from the opening of this chapter, where `+` stopped meaning addition and started meaning "include this predictor"? You now know exactly how that trick works: an S3 class, a method for `+`, and a function that interprets the captured expression in a new context. R gave the formula system no special privileges. The same tools are available to you. When you find yourself writing repetitive, mechanical code, consider whether a small DSL, even just a class with a few overloaded operators, would let you express the same ideas more directly.
 
 
 ### Exercises {.unnumbered}
