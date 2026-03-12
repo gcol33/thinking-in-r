@@ -5,7 +5,7 @@
 source(here::here("_common.R"))
 ```
 
-Suppose you need to process a tree of unknown depth, a structure that nests inside itself with no predetermined bottom. A `for` loop can't express this because you don't know how many levels to iterate; you would need a loop inside a loop inside a loop, turtles all the way down. What you actually need is a function that can call itself, peeling away one layer of nesting each time until it reaches something solid. That self-calling trick has a name, and it turns out to sit at the very foundation of what computation means.
+Suppose you need to process a tree of unknown depth, a structure that nests inside itself with no predetermined bottom. A `for` loop can't express this because you don't know how many levels to iterate; you would need a loop inside a loop inside a loop, turtles all the way down. The alternative is a function that calls itself, peeling away one layer of nesting each time until it reaches something solid. That function is recursive, and recursion predates loops by decades in the theory of computation.
 
 A recursive function calls itself. The sentence sounds circular because circularity is the point: you solve a problem by breaking it into smaller copies of the same problem, bottoming out when the copies are small enough to answer directly. You saw `Reduce()` in @sec-reduce-and-accumulate collapse a list into a single value by repeatedly applying a binary function, but `Reduce()` is just one specific recursive pattern wearing a loop's clothing. Recursion itself can express anything a loop can, and several things loops express awkwardly. What happens, though, when the chain of self-calls grows too long for R to handle?
 

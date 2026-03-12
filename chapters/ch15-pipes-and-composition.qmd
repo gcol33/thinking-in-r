@@ -1,16 +1,17 @@
-The pipe gives you composition in a readable notation, but composition is only the beginning. Once you can chain transformations, the next question is how to apply them to many things at once: to every column, every group, every element of a list. That is the territory of @sec-functional-programming-map.# Pipes and composition {#sec-pipes-and-composition}
+Pipes give you composition. @sec-purrr-map asks the next question: how do you apply the same transformation to many things at once?
+# Pipes and composition {#sec-pipes-and-composition}
 
 ```{r}
 #| include: false
 source(here::here("_common.R"))
 ```
 
-Consider a line of code that selects columns, filters rows, and sorts the result. Written the conventional way, you read it inside-out: the first operation you want to happen is buried deepest in the expression, the last operation sits on the outside, and somewhere in between you lose track of which parenthesis closes which call. Why does the order you write the code run exactly backwards from the order you think about the problem?
+Consider a line of code that selects columns, filters rows, and sorts the result. Written with nested function calls, you read it inside-out: the first operation you want is buried deepest, and by the third level of parentheses you are counting closing parens by hand. The order you write the code runs backwards from the order you think about the problem.
 
 
 ## The problem with nesting {#sec-nesting-problem}
 
-Real analysis chains multiple operations. Suppose you want to take the `penguins` data, keep only Adelie penguins, select two columns, and sort by body mass. Without pipes, you have three choices.
+Real analysis chains multiple operations. Take the `penguins` data, keep only Adelie penguins, select two columns, sort by body mass. Without pipes, you have three choices.
 
 **Nesting**: read inside-out, right-to-left.
 
@@ -60,9 +61,9 @@ penguins |>
 
 Read it top to bottom: take `penguins`, select two columns, keep Adelie rows, sort by mass. Each line transforms the result of the previous one, and the reading order matches the execution order.
 
-The rule is simple. `x |> f()` is syntactic sugar for `f(x)`: the pipe takes the value on its left and inserts it as the first argument of the function on its right. That is the entire mechanism, no magic, no special evaluation, just a rewriting of `x |> f()` as `f(x)` before the code runs. Chain two pipes and `x |> f() |> g()` becomes `g(f(x))`, which is (g ∘ f)(x) in mathematical notation. The pipe is function composition from lambda calculus (@sec-church), written left-to-right instead of inside-out.
+`x |> f()` is syntactic sugar for `f(x)`. R literally rewrites it before the code runs. Chain two and `x |> f() |> g()` becomes `g(f(x))`, which is (g ∘ f)(x) written left-to-right instead of inside-out. That is function composition from @sec-church, just in friendlier notation.
 
-Function composition is itself a monoid, with `∘` as the operation and the identity function `\(x) x` as the identity element: `f ∘ id = f` and `id ∘ f = f`, just as `x + 0 = x` for addition. You saw the same structure with `c()` and `NULL` (@sec-no-scalars), with string concatenation and `""`, and you will see it again with ggplot's `+` (@sec-ggplot-lambda) and with `Reduce()` (@sec-reduce-and-accumulate). The monoid keeps appearing because composition is the fundamental way to build complex behavior from simple parts.
+This is another monoid (@sec-data-transformation): `∘` is the operation, the identity function `\(x) x` is the identity element, and chaining any number of verbs always gives you back a data frame. The same structure shows up again with `Reduce()` in @sec-reduce-and-accumulate.
 
 The native pipe `|>` was introduced in R 4.1 (2021) and is built into the language, requiring no packages. The idea, however, is older than R itself: Doug McIlroy proposed the pipe concept for Unix in 1964, writing "we should have some ways of coupling programs like garden hose." The `|` operator in the Unix shell chains programs, each reading from standard input and writing to standard output; R's `|>` is the same idea applied to data frames, where each dplyr verb takes a data frame and returns one.
 

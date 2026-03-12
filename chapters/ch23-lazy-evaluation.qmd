@@ -28,7 +28,7 @@ A promise has three components:
 
 Promises are invisible by design: R has no user-facing "promise" type. You cannot create one manually, inspect one with `str()`, or test for one with `is.promise()`. The invisibility is deliberate, because the act of inspecting a promise would force its evaluation, changing program behavior. The abstraction only works because you cannot look behind it.
 
-In the terminology of lambda calculus, this is *call-by-need* evaluation: the argument is passed unevaluated (like call-by-name) but the result is cached after the first evaluation (unlike call-by-name, which would re-evaluate each time). Lambda calculus defines three evaluation strategies: call-by-value (strict, as in C and Python), call-by-name (non-strict, as in Algol 60), and call-by-need (lazy, as in Haskell). R is mostly call-by-value but uses call-by-need for function arguments via promises. The Church-Rosser theorem guarantees that if a reduction terminates, all strategies reach the same normal form, but they may differ in whether they terminate at all.
+In the terminology of lambda calculus, this is *call-by-need* evaluation: the argument is passed unevaluated (like call-by-name) but the result is cached after the first evaluation (unlike call-by-name, which would re-evaluate each time). Lambda calculus distinguishes three evaluation strategies: call-by-value (strict, as in C and Python), call-by-name (non-strict, as in Algol 60), and call-by-need (lazy, as in Haskell). R uses call-by-need for function arguments through promises, though most arguments are forced immediately in practice. The Church-Rosser theorem guarantees that if a reduction terminates, all strategies reach the same normal form, but they may differ in whether they terminate at all.
 
 What does laziness buy you in practice? Default arguments that would be impossible under eager evaluation:
 
@@ -156,7 +156,7 @@ df <- data.frame(x = 1:5, y = c(10, 20, 30, 40, 50))
 subset(df, x > 3)
 ```
 
-You wrote `x > 3`, but `x` is a column of `df`, not a variable in your global environment. `subset` found it because `subset` doesn't evaluate `x > 3` in your environment at all. It captures the expression using `substitute()`, then evaluates it inside `df` using `eval()`:
+`x` here is a column of `df`, not a variable in your global environment. `subset` never evaluates `x > 3` in your environment. It captures the expression with `substitute()`, then evaluates it inside `df` with `eval()`:
 ```r
 # Simplified subset internals
 subset.data.frame <- function(x, subset, ...) {
@@ -296,13 +296,13 @@ For 80% of programming-with-dplyr tasks, `{{ }}` is all you need. Learn it, use 
 
 ## The trade-offs of NSE {#sec-nse-tradeoffs}
 
-NSE is a design trade-off, and honesty about both sides is more useful than advocacy.
+NSE buys you something and costs you something.
 
-**Convenience vs. predictability.** `filter(df, x > 5)` is concise and readable. But what if there's a variable `x` in your environment *and* a column `x` in your data frame? Data masking means the column wins, which is usually correct but when it's not, the bug is silent: no error, no warning, just wrong results. You can stare at the code for an hour and not see it.
+**Convenience vs. predictability.** `filter(df, x > 5)` is concise and readable, but if a variable `x` exists in your environment *and* a column `x` exists in your data frame, the column wins silently. When that's wrong, nothing tells you.
 
 **Interactive vs. programmatic.** NSE is optimized for the console, where you type `select(df, name, age)` and it just works. Writing a function that wraps `select` requires `{{ }}`, an extra concept that sits between you and the dplyr you already know. The interactive user pays nothing; the programmer pays a tax, and the tax scales with the complexity of the interface you're building.
 
-**Debugging.** Errors inside data-masked functions can be opaque. "Object 'species' not found" might mean you forgot to load the data, misspelled a column name, or called a data-masked function in a context it wasn't designed for. The error message doesn't distinguish these cases, so you're left to infer the cause from context.
+**Debugging.** "Object 'species' not found" could be a typo, missing data, or a masking scope problem. The error message is the same in all three cases.
 
 **This isn't a tidyverse invention.** Base R uses NSE in `subset()`, `with()`, `transform()`, and the formula interface (`lm(y ~ x, data = df)`). The tidyverse applies it more systematically and more pervasively, but the idea is as old as S.
 

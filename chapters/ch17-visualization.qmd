@@ -270,7 +270,7 @@ theme_set(theme_minimal())
 
 Themes are cosmetic. Spend your time on clear mappings and good labels before worrying about fonts.
 
-That said, a consistent theme across all your plots signals professionalism, the way consistent formatting signals care in writing. Pick one default early (most people end up with `theme_minimal()` or `theme_bw()`), use it everywhere, and stop fiddling; consistency matters more than which theme you choose. Now that the individual pieces are in place, how do they compose into a full specification?
+That said, pick one default early (`theme_minimal()` or `theme_bw()` are the usual choices) and use it everywhere. Three plots in the same report with the same theme are preferable.
 
 
 ### Exercises {.unnumbered}
@@ -312,7 +312,7 @@ The pattern for most visualizations follows the same shape:
 4. Add geoms.
 5. Refine with scales, facets, labels, and a theme.
 
-Each step is independent and composable: swap `geom_point()` for `geom_jitter()` and nothing else breaks; switch `facet_wrap(~ sex)` to `facet_grid(sex ~ island)` and the rest of the specification stays the same. The pieces are orthogonal, which is why the grammar scales to complex plots without collapsing under its own weight. But if you have been paying attention to the themes of this book, you might notice something familiar about this composability.
+Each step is independent: swap `geom_point()` for `geom_jitter()` and nothing else in the specification changes. `+` is doing more work than it looks like.
 
 
 ## ggplot2 as lambda calculus {#sec-ggplot-lambda}

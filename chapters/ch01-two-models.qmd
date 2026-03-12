@@ -5,21 +5,23 @@
 source(here::here("_common.R"))
 ```
 
-Mr. Tape came in through the front door. He was very long and very thin and he walked in a straight line from the door to the table. Behind him came Mr. State. He stood very still and held nothing.
-
 Four numbers had been left on the table: 3, 5, 2, 8.
 
-Mr. Tape read the first number. "Three," he said, and Mr. State was holding a 3. He seemed pleased with it. Mr. Tape read the next. "Five," and Mr. State was holding an 8. The 3 was gone. He looked at the 8 as though he had always been holding it. "Two." He was holding a 10. "Eight." He was holding an 18 and he could not have told you what he'd had a moment before.
+Mr. Tape came in through the front door. He was very long and very thin, and he walked in a straight line from the door to the table. Behind him came Mr. State, who stood very still and held nothing.
+
+Mr. Tape read the first number. "Three," he said, and Mr. State was holding a 3. He seemed pleased with it. Mr. Tape read the next. "Five," and Mr. State was holding an 8. The 3 was gone. He looked at the 8 as though he had always been holding it. "Two." He was holding a 10. "Eight." He was holding an 18. He could not have told you what he'd had a moment before.
 
 "Eighteen," said Mr. Tape.
 
 Mr. State put the 18 on the table. He looked at his empty hands.
 
-Mr. Fold had been sitting at the far end of the table. (The child could not remember him coming in. He had no one with him.) He picked up the 2 and the 8 and folded one into the other. A 10 sat on the table, and when you looked closely you could see the 2 and the 8 still in there, pressed together like petals in a book. He folded the 10 into the 5. He folded the 15 into the 3.
+Mr. Fold had been sitting at the far end of the table the whole time. He picked up the 2 and the 8. He pressed their edges together and creased them flat. A 10 sat on the table. The 2 and the 8 were gone. He folded the 10 into the 5 the same way. Crease and press. Then the 15 into the 3.
 
 Eighteen.
 
-Mr. State picked it up and turned it over. He held it to the light. Everything was still inside.
+Mr. State picked it up and turned it over.
+
+It was the same number.
 
 
 ## Instructions and state {#sec-turing}

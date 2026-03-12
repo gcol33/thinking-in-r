@@ -31,7 +31,7 @@ typeof(penguin)
 
 You already used a list in @sec-functions-in-lists when you stored functions as named elements. Lists are the same structure whether they hold numbers, strings, or functions, but accessing the right element requires care.
 
-The idea of pairing two values into one object has deep roots. In lambda calculus, a pair is encoded as `λa.λb.λf. f a b`: a function that captures two values and waits for a selector. Pass it `λx.λy. x` (select first) and you get `a`; pass `λx.λy. y` (select second) and you get `b`. Lisp's `cons`, `car`, and `cdr` are exactly these operations with names. R's `list()` is the practical descendant of this construction: a container built from the idea that you can bundle values together and retrieve them with selectors (`[[1]]`, `[[2]]`, `$name`).
+The lambda calculus already had this: `λa.λb.λf. f a b` is a pair encoded as a closure, with selectors `λx.λy. x` and `λx.λy. y` to get each element back. `cons`/`car`/`cdr` in Lisp; `list()`/`[[`/`$` in R.
 
 
 ### Exercises {.unnumbered}
@@ -149,7 +149,9 @@ study <- list(
 str(study)
 ```
 
-If you only learn one function for working with lists, make it `str()`. It prints the structure compactly, showing types, lengths, and nesting levels at a glance, and it works on any R object, not just lists. Use it whenever you receive something unfamiliar. Every nested list is a tree: the top-level list is the root, each sub-list is a branch, and the atomic values are leaves. The same shape appears in file systems (directories containing files and subdirectories), in HTML (the DOM), and in JSON.
+`str()` is the single most useful function for lists. It works on any R object, but with lists it shows you the nesting, the types, and the lengths in one compact summary. Get in the habit of calling it on anything you did not build yourself.
+
+Every nested list is a tree: sub-lists are branches, atomic values are leaves. File systems, the DOM, and JSON are all trees too, which is why R's lists map onto them so naturally.
 
 Inspecting is only half the problem. How do you reach into the tree and pull out what you need? Chain `[[` or `$`:
 
@@ -192,7 +194,7 @@ typeof(fit)
 names(fit)
 ```
 
-`fit$coefficients`, `fit$residuals`, `fit$fitted.values`: all list extractions. The model object is a list with a class attribute (`"lm"`) that tells R how to print and summarize it, but the data access works the same way as with any other list.
+`fit$coefficients`, `fit$residuals`, `fit$fitted.values` — these are ordinary `$` extractions on a list. The `"lm"` class attribute changes how R prints and summarizes the object, not how you get data out of it.
 
 Data frames (@sec-data-frames), model objects, and environments are all lists (or list-like structures) with different rules about what they can contain. The most interesting rule is also the simplest: what happens when every element is a vector of the same length?
 
@@ -252,9 +254,7 @@ R uses copy-on-modify for lists, the same semantics as for vectors. When you mod
 
 ## Linked lists {#sec-linked-lists}
 
-Suppose you want to prepend an element to a sequence in constant time, or process a collection by peeling off one element at a time and recursing on the rest. R's built-in lists are arrays of pointers with O(1) random access, which is great for indexing but means prepending requires copying the whole pointer array. A linked list trades random access for efficient prepending: each node holds a value and a pointer to the next node, and the chain ends with `NULL`.
-
-You can build one in R using nested lists:
+R's built-in lists are arrays of pointers, so indexing is O(1) and prepending is O(n) (every pointer in the array gets copied). A linked list is a chain of nodes, each holding a value and a pointer to the next. Prepending is O(1); reaching element *k* means following *k* pointers. You build one in R with nested lists:
 
 ```{r}
 cons <- function(head, tail) list(head = head, tail = tail)
@@ -283,7 +283,7 @@ ll_to_vector(ll)
 
 This structure is a direct translation of Church encoding. In lambda calculus, a pair is `λh.λt.λf. f h t`: a function that captures two values and waits for a selector. `car` passes a selector that returns the first value; `cdr` passes one that returns the second. A linked list is a chain of such pairs, terminated by a special "nil" value. Lisp was built on exactly this encoding, and `cons`/`car`/`cdr` remain the standard names for these operations across functional languages.
 
-So why doesn't R use linked lists for everyday work? R was designed for column-oriented numerical computing, where you need to pass entire columns to C routines like `sum()` or to BLAS, and that requires contiguous memory: a single block of doubles that a C function can walk with a pointer. A linked list scatters its elements across the heap, so you would need to copy them into a contiguous buffer before any vectorized operation could touch them. R's built-in lists (VECSXP) are arrays of pointers, giving O(1) random access and contiguous pointer storage. Linked lists shine at prepending (O(1), just `cons` a new head) and at recursive processing where you always work with the first element and pass the rest along. Lisp used them because Lisp's model is recursive symbolic processing, not numerical arrays; R chose arrays because its model is vectorized computation.
+So why doesn't R use linked lists for everyday work? Because R needs contiguous memory. Functions like `sum()` and the BLAS routines behind matrix algebra expect a single block of doubles that a C function can walk with a pointer, and a linked list scatters its elements across the heap; you would have to copy them into a contiguous buffer before any vectorized operation could touch them. R's built-in lists (VECSXP) solve this with arrays of pointers: O(1) random access, contiguous pointer storage. Linked lists are good at something else entirely: prepending (O(1), just `cons` a new head) and recursive processing where you peel off the first element and pass the rest along. Lisp was built on that kind of processing; R was built on vectorized computation over contiguous arrays.
 
 
 ### Exercises {.unnumbered}

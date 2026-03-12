@@ -24,7 +24,7 @@ Always 1. The counter never advances, because every call starts from scratch: ev
 
 ## Environments {#sec-environments}
 
-Before a function can remember anything, you need to understand where R stores what it knows. An environment is R's internal bookkeeping structure for mapping names to values: think of it as a bag where each label points to exactly one object, and every bag has a parent bag above it, forming a chain that R walks whenever it needs to resolve a name. At the very top of this chain sits the empty environment, parentless; everything else inherits from something.
+An environment maps names to values. Each environment has a parent, forming a chain: when R encounters a name, it checks the current environment first, then walks up the chain until it finds a binding or hits the empty environment at the top. Functions remember things by holding a reference to the environment where they were created, which is why scope matters here.
 
 You can inspect the current environment with `environment()`, list its contents with `ls()`, and find its parent with `parent.env()`:
 
@@ -48,7 +48,7 @@ identical(environment(), globalenv())
 
 Three properties make it special. It never gets garbage-collected; it persists for the entire R session. Its parent is not fixed: it shifts whenever you attach a new package with `library()`. And it is the only environment you routinely modify by hand, because functions create and destroy their own execution environments automatically (@sec-execution-environments), while the global environment simply accumulates bindings as you work.
 
-That accumulation is both a convenience and a trap. Convenient, because you can explore interactively, building data objects step by step. Dangerous, because any function defined in the global environment can see and silently depend on those objects: a function that works in your current session may break in a fresh one because it relied on a global variable you forgot to pass as an argument. In the language of lambda calculus, that function is an *open term*, its behavior hostage to whatever context it happens to run in. Making all dependencies explicit (passing them as arguments) turns it into a *closed term*, portable and self-contained. But what happens when a name *isn't* passed as an argument?
+That accumulation lets you explore interactively, building data objects step by step. It also means any function defined in the global environment can see and silently depend on those objects. A function that works in your current session may break in a fresh one because it relied on a global variable you forgot to pass as an argument. In lambda calculus, that function is an *open term*: its result depends on bindings outside its own body. Pass all dependencies as arguments and it becomes a *closed term*, portable and self-contained. But what happens when a name *isn't* passed as an argument?
 
 ### The search path
 
@@ -79,7 +79,7 @@ g <- function() { x <- 20; f() }
 g()
 ```
 
-The result is 10, not 20. `f` was defined in the global environment, so it looks for `x` there, ignoring the `x <- 20` inside `g` where it was merely *called*. This is lexical scoping: a function resolves names where it was *defined*, not where it was *called*. R inherited the idea from Scheme (1975), which adopted it over Lisp's dynamic scoping and changed programming language design. Dynamic scoping searches the call stack, which is simpler to implement but makes functions unpredictable: the same function returns different results depending on who calls it. R took lexical scoping from Scheme, not from S (which originally used dynamic scoping; see @sec-s-language), and this one design decision is why closures work in R at all.
+The result is 10, not 20. `f` was defined in the global environment, so it looks for `x` there, ignoring the `x <- 20` inside `g` where it was merely *called*. This is *lexical scoping*: a function resolves names where it was defined, not where it was called. The alternative, *dynamic scoping*, searches the call stack instead; the same function would return different results depending on who calls it. R got lexical scoping from Scheme (1975), not from S, which originally used dynamic scoping (@sec-s-language). Without it, closures (the subject of this chapter) would not work.
 
 Four rules govern how R resolves names:
 
@@ -294,9 +294,9 @@ avg(20)
 avg(6)
 ```
 
-The pattern is always the same: a factory function creates an environment, returns an inner function that captures it, and `<<-` lets the inner function modify the captured state. Because that state lives in a private environment that travels with the function, no outside code can see or tamper with it, and it persists across calls.
+A factory function creates an environment, returns an inner function that captures it, and `<<-` lets the inner function modify the captured state. The state lives in a private environment that travels with the function: no outside code can see or tamper with it, and it persists across calls.
 
-Now compare this to the global-variable approach:
+The global-variable approach does none of this:
 
 ```r
 # Don't do this
@@ -382,7 +382,7 @@ For a richer view, `rlang::env_print()` shows the environment's contents, parent
 rlang::env_print(environment(count))
 ```
 
-These tools are not for production code (reaching into a closure's environment breaks its encapsulation), but for learning they are the fastest way to build intuition. The cycle of "make a closure, inspect its environment, call it, inspect again" turns an abstract concept into something you can watch happening, variable by variable, call by call. And once you have that intuition, you might start to wonder: if a closure can hold state, and a list of closures can impersonate an object, what exactly separates functional programming from object-oriented programming?
+These tools are not for production code (reaching into a closure's environment breaks its encapsulation), but for learning they are the fastest way to see what a closure actually holds. Make one, inspect its environment, call it, inspect again. A closure that holds state and a list of closures that share an environment start to look a lot like an object with methods, which is exactly the connection @sec-oop-in-r explores.
 
 
 ### Exercises {.unnumbered}

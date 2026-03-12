@@ -10,7 +10,7 @@ library(dplyr)
 
 You have a list of three data frames and you want to compute the mean of a column in each one. Six lines of `for` loop, or one line of `map()`. The difference is not cosmetic.
 
-You already know that functions are values (@sec-functions-are-values-chapter) and that you can pass them to other functions (@sec-passing-functions). What happens when you push that idea to its natural conclusion? Instead of writing loops that apply a function to each element, you hand the function to a *functional*: a higher-order function whose sole job is to handle the iteration so you never have to think about indexing, pre-allocation, or name-copying again.
+Functions are values (@sec-functions-are-values-chapter) and you can pass them to other functions (@sec-passing-functions). A *functional* takes that one step further: it is a higher-order function that handles the iteration for you. You give it a function and a collection; it applies the function to each element, manages the indexing and pre-allocation, and returns the results.
 
 This chapter uses three packages. Load them now if you are following along:
 
@@ -350,7 +350,7 @@ penguins |>
 
 `across()` replaces the older `summarise_at()`, `summarise_if()`, and `summarise_all()`, which are now superseded. If you encounter them in older code, they do the same thing with less flexible syntax.
 
-The connection to `map()` is more than an analogy. Under the hood, `across()` iterates over the selected columns, applies the function to each one, and assembles the results. `map()` iterates over list entries, `across()` over data frame columns, `sapply()` over vector values; the mechanism is identical and only the container differs. Once you see that shared pattern, something clicks: the loop you wrote at the start of this chapter, the `lapply()` from base R, the typed `map_dbl()` from purrr, the `across()` inside `summarise()`, they are all the same idea wearing different clothes. You separate what to do from how to iterate, hand the function to something that knows how to walk across a container, and let the language handle the rest. That is the whole chapter in one sentence.
+Under the hood, `across()` iterates over the selected columns, applies the function to each one, and assembles the results. That is the same thing `map()` does over list entries and `sapply()` does over vector values. The `for` loop at the start of this chapter, `lapply()`, `map_dbl()`, `across()`: each separates *what to do* from *how to iterate*, and each walks a different container with the same logic.
 
 ### Exercises {.unnumbered}
 

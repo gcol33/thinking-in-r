@@ -7,9 +7,9 @@ library(purrr)
 library(dplyr)
 ```
 
-You have a list of data frames from an API, and you need to merge them all into one. You have a list of sets and you need their intersection. You have a sequence of transactions and you need a running balance. In each case the pattern is the same: take two things, combine them, take the result and combine it with the next thing, repeat until only one thing remains. `map()` cannot help you here, because `map()` treats every element in isolation; it never looks at what came before. The functional you need is `Reduce()`, which takes a binary operation and collapses an entire list into a single value by threading an accumulator from one step to the next.
+You have a list of data frames from an API and you need to merge them all into one. `map()` will not help: it treats every element in isolation and never looks at what came before. What you need is a way to take two things, combine them, feed the result into the next combination, and keep going until one thing remains. That operation is `Reduce()`.
 
-In @sec-iteration-without-loops you saw how `map()` replaces loops that apply a function element by element. But some loops carry state: a running total that grows with each pass, a chain of merges that folds data frames together one by one, a series of intersections that winnows a collection down to what survives every round. These are the loops that `Reduce()` was built for.
+`map()` (@sec-iteration-without-loops) replaces loops that apply a function element by element. `Reduce()` replaces the other kind: loops that carry state from one pass to the next, like a running total or a chain of merges that folds data frames together one by one.
 
 
 ## Left fold {#sec-left-fold}
@@ -22,7 +22,7 @@ Reduce(`+`, 1:5)
 
 That computes `((((1 + 2) + 3) + 4) + 5)`. The first call is `f(1, 2)`, which gives 3; then `f(3, 3)`, giving 6; then `f(6, 4)`, giving 10; then `f(10, 5)`, giving 15. Each intermediate result becomes the left argument of the next call, which is why this is called a *left fold*: the parentheses nest to the left.
 
-The name comes from Haskell's `foldl`, but the idea predates it by decades. APL had the `/` operator in 1962: `+/1 2 3 4 5` gives 15. Kenneth Iverson recognized something that took most programming languages another forty years to rediscover: reducing a list with a binary operator is not a loop pattern, it is a fundamental operation.
+The name comes from Haskell's `foldl`. APL had the same thing in 1962, spelled `+/1 2 3 4 5`. Most languages took decades longer to give the operation a name.
 
 With a named function the folding structure becomes visible:
 
@@ -199,9 +199,9 @@ df |>
   ungroup()
 ```
 
-Each row's `a`, `b`, and `c` values are collected into a vector, summed, and stored in `total`. This is a fold in the same sense as `Reduce()`: a binary operation (`+`) applied repeatedly to collapse multiple values into one, with the same monoid structure (associativity, identity element) that makes folds well-behaved (@sec-reduce-init). The only difference is the axis. `Reduce()` folds down the list; `c_across()` folds across the columns of a single row.
+Each row's `a`, `b`, and `c` values are collected into a vector, summed, and stored in `total`. Same fold as `Reduce()`, same monoid structure (@sec-reduce-init), just across columns instead of down a list.
 
-A performance warning, and it is not a small one: `rowwise()` + `c_across()` processes one row at a time in R, which means it scales poorly. For simple cases like summing or taking a maximum, `rowSums()` and `pmax()` are orders of magnitude faster because they are vectorized in C. On a data frame with 100,000 rows, `rowSums()` might finish in milliseconds where `rowwise()` + `c_across()` + `sum()` takes seconds. Use `c_across()` when the row-wise operation is genuinely complex, or when the set of columns must be selected dynamically with tidyselect helpers, but switch to vectorized alternatives the moment you care about speed.
+`rowwise()` + `c_across()` processes one row at a time in R, so it scales poorly. On 100,000 rows, `rowSums()` finishes in milliseconds because it is vectorized in C; the `rowwise()` version takes seconds. Use `c_across()` when the operation is genuinely complex or when you need tidyselect helpers to pick columns. Otherwise use `rowSums()` or `pmax()`.
 
 ### Exercises {.unnumbered}
 

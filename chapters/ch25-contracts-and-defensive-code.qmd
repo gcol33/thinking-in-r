@@ -1,4 +1,6 @@
-The next question is what happens when your functions need to talk to the outside world, to files, APIs, databases, where errors are not bugs but facts of life.# Contracts and defensive code {#sec-contracts-and-defensive-code}
+# Contracts and defensive code {#sec-contracts-and-defensive-code}
+
+The next question is what happens when your functions need to talk to the outside world, to files, APIs, databases, where errors are not bugs but facts of life.
 
 ```{r}
 #| include: false

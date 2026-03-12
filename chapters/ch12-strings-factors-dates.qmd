@@ -5,7 +5,7 @@
 source(here::here("_common.R"))
 ```
 
-You have a column of dates in three different formats, a species column that plots in the wrong order, and a free-text field full of trailing whitespace and inconsistent capitalization. Numbers behave; text, categories, and time do not. This chapter groups the three data types that look simple on the surface but hide enough complexity underneath to derail an afternoon: strings (text that needs parsing, matching, and cleaning), factors (categories that need ordering and recoding), and dates (time values that need arithmetic and formatting). Each has a dedicated tidyverse package (stringr, forcats, lubridate), each comes with traps that catch beginners, and none of them will feel fully tamed by the end of a single chapter. The goal here is enough to be productive, not exhaustive.
+You have a column of dates in three different formats, a species column that plots in the wrong order, and a free-text field full of trailing whitespace and inconsistent capitalization. Numbers behave; text, categories, and time do not. This chapter covers the three types that derail an afternoon: strings, factors, and dates. Each has a dedicated tidyverse package (`stringr`, `forcats`, `lubridate`), each comes with traps that catch beginners, and none of them will feel fully tamed by the end of a single chapter. The goal here is enough to be productive, not exhaustive.
 
 We will use the `palmerpenguins` dataset throughout. Load it now:
 
@@ -34,9 +34,9 @@ Double quotes and single quotes both work. Pick one and stick with it.
 Use double quotes. R's own style guide does, and so does most code you will encounter in the wild. Single quotes earn their keep inside double-quoted strings: `"it's easy"`.
 :::
 
-R uses UTF-8 as its modern string encoding, a scheme that Ken Thompson and Rob Pike designed on a placemat in a New Jersey diner in September 1992, one that is backward-compatible with ASCII, self-synchronizing, and variable-width (one to four bytes per character). When accented characters turn to garbled text, `stringr::str_conv()` or `readr::locale(encoding = "latin1")` will fix it.
+R uses UTF-8 as its modern string encoding, a scheme that Ken Thompson and Rob Pike designed on a placemat in a New Jersey diner in September 1992, one that is backward-compatible with ASCII, self-synchronizing, and variable-width (one to four bytes per character). If accented characters come out garbled, the file is probably Latin-1; `stringr::str_conv()` or `readr::locale(encoding = "latin1")` handles that.
 
-Special characters use backslash escapes: `\n` (newline), `\t` (tab), `\\` (literal backslash). The difference between `print()` and `cat()` matters here:
+Special characters use backslash escapes: `\n` (newline), `\t` (tab), `\\` (literal backslash). Compare `print()` and `cat()`:
 
 ```{r}
 print("line one\nline two")
@@ -66,7 +66,7 @@ sprintf("The %s weighs %d grams", "Gentoo", 5200)
 
 ## stringr: consistent string operations {#sec-stringr}
 
-Consider the base R string functions you already know: `grep()` returns indices, `grepl()` returns logicals, `sub()` replaces the first match, `gsub()` replaces all matches. Different argument orders, different return types, names that reveal nothing about what they do. The problem is not that these functions are broken; the problem is that you have to memorize each one individually, because no convention ties them together.
+Base R has `grep()`, `grepl()`, `sub()`, `gsub()` — they work, but the argument orders are inconsistent, the return types vary, and good luck guessing what `gsub` stands for. No convention ties them together, so you memorize each one separately.
 
 stringr fixes this with a single rule: every function starts with `str_`, takes the string as the first argument, and takes the pattern second. Once you know the convention, you can guess function names before you look them up.
 
@@ -137,7 +137,7 @@ sum(str_detect(penguins$species, "Adelie"))
 
 You have seen `str_detect()` matching literal text. But what if you need to match "any string that starts with a capital letter and ends with a digit"? Literal matching cannot express that. Regular expressions can.
 
-Regular expressions are a mini-language for describing patterns in text, not R-specific; the same syntax works in Python, JavaScript, grep, and most text editors. You do not need to memorize regex. You need to know the basics, and you need to know how to look up the rest.
+Regular expressions are a mini-language for describing patterns in text. The syntax is not R-specific — the same patterns work in Python, JavaScript, and `grep` on the command line. What follows covers enough to read and write simple patterns; `?regex` has the full reference.
 
 The core building blocks:
 
@@ -156,7 +156,7 @@ The core building blocks:
 | `\\s` | Whitespace |
 | `\\w` | Word character (letter, digit, underscore) |
 
-The doubled backslashes (`\\d` instead of `\d`) exist because R strings process backslashes first: to get a literal `\d` to the regex engine, you write `"\\d"` in R. Regular expressions themselves come from formal language theory, where Stephen Kleene defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and grep in 1973. The `*` quantifier is still called the *Kleene star*, a construct from mathematical logic that has survived unchanged for nearly seventy years.
+The doubled backslashes (`\\d` instead of `\d`) exist because R strings process backslashes first: to get a literal `\d` to the regex engine, you write `"\\d"` in R. Regular expressions themselves come from formal language theory, where Stephen Kleene defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and `grep` in 1973; the `*` quantifier is still called the *Kleene star* after him.
 
 `str_view()` lets you see what a pattern matches, making it the best tool for building and debugging:
 
@@ -207,7 +207,7 @@ unclass(x)
 
 `typeof()` returns `"integer"`. `unclass()` strips the factor shell and shows the integers underneath.
 
-In type theory, a factor is a *sum type*: `factor(c("male", "female"))` defines a type with exactly two variants, `male | female`, and a value must be one of them. You first saw this pattern with logical vectors (@sec-logical-vectors), where `Bool = TRUE | FALSE`. Factors generalize it: `Species = Adelie | Chinstrap | Gentoo` is a sum type with three variants. Where a data frame is a product type (combine fields with AND, @sec-data-frames), a factor is a sum type (choose one variant with OR). The distinction matters because product types grow by adding fields, while sum types grow by adding variants, and the two compose differently. Rust's `enum`, Haskell's algebraic data types, and TypeScript's union types all make this distinction explicit; R keeps it implicit in the factor machinery, but the structure is the same.
+In type theory, a factor is a *sum type*: `factor(c("male", "female"))` defines a type with exactly two variants, `male | female`, and a value must be one of them. Logical vectors are the simplest case: `Bool = TRUE | FALSE`. Factors generalize it: `Species = Adelie | Chinstrap | Gentoo` is a sum type with three variants. Where a data frame is a product type (combine fields with AND, @sec-data-frames), a factor is a sum type (choose one variant with OR). The distinction matters because product types grow by adding fields, while sum types grow by adding variants, and the two compose differently. Rust's `enum`, Haskell's algebraic data types, and TypeScript's union types all make this distinction explicit; R keeps it implicit in the factor machinery, but the structure is the same.
 
 So why does R have this machinery at all? Statistical models need to encode categorical variables, and factors tell R "these are categories, not arbitrary text." When you pass a factor to `lm()`, R automatically creates dummy variables (indicator columns). Without factors, R would not know that `"male"` and `"female"` represent a finite set of categories rather than two arbitrary strings.
 
@@ -409,4 +409,4 @@ Each of these data types has a matching tidyverse package:
 
 The tidyverse packages give these operations a consistent interface and naming scheme. In some cases (like `str_detect` vs `grepl`) the difference is mostly cosmetic; in others (like lubridate's timezone handling) the package catches real bugs that base R silently lets through.
 
-In @sec-data-frames, you learned to structure data. Here you learned to handle the three messiest column types. But knowing how to manipulate strings, factors, and dates in isolation only gets you so far: the real payoff comes when you use them inside data frame operations, calling `str_detect()` within `filter()`, `fct_reorder()` within `ggplot()`, `ymd()` within `mutate()`. That is what @sec-data-transformation is for.
+@sec-data-frames covered the structure; this chapter covered the three column types that cause the most trouble. But data frames need data, so @sec-reading-writing-data deals with getting files off disk and into R. After that, @sec-data-transformation shows how these pieces combine: `str_detect()` inside `filter()`, `fct_reorder()` inside `ggplot()`, date arithmetic inside `mutate()`. That is where the column-level work starts saving you real time.

@@ -79,7 +79,7 @@ library(readr)
 df <- read_csv(here::here("data", "penguins.csv"))
 ```
 
-It never converts strings to factors, it is faster on large files, it prints the column types it guessed so you can catch mistakes immediately, and it returns a tibble (@sec-tibbles) instead of a plain data frame. For most work, `read_csv()` is simply the better default.
+`read_csv()` never converts strings to factors, it is faster on large files, it prints the column types it guessed so you can catch mistakes immediately, and it returns a tibble (@sec-tibbles) instead of a plain data frame. For most work, `read_csv()` is simply the better default.
 
 Key arguments worth knowing:
 
@@ -203,7 +203,7 @@ writexl::write_xlsx(df, here::here("output", "results.xlsx"))
 
 ::: callout-tip
 ## Opinion
-Excel is a fine data source. It is a terrible data format. Merged cells, multiple tables crammed onto one sheet, values encoded by background color: none of these survive the trip to R intact. The safest workflow is to read from Excel, clean the data in R, then save as CSV or Parquet for everything downstream.
+Excel is a fine data source. It is a terrible data format. Merged cells break `read_excel()` because R has no concept of a cell spanning two columns; multiple tables on one sheet force you to guess where each one starts; and color-coded values are simply invisible to any reader. Read from Excel, clean in R, save as CSV or Parquet. Do not round-trip back to `.xlsx`.
 :::
 
 
@@ -368,7 +368,7 @@ Encoding(x)
 x_utf8 <- iconv(x, from = "latin1", to = "UTF-8")
 ```
 
-The practical rule fits in one sentence: use `readr` (it assumes UTF-8), and when characters still come out wrong, pass the correct encoding explicitly. Which brings us back to where we started: the gap between the file on disk and the data frame in memory is full of invisible decisions (paths, delimiters, types, encodings) that someone made for you, often badly. Now you know how to make them yourself.
+The practical rule fits in one sentence: use `readr` (it assumes UTF-8), and when characters still come out wrong, pass the correct encoding explicitly. Which brings us back to where we started: the gap between the file on disk and the data frame in memory is full of invisible decisions (paths, delimiters, types, encodings) that someone made for you, often badly, and that break the moment you move the file to a different machine.
 
 
 ### Exercises {.unnumbered}

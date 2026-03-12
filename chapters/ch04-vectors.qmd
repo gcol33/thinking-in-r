@@ -60,7 +60,7 @@ Each step replaces a name or function call with its value. `morning` becomes `c(
 
 ::: callout-note
 ## For the curious
-`c()` is associative: `c(c(1, 2), c(3, 4))` and `c(1, c(2, c(3, 4)))` both produce `c(1, 2, 3, 4)`. Grouping doesn't matter. And `c(x, NULL)` returns `x` unchanged, so `NULL` acts as an identity element. An associative operation with an identity element is called a *monoid*: addition with 0 is a monoid, string concatenation with `""` is a monoid, and `c()` with `NULL` is a monoid. The pattern will reappear throughout this book, in `paste0`, in function composition, in ggplot layers, and in `Reduce()`.
+`c()` has two properties worth noticing. First, it is *associative*: `c(c(1, 2), c(3, 4))` and `c(1, c(2, c(3, 4)))` both produce `c(1, 2, 3, 4)`. Grouping doesn't matter. Second, `c(x, NULL)` returns `x` unchanged, so `NULL` acts as an *identity element*: combining with it does nothing. An operation that is associative and has an identity element is called a *monoid*. Addition with 0 is a monoid. String concatenation with `""` is a monoid. `c()` with `NULL` is a monoid. The pattern keeps showing up: dplyr pipelines (@sec-data-transformation), function composition (@sec-pipes-and-composition), and `Reduce()` (@sec-reduce-and-accumulate) all rely on it.
 :::
 
 A few shortcuts for common patterns:

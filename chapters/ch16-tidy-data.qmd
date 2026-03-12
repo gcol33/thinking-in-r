@@ -82,7 +82,7 @@ pop_wide |>
   )
 ```
 
-Three countries, three years, nine population values: the information content is identical in both forms. `pivot_longer()` and `pivot_wider()` are inverses; applying one and then the other returns you to where you started (up to column ordering). A pair of reversible transformations like this is called an *isomorphism*, two structures that contain the same information in different arrangements. Wide and long formats are isomorphic; neither is "more correct." In category theory, this kind of structure-preserving, reversible map between containers is called a *natural transformation*: it rearranges data inside the data-frame container without changing the information content, the same way `map()` transforms values inside a list without changing the list's length.
+Three countries, three years, nine population values: the information content is identical in both forms. `pivot_longer()` and `pivot_wider()` are inverses; applying one and then the other returns you to where you started (up to column ordering). A pair of reversible transformations like this is called an *isomorphism*: two structures that contain the same information in different arrangements. Wide and long formats are isomorphic; neither is "more correct."
 
 The hard part is not the reshaping itself but deciding *what* to reshape. Given an arbitrary table with merged cells, hierarchical headers, and embedded metadata, determining the correct tidy structure requires human judgment about what constitutes a variable, an observation, and a value. Wickham's 2014 paper defines these three terms precisely to make that judgment tractable: once you answer "is year a variable or a value?", the reshaping follows mechanically.
 
@@ -196,9 +196,9 @@ Wide tables are easier for humans to scan: a table with countries as rows and ye
 
 Data entry follows the same logic. If you're recording daily temperatures for three cities, a spreadsheet with cities as rows and dates as columns feels natural; nobody fills in a three-column long-form table by hand (and anyone who tells you they do is lying, or masochistic, or both).
 
-The workflow is: receive data however it arrives, reshape to tidy for analysis, reshape to wide for presentation if needed. Tidy data is a means to easier analysis, not a moral stance.
+So reshape to tidy when you need dplyr and ggplot, reshape to wide when you need a human to read the table. Do not get religious about it.
 
-But what happens when the information you need spans multiple tables?
+Sometimes the information you need spans multiple tables.
 
 
 ## Joins: combining tables {#sec-joins}
@@ -346,7 +346,7 @@ report |> fill(group)
 
 ## Summary {#sec-tidy-data-summary}
 
-Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. `pivot_longer()` turns columns into rows (the common direction), `pivot_wider()` turns rows into columns (the occasional direction), and joins combine tables by matching keys. `left_join()` enriches; `anti_join()` finds gaps; the rest are variations on the same theme.
+Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. `pivot_longer()` turns columns into rows (the common direction), `pivot_wider()` turns rows into columns (the occasional direction), and joins combine tables by matching keys. `left_join()` enriches; `anti_join()` finds gaps; the rest control how unmatched rows are handled.
 
 These tools compose precisely because they all expect the same shape, and the connection to their mathematical foundations runs deeper than most R programmers realize. Codd's relational algebra and the simply typed lambda calculus are both built on function application and composition over structured types, which is why the same ideas keep surfacing in R, SQL, and formal logic. In category theory, a join is a *pullback*: given two tables that each map to a shared key space, the join constructs the most general table consistent with both. Think of it as a Venn diagram for rows, where the overlap is determined by the key column; `inner_join` keeps only the overlap, while `left_join` keeps everything on the left and fills the gaps with `NA`.
 

@@ -5,9 +5,9 @@
 source(here::here("_common.R"))
 ```
 
-You have a hundred measurements of penguin body mass, another hundred of bill length, and a character vector of species names. Three vectors, all the same length, all describing the same 100 birds. You could keep them as separate objects, indexing carefully, hoping that nobody reorders one without reordering the others. Or you could store them together in a structure that enforces the constraint for you: every column the same length, every row one observation, the whole thing accessible with the list operations you already know.
+You have a hundred measurements of penguin body mass, another hundred of bill length, and a character vector of species names. Three vectors, all the same length, all describing the same 100 birds. You could keep them as separate objects, indexing carefully, hoping that nobody reorders one without reordering the others. Or you could store them together in a structure that enforces the constraint for you: every column the same length, every row one observation, accessible with the list operations from Chapter 10.
 
-That structure is the data frame, and its definition fits in a single sentence: a list where every element is a vector of the same length. Lists hold anything; a data frame constrains that freedom to equal-length columns, and once you see this, subsetting, column operations, and the entire tidyverse make sense. The idea predates R by decades: Edgar Codd's 1970 paper at IBM defined relations as sets of tuples, each row a typed record, and R's data frames, SQL tables, pandas DataFrames, and Spark datasets all descend from that same relational algebra.
+That structure is the data frame: a list where every element is a vector of the same length. Lists hold anything; a data frame constrains that freedom to equal-length columns, and once you see this, subsetting, column operations, and the entire tidyverse make sense. The idea predates R by decades: Edgar Codd's 1970 paper at IBM defined relations as sets of tuples, each row a typed record, and R's data frames, SQL tables, pandas DataFrames, and Spark datasets all descend from that same relational algebra.
 
 So what does this constraint actually buy you?
 
@@ -43,7 +43,7 @@ str(df)
 
 Two columns, two rows, and nothing more than a list wearing a label.
 
-In type theory, this structure is a *product type*: a tuple of named, typed fields. A data frame with columns `name` (character) and `mass` (double) has type `character × double`, meaning each row is a pair of one character value and one double value. Complex data structures are built from simpler combinators, and the product (pairing things together with AND) is the most basic one. Every time you add a column, you extend the product with another factor, which raises a practical question: how do you control what goes into those columns when you build one from scratch?
+Type theory calls this a *product type*. A data frame with columns `name` (character) and `mass` (double) has type `character × double`: each row pairs one character value with one double value. Add a third column and the type grows: `character × double × integer`. So what goes into those columns when you build one from scratch?
 
 
 ### Exercises {.unnumbered}
@@ -156,7 +156,7 @@ This `drop` behavior is a common source of bugs. You write a function that subse
 penguins[1, 2]
 ```
 
-Row 1, column 2: a single value (a vector of length 1). So `[` with two indices gives you surgical access to any cell, any row, any column, but the `drop` trap lurks whenever your selection narrows to a single column.
+Row 1, column 2: a single value (a vector of length 1). `[` with two indices reaches any cell, row, or column, but the `drop` gotcha still applies whenever your selection narrows to one column.
 
 ### Logical subsetting {#sec-logical-subsetting-df}
 
@@ -168,7 +168,7 @@ nrow(heavy)
 head(heavy, 3)
 ```
 
-`penguins$body_mass_g > 5000` produces a logical vector, `TRUE` for heavy penguins and `FALSE` (or `NA`) for the rest, and placing it before the comma selects the matching rows. This is exactly what `dplyr::filter()` does under the hood (@sec-data-transformation), but the base R syntax forces you to name the data frame twice, once to build the condition and once to subset. When conditions get complex, the repetition gets ugly fast.
+`penguins$body_mass_g > 5000` produces a logical vector, `TRUE` for heavy penguins and `FALSE` (or `NA`) for the rest, and placing it before the comma selects the matching rows. `dplyr::filter()` (@sec-data-transformation) does the same filtering without repeating the data frame name; base R makes you write it twice, once for the condition and once for the subset.
 
 
 ### Exercises {.unnumbered}
@@ -208,7 +208,7 @@ df2 <- within(penguins, {
 head(df2[, c("mass_kg", "bill_ratio")])
 ```
 
-`within()` evaluates the expressions inside the data frame's environment, so you can refer to columns by name without the `df$` prefix, and the result is a new data frame. `dplyr::mutate()` (@sec-data-transformation) does this more cleanly, but `within()` shows that the idea of "evaluate expressions in a data context" is older than the tidyverse.
+`within()` evaluates the expressions inside the data frame's environment, so you can refer to columns by name without the `df$` prefix, and the result is a new data frame. `dplyr::mutate()` (@sec-data-transformation) does this more cleanly, but `within()` has been in base R since 2001.
 
 ```{r}
 #| include: false
@@ -254,7 +254,7 @@ When they fail, the error messages mention dimensions rather than the real probl
 
 ## Tibbles {#sec-tibbles}
 
-Print a large data frame in R, and thousands of rows flood the console. Subset a single column, and you silently get a vector instead of a data frame. Type a column name wrong, and partial matching guesses what you meant, correctly, until the day it guesses wrong.
+Print a large data frame in R and thousands of rows flood the console. Subset a single column: you silently get a vector instead of a data frame. Type a column name wrong and partial matching returns the wrong column.
 
 A tibble is the tidyverse's answer to all three problems:
 
@@ -316,7 +316,7 @@ Use tibbles by default. Use plain data frames when a package demands one (rare) 
 
 ## Exploring data frames {#sec-exploring-data-frames}
 
-You have a new dataset. Before you filter, mutate, or plot anything, you need to know what you are working with: how many rows, how many columns, what types, how much is missing. `str()` answers all of these at once:
+`str()` is the first thing to run on a new dataset:
 
 ```{r}
 str(penguins)
@@ -344,9 +344,7 @@ head(penguins, 3)
 summary(penguins)
 ```
 
-`summary()` gives per-column summaries: min, max, mean, and quartiles for numeric columns; counts for factors. NA counts appear at the bottom of each column, which makes it the quickest way to spot missing data before you write a single line of analysis code.
-
-In RStudio, `View(penguins)` opens a spreadsheet-style viewer, useful for browsing but invisible to scripts. It does nothing when your code runs non-interactively, so treat it as a debugging aid, not a workflow step.
+`summary()` shows min, max, quartiles, and mean for numeric columns, counts for factors, and NA counts at the bottom of each column. RStudio's `View()` gives you a spreadsheet instead, useful for browsing but it gets sluggish past a few thousand rows and does nothing outside interactive sessions.
 
 
 

@@ -1,5 +1,5 @@
 So now you can keep rows and pick columns. What you cannot yet do is create something that was not there before.
-`mutate()` adds new columns while the originals stay untouched. It is the functor pattern applied to data frames: it maps a function over a column (the container), producing a new column of the same length. The container's shape (344 rows) is preserved; only the contents change. You saw the same pattern with vectorized `sqrt()` on vectors (@sec-vectorized-ops), with `sapply()` on lists (@sec-passing-functions), and with `map()` on split data frames (@sec-purrr-map). Each time, the structure is "apply a function inside a container, keep the container intact." The word for this, across all of these instances, is functor.
+`mutate()` adds new columns while the originals stay untouched — the same functor pattern from @sec-vectorized-ops: apply a function inside a container, get back the same container with different contents. There, the container was a vector; here it is a data frame with 344 rows.
 You can now keep rows, pick columns, and compute new values from old ones. One operation remains: collapsing many rows into few.
 # Data transformation {#sec-data-transformation}
 
@@ -8,7 +8,7 @@ You can now keep rows, pick columns, and compute new values from old ones. One o
 source(here::here("_common.R"))
 ```
 
-Suppose you have a table with 344 rows and 8 columns, a census of penguins on three Antarctic islands recording species, bill dimensions, flipper length, body mass, sex, and year of observation. You want to know whether Gentoo penguins are heavier than Adelie penguins. To answer that, you need to keep only certain rows, pick only certain columns, compute a mean, and break the result down by group. Four moves. Every data analysis you will ever write is some arrangement of those same four moves, and the question that shapes this chapter is deceptively simple: what is the smallest set of operations that covers all of them?
+Are Gentoo penguins heavier than Adelie penguins? The `penguins` data has the answer, but getting there means filtering rows, picking columns, computing a mean, and grouping by species. Every data analysis you will ever write is some arrangement of those same moves, and the question that shapes this chapter is: what is the smallest set of operations that covers all of them?
 
 
 ## The idea: verbs for data {#sec-verbs-for-data}
@@ -23,9 +23,9 @@ A dplyr verb takes a data frame and returns a data frame. The data frame goes in
 
 You compose them for complex transformations (via pipes, @sec-pipes-and-composition), but each one does exactly one thing. A dplyr pipeline is function composition: each verb transforms a data frame and passes it to the next, the same composition from lambda calculus, (g ∘ f)(x) = g(f(x)), applied to tables instead of numbers.
 
-These verbs did not come from nowhere. In 1970, Edgar Codd, a mathematician at IBM's San Jose Research Laboratory, published "A Relational Model of Data for Large Shared Data Banks." At the time, databases were navigational: to find a record, you followed pointers from one record to the next, like walking a linked list. Codd proposed something radical. Forget the pointers. Think of data as tables (he called them *relations*), and define a small set of operations on those tables: restriction (keep rows where a predicate holds), projection (keep certain columns), extension (add computed columns), and aggregation (collapse groups to summaries). The key insight was that every operation takes a table as input and returns a table as output, so you can chain them: filter a table, then select columns from the result, then summarize that. Codd called this set of composable operations a *relational algebra*, "algebra" in the mathematical sense of a closed system where combining any two things always gives you back the same kind of thing. IBM initially resisted the idea. Codd's own employer spent years trying to protect their existing database product (IMS) from the relational model. But the composability was too useful to ignore, and by the 1980s relational databases had won.
+These verbs did not come from nowhere. Edgar Codd's 1970 paper defined a *relational algebra*: a small set of operations on tables where every operation takes a table in and returns a table out. Restriction (keep rows), projection (keep columns), extension (add computed columns), aggregation (collapse groups). IBM resisted — they had a competing database product (IMS) — but the composability was too useful, and by the 1980s relational databases had won.
 
-dplyr is Codd's relational algebra with different names. `filter()` is restriction, `select()` is projection, `mutate()` is extension, `summarise()` is aggregation. `arrange()` handles ordering, which has no relational equivalent but is essential for display. The reason these five verbs compose so cleanly, and the reason the same ideas appear in SQL, pandas, data.table, and every other language that works with tabular data, is that they are all implementations of the same fifty-year-old algebra. But knowing where they come from is one thing; seeing them work on real data is another.
+dplyr is Codd's algebra with friendlier names. The same ideas appear in SQL, pandas, and data.table because the operations are the same; only the syntax differs. `arrange()` is the one exception — ordering has no relational equivalent, but you need it for display.
 
 ```{r}
 library(palmerpenguins)
@@ -47,7 +47,7 @@ You have 344 penguins. You only care about the Adelie ones. How do you throw the
 filter(penguins, species == "Adelie")
 ```
 
-The first argument is the data frame, the second a logical expression of the same kind you wrote in @sec-comparison-operators. Inside `filter()`, column names work like variables: `species` refers to the `species` column, not an object in your global environment.
+The logical expression works the same way as in @sec-comparison-operators, but notice that `species` here refers to the column, not to anything in your global environment. dplyr evaluates the expression inside the data frame.
 
 Multiple conditions, separated by commas, are combined with AND:
 
@@ -416,7 +416,7 @@ Base R also has `subset()`, which combines filtering and column selection:
 subset(penguins, species == "Adelie", select = c(species, body_mass_g))
 ```
 
-`subset()` is clean and readable; for simple operations, it works well. The advantage of dplyr is consistency: every verb takes a data frame first and returns a data frame, so they compose. In base R, `aggregate()` returns different column names, `order()` returns indices rather than a data frame, and `transform()` (the base equivalent of `mutate()`) cannot reference columns it just created. The dplyr verbs snap together; the base R equivalents each have their own interface.
+`subset()` is clean and readable; for simple operations, it works well. Where dplyr pulls ahead is composability: every verb takes a data frame and returns one, so you can chain them. Base R's equivalents each return something slightly different: `aggregate()` renames your columns, `order()` gives you indices instead of a data frame. So you spend time wiring them together instead of thinking about your data.
 
 In fact, dplyr and SQL are the same language wearing different syntax. Both implement relational algebra, which is why they feel similar:
 
@@ -427,7 +427,7 @@ In fact, dplyr and SQL are the same language wearing different syntax. Both impl
 
 Call `show_query()` on a database-backed tibble to see the translation directly.
 
-In category theory, a natural transformation maps one functor to another while preserving structure. `filter()` transforms a data frame (a container of rows) into a smaller container where columns keep their types and relationships are maintained. The clean composability of dplyr verbs is not an accident; it reflects this mathematical structure, where the transformation commutes with the container.
+The reason dplyr pipelines compose so cleanly is that every verb has the same type signature: data frame in, data frame out, column structure preserved. This is the same monoid pattern from @sec-no-scalars: an associative operation (verb composition) with an identity element (a verb that returns the data frame unchanged). Compose any sequence of dplyr verbs and the result is still a data frame.
 
 ::: callout-tip
 ## Opinion
