@@ -790,7 +790,7 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">1.5</span>, <span class="fl">2.5</span>, <span class="fl">3.5</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.Internal</span>(<span class="fu">inspect</span>(x))</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x0000017d591abbd8 14 REALSXP g0c3 [REF(2)] (len=3, tl=0) 1.5,2.5,3.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x00000173524b7d18 14 REALSXP g0c3 [REF(2)] (len=3, tl=0) 1.5,2.5,3.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The output shows the memory address, the SEXPTYPE (<code>REALSXP</code>), the reference count, and the actual data values. Terse, but informative.</p>
 <p>The <code>lobstr</code> package provides friendlier inspection tools:</p>
@@ -798,7 +798,7 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lobstr)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">obj_addr</span>(x)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0x17d591abbd8"</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0x173524b7d18"</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">obj_size</span>(x)</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 80 B</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -807,17 +807,17 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ref</span>(x, y)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x17d591abbd8] &lt;dbl&gt; </span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x173524b7d18] &lt;dbl&gt; </span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x17d591abbd8]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x173524b7d18]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Both <code>x</code> and <code>y</code> point to the same memory address. No copy has been made. This is the copy-on-modify mechanism you saw in <a href="ch09-complexity-and-algorithms.html#sec-space-complexity" class="quarto-xref"><span>Section 9.4</span></a>, now visible at the pointer level.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>y[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">99</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ref</span>(x, y)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x17d591abbd8] &lt;dbl&gt; </span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x173524b7d18] &lt;dbl&gt; </span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2:0x17d571aec88] &lt;dbl&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2:0x173504a2e18] &lt;dbl&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>After modification, <code>y</code> points to a different address. R copied the vector when <code>y</code> was modified, because <code>x</code> still needed the original. The copy decision depends on how many names point to the same data, which raises the obvious question: how does R keep track?</p>
 <section id="exercises" class="level3 unnumbered">
@@ -851,11 +851,11 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="st">"hello"</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="st">"hello"</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">.Internal</span>(<span class="fu">inspect</span>(a))</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x0000017d574a2ac0 16 STRSXP g0c1 [REF(5)] (len=1, tl=0)</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   @0x0000017d570b49e0 09 CHARSXP g0c1 [MARK,REF(4),gp=0x60] [ASCII] [cached] "hello"</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x00000173507b6a18 16 STRSXP g0c1 [REF(5)] (len=1, tl=0)</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   @0x00000173503ae7e8 09 CHARSXP g0c1 [MARK,REF(4),gp=0x60] [ASCII] [cached] "hello"</span></span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">.Internal</span>(<span class="fu">inspect</span>(b))</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x0000017d574a2350 16 STRSXP g0c1 [REF(5)] (len=1, tl=0)</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   @0x0000017d570b49e0 09 CHARSXP g0c1 [MARK,REF(4),gp=0x60] [ASCII] [cached] "hello"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x00000173507b62a8 16 STRSXP g0c1 [REF(5)] (len=1, tl=0)</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   @0x00000173503ae7e8 09 CHARSXP g0c1 [MARK,REF(4),gp=0x60] [ASCII] [cached] "hello"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The outer <code>STRSXP</code> addresses differ (they are separate character vectors), but the inner <code>CHARSXP</code> they point to is the same object. This interning saves memory when the same strings appear repeatedly, as in a factor or a character column with many repeated levels.</p>
 <p>A list (<code>VECSXP</code>) is a vector of SEXP pointers. Each element can point to any R object of any type, which is why lists are heterogeneous: the list itself is just an array of pointers, and the pointed-to objects can be anything. This pointer-based layout has consequences for how R handles tabular data.</p>
@@ -876,13 +876,13 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.Internal</span>(<span class="fu">inspect</span>(x))</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x0000017d58365828 14 REALSXP g0c3 [REF(2)] (len=3, tl=0) 1,2,3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x000001735166b9b8 14 REALSXP g0c3 [REF(2)] (len=3, tl=0) 1,2,3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>[MARK,NAM(X)]</code> in the inspect output shows the reference count. (The exact format varies by R version.)</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.Internal</span>(<span class="fu">inspect</span>(x))</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x0000017d58365828 14 REALSXP g0c3 [REF(5)] (len=3, tl=0) 1,2,3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; @0x000001735166b9b8 14 REALSXP g0c3 [REF(5)] (len=3, tl=0) 1,2,3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>After <code>y &lt;- x</code>, the reference count increases but the address stays the same. Both names share the same data.</p>
 <p><strong>Historical note: the NAMED mechanism.</strong> Before R 4.0, R used a cruder system called NAMED, with only three states: 0 (no references), 1 (one reference), and 2 (multiple references, or “we have lost count”). The problem was that NAMED could never decrease; once an object reached NAMED=2, R always copied it on modification, even if one reference had long since disappeared. The current reference counting system, introduced by Luke Tierney, tracks actual counts and can decrease them when bindings are removed, eliminating a whole class of unnecessary copies.</p>
@@ -896,9 +896,9 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">f</span>(x)</span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ref</span>(x, y)</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x17d59437728] &lt;dbl&gt; </span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1:0x1735273b8b8] &lt;dbl&gt; </span></span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2:0x17d59436d28] &lt;dbl&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2:0x1735273aeb8] &lt;dbl&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>x</code> and <code>y</code> are different objects. The copy happened inside <code>f</code> when <code>v[1] &lt;- 0</code> was executed, because <code>v</code> shared its data with <code>x</code>.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
@@ -939,8 +939,8 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gc</span>()</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           used (Mb) gc trigger (Mb) max used (Mb)</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ncells  683315 36.5    1417965 75.8  1417965 75.8</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Vcells 1253400  9.6    8388608 64.0  1932154 14.8</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ncells  683319 36.5    1418005 75.8  1418005 75.8</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Vcells 1253449  9.6    8388608 64.0  1932154 14.8</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The output shows memory usage in Ncells (cons cells, used for pairlists and language objects) and Vcells (vector cells, used for vector data). The “used” column is current consumption; “max used” is the peak since the last <code>gc(reset = TRUE)</code>.</p>
 <p><code>gcinfo(TRUE)</code> tells R to print a message every time the garbage collector runs, which is noisy but revealing when you want to understand how much allocation a piece of code is doing:</p>
@@ -1044,7 +1044,7 @@ Figure&nbsp;29.1: The SEXPREC struct: a fixed-size header followed by a contiguo
 <span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">body</span>(add5)</span>
 <span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x + n</span></span>
 <span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>(add5)</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x0000017d59664b28&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x0000017352950b28&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>formals()</code>, <code>body()</code>, and <code>environment()</code> are R-level accessors to the three fields of the CLOSXP. The environment of <code>add5</code> is the execution environment created when <code>adder(5)</code> was called, and it contains the binding <code>n = 5</code>. This is lexical scoping made concrete: the closure carries a pointer to the environment where it was born, and that environment stays alive as long as the closure exists, because the GC traces the pointer and keeps the environment reachable.</p>
 <p>Every user-defined function in R is a CLOSXP. Even a bare <code>function(x) x + 1</code> carries all three fields. The distinction between “function” and “closure” that some languages make does not exist in R’s implementation: all functions are closures. But not all callable things in R are closures, and the mechanisms for reaching compiled code differ in important ways.</p>

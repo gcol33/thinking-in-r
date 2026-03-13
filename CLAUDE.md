@@ -14,7 +14,7 @@
 
 1. Edit `.qmd` source files
 2. `quarto render --to html`
-3. Commit source + `docs/` + `_freeze/`
+3. Commit source + `docs/`
 4. Push to `main` — GitHub Pages auto-deploys
 
 ## PDF

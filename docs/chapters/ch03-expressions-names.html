@@ -873,7 +873,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>When you quit R, it may ask whether to “save your workspace image.” This saves all names and values currently in your workspace to a file, so they reappear next time you open R. In the early days, when computations could take hours, this made sense. Today, most computations are fast enough that you’re better off keeping your work in a script file (<code>.R</code> or <code>.qmd</code>) and rerunning it from scratch. That way, every value in your workspace traces back to a line of code you can point to, and you never wonder where a mysterious leftover variable came from.</p>
 </div>
 </div>
-<p>Step back and notice what the workspace actually is: a collection of name-to-value bindings, exactly the mechanism this chapter introduced with <code>x &lt;- 3</code>. The global environment is itself a value you can inspect (<code>environment()</code> returns it, <code>ls.str()</code> prints every binding in it), which means the thing that holds all your names is itself an expression that evaluates to a result. Even R’s bookkeeping is expressions all the way down.</p>
+<p>Try this:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>R returns <code>&lt;environment: R_GlobalEnv&gt;</code>. The workspace is an object, the same kind of thing as the numbers and strings you have been binding to names. You can pass it to <code>ls.str()</code> and get back every binding in it. The container that holds your names is itself a value with a name.</p>
 
 
 </section>
