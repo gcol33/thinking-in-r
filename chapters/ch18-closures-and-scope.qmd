@@ -346,7 +346,7 @@ acct$withdraw(30)
 acct$check()
 ```
 
-Three closures share a single environment containing one private variable, `balance`. From the outside, `acct` behaves like an object with methods; from the inside, it is just functions closing over a shared environment. Peter Norvig observed that "closures are poor man's objects, and objects are poor man's closures." R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment. @sec-oop-in-r explores where that equivalence leads.
+Three closures share a single environment containing one private variable, `balance`. From the outside, `acct` behaves like an object with methods; from the inside, it is just functions closing over a shared environment. Peter Norvig observed that "closures are poor man's objects, and objects are poor man's closures." R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment. @sec-s3-and-s7 explores where that equivalence leads.
 
 
 ### Exercises {.unnumbered}

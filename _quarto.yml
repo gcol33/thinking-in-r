@@ -100,5 +100,7 @@ format:
     link-citations: true
     callout-appearance: simple
     include-in-header: preamble.tex
+    include-before-body: covers/front-cover.tex
+    include-after-body: covers/back-cover.tex
 
 editor: source

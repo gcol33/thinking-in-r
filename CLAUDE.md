@@ -20,3 +20,6 @@
 ## PDF
 
 - Render separately with `quarto render --to pdf` — never commit the PDF (it's sold separately)
+- Covers: `covers/front-cover.tex` (front) and `covers/back-cover.tex` (back) are included via `_quarto.yml` (`include-before-body` / `include-after-body`)
+- Cover images: `covers/cover1/front.png` and `covers/cover1/back.png` — uses PNG because LaTeX doesn't natively support SVG
+- TikZ overlay places covers full-bleed on their own pages

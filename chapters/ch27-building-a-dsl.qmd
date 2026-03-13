@@ -41,7 +41,7 @@ Each DSL makes a different trade-off: formulas redefine arithmetic operators ins
 ### Exercises {.unnumbered}
 
 1. Type `ggplot2::aes` at the console (no parentheses) and read the source. Where does it capture the user's expressions? What function does it use?
-2. Look at the source of `ggplot2:::"+.gg"`. What does the `+` operator actually do to a ggplot object?
+2. Look at the source of `ggplot2`'s internal `"+.gg"` function (use the triple-colon operator). What does `+` actually do to a ggplot object?
 3. Compare `filter(df, x > 5)` to `df[df$x > 5, ]`. What does dplyr's version gain from NSE? What does it cost?
 
 

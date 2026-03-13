@@ -145,7 +145,7 @@ Key tags:
 
 - `@param`: describe each argument. Type + meaning + constraints.
 - `@return`: what the function returns.
-- `@export`: makes the function visible to users. Without it, the function is internal (accessible via `:::` but not `::`).
+- `@export`: makes the function visible to users. Without it, the function is internal (accessible via the triple-colon operator but not `::`).
 - `@examples`: runnable code. `R CMD check` executes these.
 - `@seealso`, `@family`: cross-references to related functions.
 - `@inheritParams`: borrow parameter documentation from another function.

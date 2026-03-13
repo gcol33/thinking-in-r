@@ -986,7 +986,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>acct<span class="sc">$</span><span class="fu">check</span>()</span>
 <span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 120</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Three closures share a single environment containing one private variable, <code>balance</code>. From the outside, <code>acct</code> behaves like an object with methods; from the inside, it is just functions closing over a shared environment. Peter Norvig observed that “closures are poor man’s objects, and objects are poor man’s closures.” R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment. <span class="quarto-unresolved-ref">?sec-oop-in-r</span> explores where that equivalence leads.</p>
+<p>Three closures share a single environment containing one private variable, <code>balance</code>. From the outside, <code>acct</code> behaves like an object with methods; from the inside, it is just functions closing over a shared environment. Peter Norvig observed that “closures are poor man’s objects, and objects are poor man’s closures.” R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment. <a href="ch24-s3-and-s7.html" class="quarto-xref"><span>Chapter 24</span></a> explores where that equivalence leads.</p>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
@@ -1007,7 +1007,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>(count)</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x0000019383538f58&gt;</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x0000028fb2514e78&gt;</span></span>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span>(<span class="fu">environment</span>(count))</span>
 <span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "n"</span></span>
 <span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>(count)<span class="sc">$</span>n</span>

@@ -353,7 +353,7 @@ A function that fails immediately with a clear message saves you from chasing wr
 2. What happens if you write `stopifnot(is.numeric(x), length(x) == 1)` and pass a vector? Try it.
 
 
-## Recursion {#sec-recursion}
+## Recursion {#sec-recursion-preview}
 
 A function can call other functions. Can it call *itself*?
 

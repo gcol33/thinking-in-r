@@ -1,21 +1,49 @@
 /.quarto/
 **/*.quarto_ipynb
 
+# Build artifacts
+_book/
+__pycache__/
+# LaTeX / PDF build intermediates
+Thinking-in-R.tex
+index.*
+!index.qmd
+
+# PDF freeze files (HTML freeze is tracked; PDF is not committed)
+_freeze/**/tex.json
+_freeze/**/figure-pdf/
+
 # Reference repos (cloned for research, not part of this book)
 references/
 
-# Image generation scripts
+# Cover designs (generated, large)
+covers/
+
+# Python/R utility scripts (not part of the book)
+scripts/
+
+# Image generation scripts and test images
 images/*.py
 images/*.R
 images/*.html
+images/test_*
+images/page2_check.png
+images/figure_guidelines.md
 
-# Research and fetch scripts
-fetch_*.py
-read_*.py
-
-# Internal planning documents
+# Internal planning and temp files
 author-profile.md
 review.md
+checklist.md
+todo.md
+audit-data.json
+audit.html
+v1.1.0-rewrite.diff
+
+# Chapter artifacts (copies, rendered side-files, intermediates)
+chapters/*- Copy.qmd
+chapters/*-rewrite_files/
+chapters/*_files/
+chapters/*.rmarkdown
 
 # Intermediate markdown (generated from qmd)
 chapters/*.md
