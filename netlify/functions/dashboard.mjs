@@ -146,7 +146,11 @@ export default async (req) => {
       const uniqueLine = daily.map((d, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(d.unique)}`).join(" ");
       const viewsArea = viewsLine + ` L${x(29)},${h} L${x(0)},${h} Z`;
       const uniqueArea = uniqueLine + ` L${x(29)},${h} L${x(0)},${h} Z`;
-      const labels = daily.map((d, i) => (i % 7 === 0 || i === 29) ? `<text class="x-label" x="${x(i)}" y="${h + 20}">${d.date.slice(5)}</text>` : "").join("");
+      const labels = daily.map((d, i) => {
+        if (!(i % 7 === 0 || i === 29)) return "";
+        const [m, dd] = d.date.slice(5).split("-");
+        return `<text class="x-label" x="${x(i)}" y="${h + 20}">${parseInt(m)}/${parseInt(dd)}</text>`;
+      }).join("");
       const dots = daily.map((d, i) => `<circle class="dot" cx="${x(i)}" cy="${y(d.unique)}" r="3"><title>${d.date}: ${d.unique} visitors, ${d.views} views</title></circle>`).join("");
       return `<path class="area views" d="${viewsArea}"/><path class="line views" d="${viewsLine}"/><path class="area unique" d="${uniqueArea}"/><path class="line unique" d="${uniqueLine}"/>${dots}${labels}`;
     })()}
