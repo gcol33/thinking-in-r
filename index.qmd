@@ -1,7 +1,7 @@
 # Preface {.unnumbered}
 
 ::: {.content-visible when-format="html"}
-*Last updated: `r format(as.Date(system("git log -1 --format=%ci", intern = TRUE)), "%B %d, %Y")`*
+*Last updated: {{< meta date >}}*
 
 <div class="book-cover-hero">
   <img src="cover.svg" alt="Thinking in R book cover" />
