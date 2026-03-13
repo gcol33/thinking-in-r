@@ -87,7 +87,7 @@ export default async (req) => {
   .line-chart .area.unique { fill: #4f8ff7; }
   .line-chart .dot { r: 3; fill: #4f8ff7; opacity: 0; }
   .line-chart .dot:hover { opacity: 1; }
-  .line-chart .x-label { font-size: 9px; fill: #555; text-anchor: middle; }
+  .line-chart .x-label { font-size: 11px; fill: #666; text-anchor: middle; font-family: inherit; }
   .chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; background: #1a1d27; border-radius: 8px; padding: 1rem 1rem 2rem; position: relative; }
   .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0; height: 100%; justify-content: flex-end; position: relative; }
   .bar { width: 100%; border-radius: 2px 2px 0 0; min-height: 0; }
@@ -136,19 +136,18 @@ export default async (req) => {
 
 <h2>Last 30 Days</h2>
 <div class="line-chart">
-  <svg viewBox="0 0 600 130" preserveAspectRatio="none">
+  <svg viewBox="0 0 800 160">
     ${(() => {
-      const w = 600, h = 110, pad = 20;
+      const w = 800, h = 120, pad = 40;
       const max = Math.max(...daily.map(d => d.views), 1);
       const x = (i) => pad + (i / 29) * (w - 2 * pad);
-      const yV = (v) => h - (v / max) * (h - 10);
-      const yU = (v) => h - (v / max) * (h - 10);
-      const viewsLine = daily.map((d, i) => `${i === 0 ? "M" : "L"}${x(i)},${yV(d.views)}`).join(" ");
-      const uniqueLine = daily.map((d, i) => `${i === 0 ? "M" : "L"}${x(i)},${yU(d.unique)}`).join(" ");
+      const y = (v) => h - (v / max) * (h - 10);
+      const viewsLine = daily.map((d, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(d.views)}`).join(" ");
+      const uniqueLine = daily.map((d, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(d.unique)}`).join(" ");
       const viewsArea = viewsLine + ` L${x(29)},${h} L${x(0)},${h} Z`;
       const uniqueArea = uniqueLine + ` L${x(29)},${h} L${x(0)},${h} Z`;
-      const labels = daily.map((d, i) => (i % 5 === 0 || i === 29) ? `<text class="x-label" x="${x(i)}" y="${h + 16}">${d.date.slice(5)}</text>` : "").join("");
-      const dots = daily.map((d, i) => `<circle class="dot" cx="${x(i)}" cy="${yU(d.unique)}" r="3"><title>${d.date}: ${d.unique} visitors, ${d.views} views</title></circle>`).join("");
+      const labels = daily.map((d, i) => (i % 7 === 0 || i === 29) ? `<text class="x-label" x="${x(i)}" y="${h + 20}">${d.date.slice(5)}</text>` : "").join("");
+      const dots = daily.map((d, i) => `<circle class="dot" cx="${x(i)}" cy="${y(d.unique)}" r="3"><title>${d.date}: ${d.unique} visitors, ${d.views} views</title></circle>`).join("");
       return `<path class="area views" d="${viewsArea}"/><path class="line views" d="${viewsLine}"/><path class="area unique" d="${uniqueArea}"/><path class="line unique" d="${uniqueLine}"/>${dots}${labels}`;
     })()}
   </svg>
