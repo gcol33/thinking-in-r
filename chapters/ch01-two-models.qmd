@@ -43,7 +43,7 @@ Turing's tape machine was an abstraction, but the first real computers were not 
 
 So is it?
 
-![Two models of computation: a Turing machine mutates state step by step; Church's lambda calculus reduces an expression to a value.](../images/turing_vs_church.png){#fig-turing-vs-church width=100%}
+![Two models of computation: a Turing machine mutates state step by step; Church's lambda calculus reduces an expression to a value.](../images/turing_vs_church.svg){#fig-turing-vs-church width=100%}
 
 ## Expressions and functions {#sec-church}
 
