@@ -1,4 +1,4 @@
--- Lua filter: replace {{< meta date >}} result with git commit date
+-- Lua filter: set date-modified from git, leave date (publish date) untouched
 function Meta(meta)
   local handle = io.popen("git log -1 --format=%ci")
   if handle then
@@ -11,7 +11,7 @@ function Meta(meta)
         "July", "August", "September", "October", "November", "December"
       }
       local formatted = months[tonumber(month)] .. " " .. tonumber(day) .. ", " .. year
-      meta.date = pandoc.Inlines(pandoc.Str(formatted))
+      meta["date-modified"] = pandoc.Inlines(pandoc.Str(formatted))
     end
   end
   return meta
