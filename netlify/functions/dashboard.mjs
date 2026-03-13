@@ -123,7 +123,7 @@ export default async (req) => {
     <div class="sub">${p(today)} page views</div>
   </div>
   <div class="card">
-    <div class="label">This Month</div>
+    <div class="label">Month</div>
     <div class="value">${p(uMonth)}</div>
     <div class="sub">${p(thisMonth)} page views</div>
   </div>
@@ -178,7 +178,7 @@ export default async (req) => {
 <h2>Your Visits (Owner)</h2>
 <div class="cards">
   <div class="card"><div class="label">Today</div><div class="value">${p(oToday)}</div></div>
-  <div class="card"><div class="label">This Month</div><div class="value">${p(oMonth)}</div></div>
+  <div class="card"><div class="label">Month</div><div class="value">${p(oMonth)}</div></div>
   <div class="card"><div class="label">All Time</div><div class="value">${p(oTotal)}</div></div>
 </div>
 
