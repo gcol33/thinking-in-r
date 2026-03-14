@@ -13,13 +13,13 @@ Mr. Tape picked up the first number and handed it to Mr. State. "Three." Mr. Sta
 
 "Eighteen," said Mr. Tape. He did not look back.
 
-Mr. State put the 18 on the table. He looked at his empty hands.
+Mr. State put the 18 on the table, face down. He looked at his empty hands. Then he left.
 
-Mr. Fold picked up the 2 and the 8. He pressed their edges together and creased them flat. A 10 sat on the table. He folded the 10 into the 5 the same way. Crease and press. Then the 15 into the 3.
+The man at the far end of the table had not moved. He pulled the four numbers toward himself: 3, 5, 2, 8. He picked up the 2 and the 8, pressed their edges together and creased them flat. A 10. He folded the 10 into the 5. Crease and press. Then the 15 into the 3.
 
-Mr. State picked it up and turned it over.
+Eighteen.
 
-It was the same number.
+He turned over the number Mr. State had left.
 
 
 ## Instructions and state {#sec-turing}
