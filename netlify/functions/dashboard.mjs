@@ -74,7 +74,7 @@ export default async (req) => {
   h2 { font-size: 1rem; margin: 2rem 0 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.05em; }
   .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
   .card { background: #1a1d27; border-radius: 8px; padding: 1.25rem; }
-  a.card { text-decoration: none; color: inherit; transition: background 0.15s; }
+  a.card { text-decoration: none; color: inherit; transition: background 0.15s; display: block; cursor: pointer; }
   a.card:hover { background: #222538; }
   .card .label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
   .card .value { font-size: 2rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
