@@ -5,17 +5,17 @@
 source(here::here("_common.R"))
 ```
 
-Once upon a time, four numbers had been left on the table in two identical rows: 3, 5, 2, 8.
+Once upon a time, four numbers had been left on the table: 3, 5, 2, 8.
 
 Mr. Tape came in through the front door. He was long and thin, and he walked in a straight line from the door to the table. Behind him came Mr. State, who took his place behind Mr. Tape and waited, as he always did. But they were not the only ones there. At the far end of the table someone was already sitting with his hands flat on the surface.
 
-Mr. Tape picked up the first number and handed it to Mr. State.
+Mr. Tape touched the first number and read it aloud.
 
 "Three."
 
-Mr. State held it and seemed pleased.
+Mr. State was holding a 3. No one had seen where it came from. On the table, the 3 was still there. He seemed pleased.
 
-Mr. Tape picked up the next.
+Mr. Tape touched the next.
 
 "Five."
 
@@ -31,9 +31,7 @@ He was holding an 18. He could not have told you what he'd had a moment before.
 
 "Eighteen," said Mr. Tape, as was his duty.
 
-Mr. State put the 18 on the table and looked at his empty hands.
-
-The man at the far end of the table looked at the 18 for some time.
+The man at the far end of the table had been watching.
 
 "Let's see," said Mr. Fold at last.
 
