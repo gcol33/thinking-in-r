@@ -691,7 +691,6 @@ Figure&nbsp;1.1: Two models of computation: a Turing machine mutates state step 
 = add(3, 15)
 = 18</code></pre>
 <p>The expression unfolds, each <code>add</code> consuming its arguments, until only 18 remains. This was Mr.&nbsp;Fold’s method — no running total, no memory, just pairs collapsing until one number was left. Nothing was overwritten.</p>
-<p>Turing’s model asks “what sequence of operations transforms my initial state into the answer?” Church’s asks a different question entirely: “what expression, when fully evaluated, gives the answer?” The result is the same, but the picture of what happened along the way could hardly be more different. And both pictures show up in real code, in a language you can open right now.</p>
 </section>
 <section id="sec-where-r-fits" class="level2" data-number="1.3">
 <h2 data-number="1.3" class="anchored" data-anchor-id="sec-where-r-fits"><span class="header-section-number">1.3</span> What this has to do with R</h2>

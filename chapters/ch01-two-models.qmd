@@ -93,8 +93,6 @@ sum([3, 5, 2, 8])
 
 The expression unfolds, each `add` consuming its arguments, until only 18 remains. This was Mr. Fold's method — no running total, no memory, just pairs collapsing until one number was left. Nothing was overwritten.
 
-Turing's model asks "what sequence of operations transforms my initial state into the answer?" Church's asks a different question entirely: "what expression, when fully evaluated, gives the answer?" The result is the same, but the picture of what happened along the way could hardly be more different. And both pictures show up in real code, in a language you can open right now.
-
 
 ## What this has to do with R {#sec-where-r-fits}
 
