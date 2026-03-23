@@ -7,7 +7,7 @@ source(here::here("_common.R"))
 
 You write a loop that takes three seconds on your test data. You deploy it on the full dataset, ten times larger, and it takes five minutes. Not thirty seconds. Five minutes. You double-check the code; nothing has changed, nothing is obviously wrong. The loop is doing the same thing it did before, just on more rows. So why did a 10x increase in data produce a 100x increase in running time?
 
-The answer is not about your code being "bad," and no amount of hardware will fix it. It is about the *shape* of growth: how running time scales with input size, and why some operations hit a wall that scales steeper than you expected. Big-O notation, hash tables, the limits of computation: these ideas draw the line between code that scales and code that chokes. They also explain why that line exists at all.
+The answer is not about your code being "bad," and no amount of hardware will fix it. It is about the *shape* of growth: how running time scales with input size\index{time complexity}\index{space complexity}, and why some operations hit a wall that scales steeper than you expected. Big-O notation, hash tables, the limits of computation: these ideas draw the line between code that scales and code that chokes. They also explain why that line exists at all.
 
 
 ## Not all operations are equal {#sec-why-speed-shape}
@@ -19,21 +19,21 @@ That difference is not a constant factor that a faster computer could erase; it 
 
 ## Big-O notation {#sec-big-o}
 
-Big-O notation formalizes a single question: how does running time grow with input size? We say f(n) is O(g(n)) if, past some input size, f grows no faster than a constant multiple of g.
+Big-O notation\index{Big-O notation} formalizes a single question: how does running time grow with input size? We say f(n) is O(g(n)) if, past some input size, f grows no faster than a constant multiple of g.
 
 The notation strips away constant factors and lower-order terms, which means an algorithm that takes 3n² + 100n + 7 steps is simply O(n²). The constants matter in practice (a factor of 10 is still a factor of 10), but Big-O captures the *shape* of growth, and that shape dominates once n gets large enough. What about when n is small?
 
 ### Common complexity classes
 
-**O(1): constant time.** The operation takes the same time regardless of input size. `length(x)` is O(1) because R stores the length as an attribute and never counts the elements; indexing by position (`x[5]`) is also O(1), since R computes a memory offset and jumps directly to it. A less obvious example, and a more interesting one, is hash table lookup, which gets its own section below (@sec-hash-tables).
+**O(1)\index{O(1)}: constant time.** The operation takes the same time regardless of input size. `length(x)` is O(1) because R stores the length as an attribute and never counts the elements; indexing by position (`x[5]`) is also O(1), since R computes a memory offset and jumps directly to it. A less obvious example, and a more interesting one, is hash table lookup, which gets its own section below (@sec-hash-tables).
 
-**O(log n): logarithmic time.** Each step halves the search space. Binary search is the classic example: `findInterval(0.5, sorted_x)` finds where 0.5 falls in a sorted vector by repeatedly splitting it in half, which on a million elements takes roughly 20 comparisons and on a billion elements about 30. Logarithmic growth is *extremely* slow. So slow it barely registers.
+**O(log n): logarithmic time.** Each step halves the search space. Binary search\index{binary search} is the classic example: `findInterval(0.5, sorted_x)` finds where 0.5 falls in a sorted vector by repeatedly splitting it in half, which on a million elements takes roughly 20 comparisons and on a billion elements about 30. Logarithmic growth is *extremely* slow. So slow it barely registers.
 
-**O(n): linear time.** You touch every element once. `sum(x)` walks the entire vector, adding each element: one pass, n additions. `which(x > 0)` also scans every element once, selecting those that match. Linear is often the best you can do, because you need to at least *read* all the input.
+**O(n)\index{O(n)}: linear time.** You touch every element once. `sum(x)` walks the entire vector, adding each element: one pass, n additions. `which(x > 0)` also scans every element once, selecting those that match. Linear is often the best you can do, because you need to at least *read* all the input.
 
-**O(n log n): linearithmic time.** The cost of sorting. `sort(x)` for a vector of length n makes O(n log n) comparisons, which is only slightly worse than linear: sorting a million numbers takes about 20x more work than summing them, not 1,000,000x more. Can you do better? For comparison-based sorting, no: there is a proof (via decision trees) that any algorithm which sorts by comparing pairs of elements must make at least O(n log n) comparisons in the worst case. Radix sort sidesteps this bound by not comparing elements at all (it distributes them into buckets by digit) but it only works when the keys have bounded range (integers, fixed-length strings).
+**O(n log n)\index{O(n log n)}: linearithmic time.** The cost of sorting. `sort(x)` for a vector of length n makes O(n log n) comparisons, which is only slightly worse than linear: sorting a million numbers takes about 20x more work than summing them, not 1,000,000x more. Can you do better? For comparison-based sorting, no: there is a proof (via decision trees) that any algorithm which sorts by comparing pairs of elements must make at least O(n log n) comparisons in the worst case. Radix sort sidesteps this bound by not comparing elements at all (it distributes them into buckets by digit) but it only works when the keys have bounded range (integers, fixed-length strings).
 
-**O(n²): quadratic time.** Nested loops where both loops run over the input. This is where performance falls apart. The classic R example is growing a vector with `c()`:
+**O(n²)\index{O(n squared)}: quadratic time.** Nested loops where both loops run over the input. This is where performance falls apart. The classic R example is growing a vector with `c()`:
 
 ```{r}
 #| eval: false
@@ -68,7 +68,7 @@ Suppose you have a list of 10,000 names and you need to check whether `"beta"` i
 
 If the list is sorted, binary search gets you to O(log n). But there is a way to get O(1), constant time, regardless of how many names are in the list.
 
-The trick is to turn the name into a number. A *hash function* takes a string (or any value) and produces an integer. For example, a simple hash might sum the character codes of each letter:
+The trick is to turn the name into a number. A *hash function*\index{hash table} takes a string (or any value) and produces an integer. For example, a simple hash might sum the character codes of each letter:
 
 ```{r}
 simple_hash <- function(key, n_slots) {
@@ -284,9 +284,9 @@ Everything above assumes the problem *can* be solved, that some algorithm exists
 
 ### The halting problem {#sec-halting-problem}
 
-By the early twentieth century, mathematicians had been on a winning streak that stretched back decades. Cantor had tamed infinity. Frege had formalized logic. Peano had reduced arithmetic to five axioms. Every time someone asked "can we make this rigorous?" the answer had been yes. David Hilbert had watched this happen for thirty years, and in 1928 he posed the question that felt like the natural finish line: the *Entscheidungsproblem*, the decision problem. Could you build a mechanical procedure that takes any mathematical statement and tells you whether it is true or false? If such a procedure existed, mathematical truth would be computable. Every conjecture decidable, every proof checkable by turning a crank, but then in 1936 a twenty-three-year-old graduate student would shock the whole mathematical worldview.
+By the early twentieth century, mathematicians had been on a winning streak that stretched back decades. Cantor had tamed infinity. Frege had formalized logic. Peano had reduced arithmetic to five axioms. Every time someone asked "can we make this rigorous?" the answer had been yes. David Hilbert had watched this happen for thirty years, and in 1928 he posed the question that felt like the natural finish line: the *Entscheidungsproblem*\index{Entscheidungsproblem}, the decision problem. Could you build a mechanical procedure that takes any mathematical statement and tells you whether it is true or false? If such a procedure existed, mathematical truth would be computable. Every conjecture decidable, every proof checkable by turning a crank, but then in 1936 a twenty-three-year-old graduate student would shock the whole mathematical worldview.
 
-He proved that no algorithm can decide, for an arbitrary program and input, whether that program will eventually halt or run forever. It was Alan Turing, the same graduate student whose tape machine we met in @sec-turing, now proving that his own machine had a boundary it could never cross. The specific question he settled is called the *halting problem*. The proof is one of the most beautiful arguments in mathematics, it fits in half a page, and it works by turning the assumption against itself. We give it in full, twice: once in R and once in lambda calculus.
+He proved that no algorithm\index{algorithm} can decide, for an arbitrary program and input, whether that program will eventually halt or run forever\index{halting problem}. It was Alan Turing, the same graduate student whose tape machine we met in @sec-turing, now proving that his own machine had a boundary it could never cross. The specific question he settled is called the *halting problem*. The proof is one of the most beautiful arguments in mathematics, it fits in half a page, and it works by turning the assumption against itself. We give it in full, twice: once in R and once in lambda calculus.
 
 **The proof by contradiction (in R).** Assume, for the sake of contradiction, that a function `halts(f, x)` exists. It takes any function `f` and any input `x`, and returns `TRUE` if `f(x)` terminates, `FALSE` if `f(x)` runs forever. It always returns one or the other; it never crashes or loops itself. That is the assumption we will break.
 
@@ -309,7 +309,7 @@ Now ask: does `trouble(trouble)` halt?
 
 **Case 2:** Suppose `halts(trouble, trouble)` returns `FALSE`. Then `trouble(trouble)` enters the `else` branch and returns `trouble`. It halts. But `halts` said it would not. Contradiction.
 
-Both cases contradict the assumption, and there is no third case (we assumed `halts` always returns `TRUE` or `FALSE`). Therefore `halts` cannot exist. No algorithm, in any language, can solve the halting problem for arbitrary programs.
+Both cases contradict the assumption, and there is no third case (we assumed `halts` always returns `TRUE` or `FALSE`). Therefore `halts` cannot exist. No algorithm, in any language, can solve the halting problem for arbitrary programs\index{undecidable}.
 
 The argument is a *diagonal argument*, the same technique Cantor used in 1891 to prove that the real numbers are uncountable, and the same structure Godel used in 1931 for the incompleteness theorems. The trick is always the same: assume a complete listing (or decision procedure) exists, then construct something that disagrees with every entry on the diagonal.
 
@@ -338,7 +338,7 @@ The mechanism that breaks H is self-application: a term applied to itself. That 
 
 Church published this in April 1936 ("An Unsolvable Problem of Elementary Number Theory"); Turing published his version in November 1936 ("On Computable Numbers"). They later proved that their two formalisms, lambda calculus and Turing machines, compute exactly the same class of functions. The halting problem is not an artifact of one model. It is a boundary.
 
-**Why it matters in practice.** Rice's theorem (1953) generalizes the result: *any* non-trivial semantic property of programs is undecidable. You cannot write a program that decides whether another program is "correct," "efficient," or "pure." Every static analyzer is necessarily incomplete, meaning it will either miss some bugs or raise false alarms. Tools like lintr and mypy use sound overapproximations, rejecting some correct programs to guarantee they never accept an incorrect one. The question is not whether your analyzer has blind spots, but where.
+**Why it matters in practice.** Rice's theorem\index{Rice's theorem} (1953) generalizes the result: *any* non-trivial semantic property of programs is undecidable. You cannot write a program that decides whether another program is "correct," "efficient," or "pure." Every static analyzer is necessarily incomplete, meaning it will either miss some bugs or raise false alarms. Tools like lintr and mypy use sound overapproximations, rejecting some correct programs to guarantee they never accept an incorrect one. The question is not whether your analyzer has blind spots, but where.
 
 ### Practical workarounds
 
@@ -362,7 +362,7 @@ The R package `R.utils` provides `withTimeout()` for a cleaner interface. These 
 
 ### The Church-Turing thesis
 
-In 1936, Alonzo Church proved that the *Entscheidungsproblem* (the decision problem for first-order logic) is unsolvable, using lambda calculus as his model of computation. Alan Turing, working independently, proved the same result using his abstract machine. Turing then went further: in an appendix added after learning of Church's work, he proved that the two formalisms compute exactly the same class of functions. The *Church-Turing thesis* states that any function computable by an effective procedure can be computed by a Turing machine, or equivalently, expressed as a lambda calculus term.
+In 1936, Alonzo Church proved that the *Entscheidungsproblem* (the decision problem for first-order logic) is unsolvable, using lambda calculus as his model of computation. Alan Turing, working independently, proved the same result using his abstract machine. Turing then went further: in an appendix added after learning of Church's work, he proved that the two formalisms compute exactly the same class of functions. The *Church-Turing thesis*\index{Church-Turing thesis} states that any function computable by an effective procedure can be computed by a Turing machine, or equivalently, expressed as a lambda calculus term.
 
 This has a concrete consequence: R, Python, C, Haskell, and every other general-purpose language can compute exactly the same set of functions. No language can solve the halting problem; no language can compute a function that another general-purpose language cannot. The differences between languages are speed, expressiveness, and safety, not computational power.
 
@@ -372,7 +372,7 @@ R's functional core (functions as values, closures, recursion) is directly desce
 
 Some problems are easy to *verify* but (probably) hard to *solve*. Given a proposed solution to the traveling salesman problem, you can check its total distance in O(n), but finding the optimal solution appears to require exponential time.
 
-The class **P** contains problems solvable in polynomial time; the class **NP** contains problems whose solutions can be *verified* in polynomial time. Whether P = NP is the most famous open question in computer science, and most researchers believe P ≠ NP, which would mean some problems are fundamentally harder to solve than to check.
+The class **P** contains problems solvable in polynomial time; the class **NP** contains problems whose solutions can be *verified* in polynomial time. Whether P = NP\index{P vs NP} is the most famous open question in computer science, and most researchers believe P ≠ NP, which would mean some problems are fundamentally harder to solve than to check.
 
 The subset sum problem makes the gap concrete. Given a set of integers, does any subset sum to a target value? Verifying a proposed subset is O(n), just add the numbers. Finding one by brute force means checking all 2^n subsets:
 
@@ -405,9 +405,9 @@ subset_sum_greedy <- function(x, target) {
 
 At n = 20 the brute-force version checks about a million subsets and finishes in under a second. At n = 40 it checks a trillion — you will not wait long enough. The greedy version runs in O(n log n) on either input but is not guaranteed to find a solution that exists. That is the P-vs-NP gap in miniature: polynomial verification, (apparently) exponential search, and a fast heuristic that trades correctness for speed.
 
-In practice, R encounters NP-hard problems in optimization. `optim()` does not guarantee a global optimum for non-convex problems; it uses heuristic methods (Nelder-Mead, simulated annealing) that find good-enough solutions without exhaustive search. This is the pragmatic response to intractability: give up on perfection and settle for "good enough, fast."
+In practice, R encounters NP-hard\index{NP-hard} problems in optimization. `optim()` does not guarantee a global optimum for non-convex problems; it uses heuristic methods (Nelder-Mead, simulated annealing) that find good-enough solutions without exhaustive search. This is the pragmatic response to intractability: give up on perfection and settle for "good enough, fast."
 
-Remember the loop from the opening, the one that took five minutes instead of thirty seconds? You now have the vocabulary to diagnose it: somewhere in that loop, an O(n²) operation was hiding inside what looked like O(n) code, and the 10x increase in data exposed the quadratic scaling that small test sets had concealed. The growth rate was there from the start; faster hardware only postpones when you hit it.
+The loop from the opening, the one that took five minutes instead of thirty seconds — you now have the vocabulary to diagnose it: somewhere in that loop, an O(n²) operation was hiding inside what looked like O(n) code, and the 10x increase in data exposed the quadratic scaling that small test sets had concealed. The growth rate was there from the start; faster hardware only postpones when you hit it. But complexity is only half the story — the other half is the data structure you choose to hold your values, and so far the only container you have is the atomic vector, which insists that everything inside it be the same type.
 
 ### Exercises {.unnumbered}
 

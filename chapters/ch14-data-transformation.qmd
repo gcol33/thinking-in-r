@@ -13,17 +13,17 @@ Are Gentoo penguins heavier than Adelie penguins? The `penguins` data has the an
 
 ## The idea: verbs for data {#sec-verbs-for-data}
 
-A dplyr verb takes a data frame and returns a data frame. The data frame goes in first, the result comes out the same shape, and nothing else changes. Five verbs cover most of what you need:
+A dplyr\index{dplyr (package)} verb takes a data frame and returns a data frame. The data frame goes in first, the result comes out the same shape, and nothing else changes. Five verbs cover most of what you need:
 
-- `filter()` keeps rows that match a condition.
-- `select()` picks columns by name.
-- `mutate()` adds new columns computed from existing ones.
-- `summarise()` collapses rows into a summary.
-- `arrange()` reorders rows.
+- `filter()`\index{filter()} keeps rows that match a condition.
+- `select()`\index{select()} picks columns by name.
+- `mutate()`\index{mutate()} adds new columns computed from existing ones.
+- `summarise()`\index{summarise()} collapses rows into a summary.
+- `arrange()`\index{arrange()} reorders rows.
 
 You compose them for complex transformations (via pipes, @sec-pipes-and-composition), but each one does exactly one thing. A dplyr pipeline is function composition: each verb transforms a data frame and passes it to the next, the same composition from lambda calculus, (g ∘ f)(x) = g(f(x)), applied to tables instead of numbers.
 
-These verbs did not come from nowhere. Edgar Codd's 1970 paper defined a *relational algebra*: a small set of operations on tables where every operation takes a table in and returns a table out. Restriction (keep rows), projection (keep columns), extension (add computed columns), aggregation (collapse groups). IBM resisted — they had a competing database product (IMS) — but the composability was too useful, and by the 1980s relational databases had won.
+These verbs did not come from nowhere. Edgar Codd's 1970 paper defined a *relational algebra*\index{relational algebra}: a small set of operations on tables where every operation takes a table in and returns a table out. Restriction (keep rows), projection (keep columns), extension (add computed columns), aggregation (collapse groups). IBM resisted — they had a competing database product (IMS) — but the composability was too useful, and by the 1980s relational databases had won.
 
 dplyr is Codd's algebra with friendlier names. The same ideas appear in SQL, pandas, and data.table because the operations are the same; only the syntax differs. `arrange()` is the one exception — ordering has no relational equivalent, but you need it for display.
 
@@ -223,7 +223,7 @@ summarise(penguins, mean_mass = mean(body_mass_g, na.rm = TRUE))
 
 One row. One number. On its own, collapsing everything into a single summary is limited. The interesting question is not "what is the mean?" but "how does the mean differ across species?" That is where `group_by()` enters.
 
-`group_by()` marks a data frame as grouped. It doesn't change the data; it attaches metadata that tells subsequent verbs to operate per group:
+`group_by()`\index{group\_by()} marks a data frame as grouped. It doesn't change the data; it attaches metadata that tells subsequent verbs to operate per group:
 
 ```{r}
 penguins_grouped <- group_by(penguins, species)
@@ -244,7 +244,7 @@ summarise(
 )
 ```
 
-`n()` counts the number of rows in each group; `n_distinct()` counts unique values:
+`n()`\index{n()} counts the number of rows in each group; `n_distinct()` counts unique values:
 
 ```{r}
 summarise(
@@ -253,7 +253,7 @@ summarise(
 )
 ```
 
-The shortcut `count()` does `group_by()` plus `summarise(n = n())` in one step:
+The shortcut `count()`\index{count()} does `group_by()` plus `summarise(n = n())` in one step:
 
 ```{r}
 count(penguins, species)
@@ -310,7 +310,7 @@ distinct(penguins, species, island)
 
 Seven combinations of species and island exist in the data.
 
-`slice_head()` and `slice_tail()` keep the first or last `n` rows:
+`slice_head()`\index{slice()} and `slice_tail()` keep the first or last `n` rows:
 
 ```{r}
 slice_head(penguins, n = 3)
@@ -335,7 +335,7 @@ pull(penguins, species) |> head()
 relocate(penguins, sex, year)
 ```
 
-Finally, `across()` applies a function to multiple columns at once. Summarise all numeric columns by their mean:
+Finally, `across()`\index{across()} applies a function to multiple columns at once. Summarise all numeric columns by their mean:
 
 ```{r}
 summarise(penguins, across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
@@ -429,7 +429,7 @@ subset(penguins, species == "Adelie", select = c(species, body_mass_g))
 
 `subset()` is clean and readable; for simple operations, it works well. Where dplyr pulls ahead is composability: every verb takes a data frame and returns one, so you can chain them. Base R's equivalents each return something slightly different: `aggregate()` renames your columns, `order()` gives you indices instead of a data frame. So you spend time wiring them together instead of thinking about your data.
 
-In fact, dplyr and SQL are the same language wearing different syntax. Both implement relational algebra, which is why they feel similar:
+dplyr and SQL\index{SQL} are the same language wearing different syntax. Both implement relational algebra, which is why they feel similar:
 
 | dplyr | SQL |
 |---|---|

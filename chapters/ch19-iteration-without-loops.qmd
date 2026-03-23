@@ -10,7 +10,7 @@ library(dplyr)
 
 You have a list of three data frames and you want to compute the mean of a column in each one. Six lines of `for` loop, or one line of `map()`. The `map()` version is shorter, but the real difference is structural.
 
-Functions are values (@sec-functions-are-values-chapter) and you can pass them to other functions (@sec-passing-functions). A *functional* builds on that idea: it is a higher-order function that handles the iteration for you. You give it a function and a collection; it applies the function to each element, manages the indexing and pre-allocation, and returns the results.
+Functions are values (@sec-functions-are-values-chapter) and you can pass them to other functions (@sec-passing-functions). A *functional* builds on that idea: it is a higher-order function that handles the iteration\index{iteration} for you. You give it a function and a collection; it applies the function to each element, manages the indexing and pre-allocation, and returns the results.
 
 This chapter uses three packages. Load them now if you are following along:
 
@@ -44,7 +44,7 @@ names(results) <- names(penguins_split)
 results
 ```
 
-Six lines to say "compute the mean mass for each group." Look at how much of that is bookkeeping: pre-allocate a container, set up an index, store results at the right position, copy names over at the end. The actual computation, `mean(df$body_mass_g, na.rm = TRUE)`, sits buried in the middle, surrounded by scaffolding that has nothing to do with the question you asked.
+Six lines to say "compute the mean mass for each group."\index{for loop} Look at how much of that is bookkeeping: pre-allocate a container, set up an index, store results at the right position, copy names over at the end. The actual computation, `mean(df$body_mass_g, na.rm = TRUE)`, sits buried in the middle, surrounded by scaffolding that has nothing to do with the question you asked.
 
 A functional says the same thing in one line:
 
@@ -75,9 +75,9 @@ The idea of handing a function to something that applies it to every element in 
 lapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-`lapply(x, f)` applies `f` to each element of `x` and returns a list. Always a list. That predictability is its strength.
+`lapply(x, f)`\index{lapply()} applies `f` to each element of `x` and returns a list. Always a list. That predictability is its strength.
 
-`sapply()` does the same thing, but tries to "simplify" the result:
+`sapply()`\index{sapply()} does the same thing, but tries to "simplify" the result:
 
 ```{r}
 sapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
@@ -85,7 +85,7 @@ sapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 
 When every call to `f` returns a single value, `sapply()` hands you a named vector. But if `f` returns different lengths for different elements, `sapply()` falls back to a list, silently. You cannot predict the return type without knowing the output of `f` for every element of `x`. Fine at the console; unreliable inside a function that other code depends on.
 
-`vapply()` solves this by making you declare the expected type:
+`vapply()`\index{vapply()} solves this by making you declare the expected type:
 
 ```{r}
 vapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE), numeric(1))
@@ -93,7 +93,7 @@ vapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE), numeric(1))
 
 The third argument, `numeric(1)`, says "I expect each call to return a single numeric value." If any call returns something else, you get an error instead of a silent type change.
 
-Two other base R functionals are worth knowing. `tapply(x, group, f)` applies `f` to subsets of `x` defined by `group`:
+Two other base R functionals are worth knowing.\index{apply family} `tapply(x, group, f)` applies `f` to subsets of `x` defined by `group`:
 
 ```{r}
 tapply(penguins$body_mass_g, penguins$species, mean, na.rm = TRUE)
@@ -119,7 +119,7 @@ Use `lapply()` when you want a list. Use `vapply()` when you want a vector and w
 
 ## `purrr::map()`: the tidyverse functional {#sec-purrr-map}
 
-The purrr package provides `map()`, which does the same thing as `lapply()`:
+The purrr\index{purrr (package)} package provides `map()`\index{map()}, which does the same thing as `lapply()`:
 
 ```{r}
 map(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
@@ -127,7 +127,7 @@ map(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 
 Apply a function to each element, return a list. So why bother with a new package?
 
-Three reasons. First, typed variants: `map_dbl()` returns a double vector, `map_chr()` returns a character vector, and if the function returns the wrong type, you get an error. No more guessing, no more silent simplification.
+Three reasons. First, typed variants: `map_dbl()`\index{map\_dbl()} returns a double vector, `map_chr()`\index{map\_chr()} returns a character vector, and if the function returns the wrong type, you get an error. No more guessing, no more silent simplification.
 
 ```{r}
 map_dbl(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
@@ -167,8 +167,8 @@ The typed variants of `map()` enforce both the type and the length of each resul
 
 - `map_dbl(.x, .f)`: each call to `.f` must return a single double. Result is a numeric vector.
 - `map_chr(.x, .f)`: each call must return a single string. Result is a character vector.
-- `map_lgl(.x, .f)`: each call must return a single logical. Result is a logical vector.
-- `map_int(.x, .f)`: each call must return a single integer. Result is an integer vector.
+- `map_lgl(.x, .f)`\index{map\_lgl()}: each call must return a single logical. Result is a logical vector.
+- `map_int(.x, .f)`\index{map\_int()}: each call must return a single integer. Result is an integer vector.
 
 ```{r}
 map_int(penguins_split, nrow)
@@ -219,9 +219,9 @@ species_counts <- map_int(penguins_split, nrow)
 map2_chr(species_names, species_counts, \(name, n) paste(name, ":", n, "penguins"))
 ```
 
-`map2(.x, .y, .f)` calls `.f(x[[1]], y[[1]])`, then `.f(x[[2]], y[[2]])`, and so on. The two inputs are consumed in parallel, not in a nested grid.
+`map2(.x, .y, .f)`\index{map2()} calls `.f(x[[1]], y[[1]])`, then `.f(x[[2]], y[[2]])`, and so on. The two inputs are consumed in parallel, not in a nested grid.
 
-For three or more inputs, use `pmap()`. You supply a list of vectors (or a data frame, since a data frame is a list of columns):
+For three or more inputs, use `pmap()`\index{pmap()}. You supply a list of vectors (or a data frame, since a data frame is a list of columns):
 
 ```{r}
 params <- list(
@@ -236,7 +236,7 @@ pmap(params, \(mean, sd, n) rnorm(n, mean, sd))
 
 Each row of parameters becomes one call. `pmap()` is the general case; `map2()` is the special case for exactly two inputs.
 
-The base R equivalents are `Map(f, x, y)` (which returns a list, like `map2()`) and `mapply(f, x, y)` (which simplifies, like `sapply()`). The same warning applies: `mapply` is unpredictable in return type.
+The base R equivalents are `Map(f, x, y)`\index{Map()} (which returns a list, like `map2()`) and `mapply(f, x, y)` (which simplifies, like `sapply()`). The same warning applies: `mapply` is unpredictable in return type.
 
 Where `pmap()` really shines is in configuration-driven workflows, places where you want to fit different models to different subsets with different formulas, all controlled by a single table of parameters. Suppose you want to regress body mass on flipper length for each species, but with a different formula for each:
 
@@ -271,7 +271,7 @@ Everything so far has been about functions that *compute* something: they take i
 walk(names(penguins_split), \(name) cat(name, "\n"))
 ```
 
-`walk(.x, .f)` applies `.f` to each element of `.x`, but instead of collecting results into a list, it returns `.x` invisibly. The point is the side effect, not the return value.
+`walk(.x, .f)`\index{walk()} applies `.f` to each element of `.x`, but instead of collecting results into a list, it returns `.x` invisibly. The point is the side effect, not the return value.
 
 The two-input version, `walk2()`, is especially useful for writing files:
 
@@ -305,7 +305,7 @@ The `walk()` prints a line for each species, then passes `penguins_split` throug
 
 Not everything should be a functional. Loops earn their place in three situations.
 
-**When iterations depend on each other.** If the result of iteration `i` feeds into iteration `i + 1`, a functional cannot help you, because functionals assume independence between elements. Simulation chains, iterative algorithms, and accumulating state all need explicit loops. (purrr's `reduce()` and `accumulate()` handle some of these sequential cases, and you will meet them in @sec-reduce-and-accumulate. In the language of category theory, a fold that tears down a list one element at a time is a *catamorphism*, the most general recursion pattern: any loop that starts with an accumulator, walks a list, and returns the accumulator is a catamorphism in disguise.)
+**When iterations depend on each other.** If the result of iteration `i` feeds into iteration `i + 1`, a functional cannot help you, because functionals assume independence between elements. Simulation chains, iterative algorithms, and accumulating state all need explicit loops. (purrr's `reduce()` and `accumulate()` handle some of these sequential cases, and you will meet them in @sec-reduce-and-accumulate. In the language of category theory, a fold that tears down a list one element at a time is a *catamorphism*\index{split-apply-combine}, the most general recursion pattern: any loop that starts with an accumulator, walks a list, and returns the accumulator is a catamorphism in disguise.)
 
 ```{r}
 # Random walk: each step depends on the previous
@@ -329,7 +329,7 @@ Replace a loop with a functional when the pattern is "do this to each thing inde
 
 ## `across()` revisited {#sec-across-revisited}
 
-In @sec-column-wise, you saw `across()` for applying a function to multiple columns inside a dplyr verb. So what is `across()`, exactly? It is `map()` thinking applied inside a data frame pipeline.
+In @sec-column-wise, you saw `across()`\index{across()} for applying a function to multiple columns inside a dplyr verb. So what is `across()`, exactly? It is `map()` thinking applied inside a data frame pipeline.
 
 ```{r}
 penguins |>

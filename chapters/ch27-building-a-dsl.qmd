@@ -9,7 +9,7 @@ Suppose you write `y ~ x1 + x2` and R does not add anything. The plus sign, whic
 
 You already have the pieces. `quote()` captures code as data (@sec-code-is-data), `substitute()` captures the caller's code (@sec-capture-evaluate), S3 dispatch selects behavior by type (@sec-dispatch), and operators are just functions (@sec-operators-are-functions). This chapter puts them together: you will dissect DSLs you already use, then build one from scratch.
 
-A domain-specific language, or DSL, is a small language designed for one task. SQL queries data. Regular expressions match text. HTML structures documents. These are *external* DSLs with their own parsers, their own syntax, their own tooling. R excels at something different: *internal* DSLs, mini-languages embedded inside R itself, using R's own syntax but giving it new meaning. The formula interface, ggplot2's grammar of graphics, dplyr's verb chains, data.table's `[i, j, by]` notation: each lives inside R and plays by R's rules (mostly). What makes R unusually good at this is non-standard evaluation and operator overloading: the ability to capture user expressions without evaluating them, reinterpret what operators mean, and dispatch behavior through S3.
+A domain-specific language\index{domain-specific language (DSL)}, or DSL, is a small language designed for one task. SQL queries data. Regular expressions match text. HTML structures documents. These are *external* DSLs with their own parsers, their own syntax, their own tooling. R excels at something different: *internal* DSLs, mini-languages embedded inside R itself, using R's own syntax but giving it new meaning. The formula interface, ggplot2's grammar of graphics, dplyr's verb chains, data.table's `[i, j, by]` notation: each lives inside R and plays by R's rules (mostly). What makes R unusually good at this is non-standard evaluation and operator overloading: the ability to capture user expressions without evaluating them, reinterpret what operators mean, and dispatch behavior through S3.
 
 By the mid-1960s, programmers were drowning in general-purpose syntax that forced every domain into the same mold. Peter Landin argued in 1966 that they should be able to build "a language appropriate to the problem." Three decades later, Guy Steele's keynote "Growing a Language" made the same case from the other side: a good language is one that users can extend until it fits the domain. R's formula interface, which dates to S in the 1980s, predates both papers, but the instinct is the same: capture code, give it new meaning.
 
@@ -18,7 +18,7 @@ By the mid-1960s, programmers were drowning in general-purpose syntax that force
 
 The test of a DSL is not cleverness of syntax but consistency of mapping: every domain concept corresponds to a language construct, and the correspondence holds without exceptions that the user must memorize. R's existing DSLs each take a different approach to achieving this.
 
-**Formulas.** `y ~ x1 + x2` is R's oldest DSL. The `~` operator creates a formula object storing two expressions (the left- and right-hand sides) plus the environment where it was created; it computes nothing. Inside the formula, `+` does not mean addition but "include this term," `*` means "include main effects and their interaction," and `:` means "interaction only." This is code that means something completely different from its usual meaning, interpreted not by R's evaluator but by `model.matrix()`. You explored this in @sec-formulas-as-expressions. But formulas freeze structure at definition time. What if you want to build structure incrementally, adding pieces one at a time?
+**Formulas.** `y ~ x1 + x2` is R's oldest DSL. The `~` operator creates a formula interface\index{formula interface} object storing two expressions (the left- and right-hand sides) plus the environment where it was created; it computes nothing. Inside the formula, `+` does not mean addition but "include this term," `*` means "include main effects and their interaction," and `:` means "interaction only." This is code that means something completely different from its usual meaning, interpreted not by R's evaluator but by `model.matrix()`. You explored this in @sec-formulas-as-expressions. But formulas freeze structure at definition time. What if you want to build structure incrementally, adding pieces one at a time?
 
 **ggplot2.** The `+` operator for ggplot objects does not add numbers. It layers graphical components:
 
@@ -29,7 +29,7 @@ ggplot(mtcars, aes(x = wt, y = mpg)) +
   geom_smooth(method = "lm")
 ```
 
-`aes()` captures column names as expressions without evaluating them, while `+.gg` (the S3 method for `+` on ggplot objects) takes the existing plot and attaches the new layer. The plot builds incrementally, one `+` at a time, accumulating a list of layers, scales, and coordinates. This is an expression builder pattern: each `+` returns a new (or modified) plot object, and the final object is rendered only when printed. Incremental building solves the formula problem, but it introduces a new one: every `+` is a standalone layer, with no awareness of what the other layers are doing. What if the verbs themselves need to know about the data?
+`aes()` captures column names as expressions without evaluating them, while `+.gg` (the S3 method for `+` on ggplot objects) takes the existing plot and attaches the new layer. This is the `+` operator overloading\index{+ operator overloading} pattern in ggplot2\index{ggplot2 (as DSL example)}. The plot builds incrementally, one `+` at a time, accumulating a list of layers, scales, and coordinates. This is an expression builder\index{expression builder} pattern: each `+` returns a new (or modified) plot object, and the final object is rendered only when printed. Incremental building solves the formula problem, but it introduces a new one: every `+` is a standalone layer, with no awareness of what the other layers are doing. What if the verbs themselves need to know about the data?
 
 **dplyr.** `filter(penguins, species == "Adelie")` captures `species == "Adelie"` as an expression and evaluates it against the data frame using data masking (@sec-capture-evaluate). The pipe operator chains verbs together, each doing one thing: filter rows, select columns, create new columns, summarize groups. Because the verbs are S3 generics, they dispatch on the data source. `filter.data.frame` works on data frames; `filter.tbl_lazy` generates SQL. Same syntax, different backend. That generality comes at a cost, though: each verb is a separate function call, and the pipe threading them together is syntactic, not semantic. Could you collapse the whole pipeline into a single expression?
 
@@ -73,7 +73,7 @@ This two-phase design (build a description, then execute it) appears in SQL quer
 
 Here is a concrete problem: unit arithmetic is error-prone because adding meters to seconds is meaningless, yet nothing in base R stops you from doing it. A small DSL can enforce dimensional correctness at the language level, so that `meters(5) + meters(3)` returns 8 meters, `meters(5) + seconds(3)` throws an error, and `meters(100) |> to("km")` returns 0.1 km. The DSL is deliberately small, but it exercises every technique from the last three chapters: S3 classes, operator overloading, constructors, validation, and dispatch.
 
-Start with the class. A unit value is a number paired with a unit string:
+Start with the class. A unit value is a number paired with a unit string, using an S3 class\index{S3 class}:
 
 ```{r}
 new_unit <- function(value, unit) {
@@ -104,7 +104,7 @@ These constructors are the DSL's vocabulary, the words users will actually write
 
 ### Operator overloading {#sec-unit-operators}
 
-Overload `+` so that it works on `unit_val` objects, but only when the units match:
+Overload\index{operator overloading} `+` so that it works on `unit_val` objects, but only when the units match:
 
 ```{r}
 "+.unit_val" <- function(a, b) {
@@ -230,7 +230,7 @@ Every operator enforces the same invariant: you cannot mix units. The type syste
 
 The unit DSL used three techniques: S3 classes, operator overloading, and constructor functions. More ambitious DSLs draw on a larger toolkit.
 
-**Operator overloading.** R lets you define methods for `+`, `-`, `*`, `/`, `[`, `[[`, `<`, `>`, `==`, `|`, `&`, and more. You can also create custom infix operators with the `%op%` syntax:
+**Operator overloading.** R lets you define methods for `+`, `-`, `*`, `/`, `[`, `[[`, `<`, `>`, `==`, `|`, `&`, and more. You can also create custom infix operators\index{infix operator} with the `%op%` syntax:
 
 ```{r}
 "%to%" <- function(x, target) to(x, target)
@@ -338,7 +338,7 @@ The chapter's DSL used five ingredients:
 
 A more ambitious DSL would add NSE to capture column names or expressions, use S3 generics to dispatch across backends, and build expression objects that defer evaluation. ggplot2 uses all of these. The progression from "simple class with overloaded operators" to "full expression-builder DSL with lazy evaluation and multiple backends" is a continuum, and you do not need the full machinery for every problem. Start with the simplest technique that makes your interface read naturally; add complexity only when the domain demands it.
 
-Remember the formula interface from the opening of this chapter, where `+` stopped meaning addition and started meaning "include this predictor"? You now know exactly how that trick works: an S3 class, a method for `+`, and a function that interprets the captured expression in a new context. R gave the formula system no special privileges. The same tools are available to you. When you find yourself writing repetitive, mechanical code, consider whether a small DSL, even just a class with a few overloaded operators, would let you express the same ideas more directly.
+The formula interface from the opening of this chapter, where `+` stopped meaning addition and started meaning "include this predictor" — you now know exactly how that trick works: an S3 class, a method for `+`, and a function that interprets the captured expression in a new context. R gave the formula system no special privileges. The same tools are available to you. When you find yourself writing repetitive, mechanical code, consider whether a small DSL, even just a class with a few overloaded operators, would let you express the same ideas more directly.
 
 
 ### Exercises {.unnumbered}

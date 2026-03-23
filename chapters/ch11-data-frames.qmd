@@ -7,7 +7,7 @@ source(here::here("_common.R"))
 
 You have a hundred measurements of penguin body mass, another hundred of bill length, and a character vector of species names. Three vectors, all the same length, all describing the same 100 birds. You could keep them as separate objects, indexing carefully, hoping that nobody reorders one without reordering the others. Or you could store them together in a structure that enforces the constraint for you: every column the same length, every row one observation, accessible with the list operations from Chapter 10.
 
-That structure is the data frame: a list where every element is a vector of the same length. Lists hold anything; a data frame constrains that freedom to equal-length columns, and once you see this, subsetting, column operations, and the entire tidyverse make sense. The idea predates R by decades: Edgar Codd's 1970 paper at IBM defined relations as sets of tuples, each row a typed record, and R's data frames, SQL tables, pandas DataFrames, and Spark datasets all descend from that same relational algebra.
+That structure is the data frame\index{data frame}: a list where every element is a vector of the same length. Lists hold anything; a data frame constrains that freedom to equal-length columns, and once you see this, subsetting, column operations, and the entire tidyverse make sense. The idea predates R by decades: Edgar Codd's\index{Codd, Edgar} 1970 paper at IBM defined relations as sets of tuples, each row a typed record, and R's data frames, SQL tables, pandas DataFrames, and Spark datasets all descend from that same relational algebra\index{relational model}.
 
 So what does this constraint actually buy you?
 
@@ -25,7 +25,7 @@ typeof(penguins)
 is.list(penguins)
 ```
 
-Type `"list"`, because it *is* a list. The difference from an ordinary list is that every element (every column) must be a vector of the same length, so each row lines up across all columns; one observation, one position in every vector. Build one yourself:
+Type `"list"`, because it *is* a list. The difference from an ordinary list is that every element (every column\index{column}) must be a vector of the same length, so each row\index{row} lines up across all columns; one observation, one position in every vector. Build one yourself:
 
 ```{r}
 df <- data.frame(
@@ -43,7 +43,7 @@ str(df)
 
 Two columns, two rows, and nothing more than a list wearing a label.
 
-Type theory calls this a *product type*. A data frame with columns `name` (character) and `mass` (double) has type `character × double`: each row pairs one character value with one double value. Add a third column and the type grows: `character × double × integer`.
+Type theory calls this a *product type*\index{product type}. A data frame with columns `name` (character) and `mass` (double) has type `character × double`: each row pairs one character value with one double value. Add a third column and the type grows: `character × double × integer`.
 
 The equal-length constraint is doing more work than it appears. A plain list lets you pair a five-element vector with a three-element vector and says nothing about the mismatch. A data frame refuses. Why? Because the constraint *is* the guarantee: row *i* across all columns describes the same observation. Break the rectangle — one column longer than another — and that guarantee disappears, and every function that touches the data must re-verify alignment on its own. Codd's 1970 relational model imposed the same rule: every tuple in a relation has the same attributes. SQL inherited it, pandas and Arrow enforce it today, and R's data frame sits in that same lineage. The trade is flexibility for a promise: if the data is rectangular, row alignment is automatic and every subsetting operation preserves it. Logical indexing, `merge()`, and `rbind()` all depend on that promise holding.
 
@@ -59,7 +59,7 @@ So what goes into those columns when you build one from scratch?
 
 ## Creating data frames {#sec-creating-data-frames}
 
-`data.frame()` is the base R workhorse. Column names come from the argument names:
+`data.frame()`\index{data.frame()} is the base R workhorse. Column names come from the argument names:
 
 ```{r}
 measurements <- data.frame(
@@ -229,7 +229,7 @@ penguins$mass_kg <- NULL
 
 ## Combining data frames {#sec-combining-data-frames}
 
-`rbind()` stacks rows; the column names and types must match:
+`rbind()`\index{rbind()} stacks rows; the column names and types must match:
 
 ```{r}
 batch1 <- data.frame(species = "Adelie", mass = 3750)
@@ -237,7 +237,7 @@ batch2 <- data.frame(species = "Gentoo", mass = 5200)
 rbind(batch1, batch2)
 ```
 
-`cbind()` glues columns side by side; the row counts must match:
+`cbind()`\index{cbind()} glues columns side by side; the row counts must match:
 
 ```{r}
 ids <- data.frame(id = c("A1", "G1"))
@@ -260,7 +260,7 @@ When they fail, the error messages mention dimensions rather than the real probl
 
 Print a large data frame in R and thousands of rows flood the console. Subset a single column: you silently get a vector instead of a data frame. Type a column name wrong and partial matching returns the wrong column.
 
-A tibble is the tidyverse's answer to all three problems:
+A tibble\index{tibble} is the tidyverse's answer to all three problems:
 
 ```{r}
 library(tibble)
@@ -299,7 +299,7 @@ A tibble is still a data frame, which means every function that accepts a data f
 is.data.frame(tbl)
 ```
 
-Convert between them with `as_tibble()` and `as.data.frame()`:
+Convert between them with `as_tibble()`\index{as\_tibble()} and `as.data.frame()`:
 
 ```{r}
 as_tibble(mtcars)

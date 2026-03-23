@@ -10,7 +10,7 @@ Suppose you need twelve formatting functions: one for dollars, one for euros, on
 
 ## The pattern {#sec-factory-pattern}
 
-A function factory is a function that returns a function:
+A function factory\index{function factory} is a function that returns a function:
 
 ```{r}
 power <- function(exponent) {
@@ -30,7 +30,7 @@ When you call `power(2)`, R creates an execution environment where `exponent` is
 
 This is exactly `make_adder` from @sec-functions-returning-functions, with exponentiation instead of addition. That section introduced the idea without naming it. The name is *function factory*, and the functions it produces are *closures*.
 
-Function factories are *partial application* made explicit: `power(2)` fixes one argument of a two-argument operation and returns a function of the remaining argument. In lambda calculus, `power` is `λe. λx. x^e`; applying it to 2 gives `λx. x^2`. This decomposition of multi-argument functions into chains of single-argument functions is called *currying* (Schonfinkel 1924, Curry 1958). In Haskell, all functions are curried by default: `add 5 3` is really `(add 5) 3`, where `add 5` returns a function. R's function factories are manual currying. In combinatory logic, the simplest factory is the K combinator (`K = λx.λy. x`): it takes a value and returns a function that always produces that value, ignoring its argument. `make_formatter("$")` is K applied: it captures `"$"` and returns a function that ignores everything except its argument.
+Function factories are *partial application*\index{partial application} made explicit: `power(2)` fixes one argument of a two-argument operation and returns a function of the remaining argument. In lambda calculus, `power` is `λe. λx. x^e`; applying it to 2 gives `λx. x^2`. This decomposition of multi-argument functions into chains of single-argument functions is called *currying* (Schonfinkel 1924, Curry 1958). In Haskell, all functions are curried by default: `add 5 3` is really `(add 5) 3`, where `add 5` returns a function. R's function factories are manual currying. In combinatory logic, the simplest factory is the K combinator (`K = λx.λy. x`): it takes a value and returns a function that always produces that value, ignoring its argument. `make_formatter("$")` is K applied: it captures `"$"` and returns a function that ignores everything except its argument.
 
 
 ### Exercises {.unnumbered}
@@ -42,7 +42,7 @@ Function factories are *partial application* made explicit: `power(2)` fixes one
 
 ## The lazy evaluation trap {#sec-lazy-eval-trap}
 
-Here is a bug that will cost you an afternoon if you have never seen it before. R evaluates arguments lazily, meaning they are not computed until they are actually used, and this seemingly innocent optimization has consequences for factories that are anything but innocent:
+Here is a bug that will cost you an afternoon if you have never seen it before. R evaluates arguments lazily, meaning they are not computed until they are actually used, and this seemingly innocent optimization has consequences for factories that are anything but innocent (the *lazy evaluation trap*\index{lazy evaluation trap}):
 
 ```{r}
 exp <- 2
@@ -68,7 +68,7 @@ fns[[3]](2)
 
 All three return 8. By the time any of them is called, `i` is 3.
 
-The fix is `force()`:
+The fix is `force()`\index{force()}:
 
 ```{r}
 power <- function(exponent) {
@@ -188,7 +188,7 @@ The next section starts from the other direction: instead of building a function
 
 ## Memoization {#sec-memoization}
 
-Sometimes you already have the right function, and the only problem is speed. Memoization wraps a function so it caches its results: the first call computes normally, but subsequent calls with the same arguments return the cached value instantly, skipping the computation entirely.
+Sometimes you already have the right function, and the only problem is speed. Memoization\index{memoization} wraps a function so it caches its results: the first call computes normally, but subsequent calls with the same arguments return the cached value instantly, skipping the computation entirely.
 
 ```{r}
 #| message: false
@@ -230,9 +230,9 @@ forget(fast_square)
 
 What do you do when a function might fail on some inputs, but you need to apply it to hundreds of values and cannot afford to let one error kill the whole pipeline? You could wrap every call in `tryCatch`. Or you could wrap the function itself once, producing a new function that handles errors gracefully everywhere it is called.
 
-A function operator takes a function as input and returns a modified function as output. Like a factory, but the raw material is a function rather than a number or string. This pattern is called a "decorator" in Python (where `@decorator` syntax makes it first-class) and appeared in the Gang of Four design patterns book (1994) as the Decorator Pattern. R has no `@`-syntax, but `safely()`, `memoise()`, and `with_logging()` are all decorators: they modify behavior by wrapping, without changing the original.
+A function operator takes a function as input and returns a modified function as output.\index{adverb}\index{error handling} Like a factory, but the raw material is a function rather than a number or string. This pattern is called a "decorator" in Python (where `@decorator` syntax makes it first-class) and appeared in the Gang of Four design patterns book (1994) as the Decorator Pattern. R has no `@`-syntax, but `safely()`, `memoise()`, and `with_logging()` are all decorators: they modify behavior by wrapping, without changing the original.
 
-`safely()` wraps a function so it never errors, returning instead a list with `$result` and `$error`:
+`safely()`\index{safely()} wraps a function so it never errors, returning instead a list with `$result` and `$error`:
 
 ```{r}
 #| message: false
@@ -243,7 +243,7 @@ safe_log(10)
 safe_log("a")
 ```
 
-`possibly()` is simpler: it returns a default value on error:
+`possibly()`\index{possibly()} is simpler: it returns a default value on error:
 
 ```{r}
 careful_log <- possibly(log, otherwise = NA)
@@ -251,7 +251,7 @@ careful_log(10)
 careful_log("a")
 ```
 
-`quietly()` captures messages, warnings, and output as list components instead of printing them:
+`quietly()`\index{quietly()} captures messages, warnings, and output as list components instead of printing them:
 
 ```{r}
 quiet_log <- quietly(log)

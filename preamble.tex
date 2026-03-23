@@ -10,6 +10,36 @@
 \usepackage{pgfornament}        % Decorative ornaments
 \usepackage{lettrine}           % Drop caps
 \usepackage{imakeidx}           % Back matter index
+\usepackage{float}              % Force figure placement with [H]
+
+% Allow code blocks (Shaded environment) to break across pages
+\usepackage{fvextra}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\},breaksymbolleft={},breaksymbolright={}}
+\BeforeBeginEnvironment{Shaded}{\par\nopagebreak}
+\AfterEndEnvironment{Shaded}{\par}
+
+% --- Page vertical alignment ---
+\raggedbottom
+
+% ============================================================
+%  CUSTOM TITLE PAGE
+% ============================================================
+\renewcommand{\maketitle}{%
+  \begin{titlepage}
+    \centering
+    \vspace*{4cm}
+    {\fontsize{36}{42}\selectfont\scshape Thinking in R\par}
+    \vspace{1.5cm}
+    {\color{black!40}\rule{6cm}{0.4pt}\par}
+    \vspace{1.5cm}
+    {\Large Gilles Colling\par}
+    \vfill
+    {\large First Edition\par}
+    \vspace{0.3cm}
+    {\large 2026\par}
+    \vspace{2cm}
+  \end{titlepage}
+}
 
 % ============================================================
 %  DROP CAPS
@@ -22,8 +52,10 @@
 
 % ============================================================
 %  BACK MATTER INDEX
+%  Uniform small font; no \texttt mixing
 % ============================================================
 \makeindex[intoc, columnseprule]
+\indexsetup{othercode=\small}
 
 % ============================================================
 %  CHAPTER HEADINGS
@@ -106,4 +138,17 @@
 \newcommand{\chapterepigraph}[2]{%
   \epigraph{\itshape #1}{\textsc{#2}}%
 }
+
+% ============================================================
+%  TABLE OF CONTENTS — reduce top margin
+% ============================================================
+\usepackage{etoolbox}
+\pretocmd{\tableofcontents}{%
+  \let\oldchapterheadstartvskip\chapterheadstartvskip
+  \renewcommand*{\chapterheadstartvskip}{\vspace*{-1cm}}%
+}{}{}
+\apptocmd{\tableofcontents}{%
+  \let\chapterheadstartvskip\oldchapterheadstartvskip
+}{}{}
+
 

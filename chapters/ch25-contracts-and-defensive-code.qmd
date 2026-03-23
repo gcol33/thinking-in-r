@@ -9,9 +9,9 @@ You have written a function that computes a rate from two columns of a data fram
 
 Every line of code between the bad input and the discovery was wasted work. The function that produced the `NA` could have stopped the pipeline in the first line, with a message that said exactly what went wrong. It didn't, because nobody wrote that check. This was the problem a young man faced in the 1980s while working at Électricité de France, where a wrong number in a pipeline could mean a miscalculated load on a reactor.
 
-After nine years of watching functions accept garbage and hand it downstream, he left and decided to build a programming language where that could not happen. His name was Bertrand Meyer; the language he was building was called Eiffel, which was defined by one central idea he called *Design by Contract*. It was simple: every function states a precondition (what must be true before it runs), a postcondition (what it guarantees after it runs), and an invariant (what stays true throughout). If a precondition fails, the caller broke the deal. If a postcondition fails, the function broke it. Either way, execution stops with a message that names the broken obligation.
+After nine years of watching functions accept garbage and hand it downstream, he left and decided to build a programming language where that could not happen. His name was Bertrand Meyer\index{Meyer, Bertrand}; the language he was building was called Eiffel\index{Eiffel (language)}, which was defined by one central idea he called *Design by Contract*\index{Design by Contract}. It was simple: every function states a precondition\index{precondition} (what must be true before it runs), a postcondition\index{postcondition} (what it guarantees after it runs), and an invariant\index{invariant} (what stays true throughout). If a precondition fails, the caller broke the deal. If a postcondition fails, the function broke it. Either way, execution stops with a message that names the broken obligation.
 
-R has no contract syntax. But `stop()` at the top of a function is a precondition. `stopifnot()` before the return value is a postcondition. The validator in a constructor/validator/helper pattern (@sec-s3-classes-properly) is a class invariant. The tools are manual; the discipline is the same. State your assumptions, halt the moment one is violated, and make the error message say what went wrong.
+R has no contract\index{contract} syntax. But `stop()` at the top of a function is a precondition. `stopifnot()`\index{stopifnot()} before the return value is a postcondition. The validator in a constructor/validator/helper pattern (@sec-s3-classes-properly) is a class invariant. The tools are manual; the discipline is the same. State your assumptions, halt the moment one is violated, and make the error message say what went wrong.
 
 
 ## The case for validation {#sec-case-for-validation}
@@ -43,7 +43,7 @@ add_tax <- function(price, rate) {
 add_tax("42", 0.2)
 ```
 
-Check inputs at the boundary, where data enters your function, not in the guts where it is consumed. The principle is short: *fail fast, fail loud, fail clear*.
+Check inputs at the boundary, where data enters your function, not in the guts where it is consumed. The principle is short: *fail fast, fail loud, fail clear*\index{defensive programming}.
 
 R has no static types, no compiler, no ahead-of-time guarantees. Every precondition you want enforced must be enforced by code you write. That sounds like a burden, but it has an upside: every assumption is visible in the function body when you revisit it six months later. `if (!is.numeric(price)) stop(...)` is verbose, but it is also impossible to miss.
 
@@ -51,7 +51,7 @@ The Ariane 5 rocket self-destructed 37 seconds after launch in 1996 because a 64
 
 ::: {.callout-note collapse="true"}
 ## The type theory connection
-A `stop()` that fires on wrong input is a runtime proof by contradiction: "if this value were numeric, execution would continue; it isn't, so we halt." The Curry-Howard correspondence formalizes this: types are propositions, programs are proofs, and a function with signature `A -> B` is a proof that "if A then B." Dependently typed languages (Idris, Agda) encode preconditions in the type system itself, making runtime `stop()` calls unnecessary. R sits at the opposite end of that spectrum. The question both approaches answer is the same: "what must hold for this computation to be sound?"
+A `stop()`\index{assertion} that fires on wrong input is a runtime proof by contradiction: "if this value were numeric, execution would continue; it isn't, so we halt." The Curry-Howard correspondence formalizes this: types are propositions, programs are proofs, and a function with signature `A -> B` is a proof that "if A then B." Dependently typed languages (Idris, Agda) encode preconditions in the type system itself, making runtime `stop()` calls unnecessary. R sits at the opposite end of that spectrum. The question both approaches answer is the same: "what must hold for this computation to be sound?"
 :::
 
 (This is about functions you write for yourself and for others, not about validating user input in a Shiny app.)
@@ -61,7 +61,7 @@ A `stop()` that fires on wrong input is a runtime proof by contradiction: "if th
 
 R gives you three signalling functions, each pitched at a different severity. The differences matter more than you might think.
 
-`stop("msg")` halts execution and signals an error. Use it when the function cannot produce a correct result.
+`stop("msg")` halts execution and signals an error\index{error}. Use it when the function cannot produce a correct result.
 
 ```{r}
 #| error: true
@@ -73,7 +73,7 @@ divide <- function(x, y) {
 divide(10, 0)
 ```
 
-`warning("msg")` continues execution but signals a warning, which makes it appropriate when the function can proceed but the result might surprise the caller.
+`warning("msg")` continues execution but signals a warning\index{warning}, which makes it appropriate when the function can proceed but the result might surprise the caller.
 
 ```{r}
 safe_log <- function(x) {
@@ -84,7 +84,7 @@ safe_log <- function(x) {
 safe_log(c(1, -2, 3))
 ```
 
-`message("msg")` prints informational output: progress updates, status reports, diagnostics. `suppressMessages()` silences these, which is why `message()` is better than `cat()` for status output. It respects the caller's wishes.
+`message("msg")`\index{message} prints informational output: progress updates, status reports, diagnostics. `suppressMessages()` silences these, which is why `message()` is better than `cat()` for status output. It respects the caller's wishes.
 
 ```{r}
 load_data <- function(path) {
@@ -278,7 +278,7 @@ For package code with many validated arguments, `checkmate` pays for itself in r
 
 Everything so far has been about signalling your own errors. But sometimes the error comes from somewhere else: a file that doesn't exist, a web API that times out, a parsing function that chokes on malformed input. You need to *catch* those errors and decide what to do about them.
 
-`tryCatch()` catches an error, warning, or message and runs a handler:
+`tryCatch()`\index{tryCatch()} catches an error, warning, or message and runs a handler:
 
 ```{r}
 result <- tryCatch(
@@ -300,7 +300,7 @@ class(result)
 
 `try()` is convenient for quick scripts, but `tryCatch()` gives you more control.
 
-For functional programming, `purrr::safely()` and `purrr::possibly()` wrap a function to make it error-tolerant. `safely()` returns a list with `$result` and `$error`, while `possibly()` returns a default value on failure. Both are designed for use with `map()` when applying a function that might fail on some elements:
+For functional programming, `purrr::safely()` and `purrr::possibly()` wrap a function to make it error-tolerant. Together with `tryCatch()`, these form R's condition\index{condition} handling system. `safely()` returns a list with `$result` and `$error`, while `possibly()` returns a default value on failure. Both are designed for use with `map()` when applying a function that might fail on some elements:
 
 ```{r}
 safe_log <- purrr::safely(log)

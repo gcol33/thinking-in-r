@@ -24,7 +24,7 @@ Always 1. The counter never advances, because every call starts from scratch: ev
 
 ## Environments {#sec-environments}
 
-An environment maps names to values. Each environment has a parent, forming a chain: when R encounters a name, it checks the current environment first, then walks up the chain until it finds a binding or hits the empty environment at the top. Functions remember things by holding a reference to the environment where they were created, which is why scope matters here.
+An environment\index{environment} maps names to values. Each environment has a parent\index{parent environment}, forming a chain: when R encounters a name, it checks the current environment first, then walks up the chain until it finds a binding or hits the empty environment at the top. Functions remember things by holding a reference to the environment where they were created, which is why scope matters here.
 
 ![The environment chain: `f` finds `x = 10` in the global environment where it was defined, not `x = 20` in `g`'s execution environment.](../images/environment_chain.png){#fig-env-chain width=100%}
 
@@ -42,7 +42,7 @@ environment()
 
 ### The global environment {#sec-global-environment}
 
-The global environment (`.GlobalEnv`, or equivalently `globalenv()`) is where your interactive work lives. Every time you type `x <- 42` at the console, you create a binding here, at the bottom of the search path, the starting point for name resolution, the default enclosing environment for any function you define interactively. But that default status has consequences.
+The global environment\index{global environment} (`.GlobalEnv`, or equivalently `globalenv()`) is where your interactive work lives. Every time you type `x <- 42` at the console, you create a binding here, at the bottom of the search path, the starting point for name resolution, the default enclosing environment for any function you define interactively. But that default status has consequences.
 
 ```{r}
 identical(environment(), globalenv())
@@ -54,7 +54,7 @@ That accumulation lets you explore interactively, building data objects step by 
 
 ### The search path
 
-When you type `x` at the console, R checks the global environment first; if no match turns up, it moves to the parent, then the parent's parent, walking up the chain until it either finds the name or runs out of environments. This chain is the *search path*:
+When you type `x` at the console, R checks the global environment first; if no match turns up, it moves to the parent, then the parent's parent, walking up the chain until it either finds the name or runs out of environments. This chain is the *search path*\index{search path}:
 
 ```{r}
 search()
@@ -85,13 +85,13 @@ The result is 10, not 20. `f` was defined in the global environment, so it looks
 
 Four rules govern how R resolves names:
 
-1. **Name masking.** Local names shadow names in parent environments. If a function defines `x`, that `x` hides any `x` in the global environment.
+1. **Name masking.**\index{name masking} Local names shadow names in parent environments. If a function defines `x`, that `x` hides any `x` in the global environment.
 
 2. **Functions vs variables.** R distinguishes function lookups from variable lookups. If you call `f(3)`, R searches for `f` but skips non-function values. This means you can have a variable `c <- 10` and still call `c(1, 2, 3)` to create a vector, because R knows you want the function.
 
 3. **Fresh start.** Every function call gets a fresh execution environment. Variables from a previous call don't carry over.
 
-4. **Dynamic lookup.** R looks up names when the function *runs*, not when it's defined. If a function uses a free variable, its value can change between calls:
+4. **Dynamic lookup.**\index{dynamic lookup} R looks up names when the function *runs*, not when it's defined. If a function uses a free variable, its value can change between calls:
 
 ```{r}
 multiplier <- 2
@@ -140,7 +140,7 @@ scale(5)
 
 ## Execution environments {#sec-execution-environments}
 
-Every time you call a function, R creates a new environment (the *execution environment*) with the function's arguments and local variables as bindings. That is why the counter at the top of this chapter never advances:
+Every time you call a function, R creates a new environment (the *execution environment*\index{execution environment}) with the function's arguments and local variables as bindings. That is why the counter at the top of this chapter never advances:
 
 ```{r}
 f <- function() {
@@ -156,7 +156,7 @@ f()
 
 Call it ten times, a hundred times; you always get 1, because each call gets its own execution environment with its own `n`, and the previous call's `n` vanishes the moment that call returns (rule 3).
 
-The parent of this fresh execution environment is not the environment where the function was *called*; it is the environment where the function was *defined* (the enclosing environment). This is what makes scoping lexical: the parent chain is determined by the structure of the source code, not by which function happened to call which at runtime.
+The parent of this fresh execution environment is not the environment where the function was *called*; it is the environment where the function was *defined* (the enclosing environment\index{enclosing environment}). This is what makes scoping lexical: the parent chain is determined by the structure of the source code, not by which function happened to call which at runtime.
 
 ```{r}
 x <- "global"
@@ -191,7 +191,7 @@ outer()
 
 ## Closures {#sec-closures}
 
-All R functions are technically closures (they all carry an enclosing environment), but the term earns its keep when a function captures variables from a parent that isn't the global environment. Here is a counter that actually counts:
+All R functions are technically closures\index{closure} (they all carry an enclosing environment), but the term earns its keep when a function captures variables from a parent that isn't the global environment. Here is a counter that actually counts:
 
 ```{r}
 make_counter <- function() {
@@ -212,7 +212,7 @@ When you call `make_counter()`, R creates an execution environment with `n <- 0`
 
 But notice the `<<-`. That choice is not cosmetic.
 
-`<<-` is the super-assignment operator. Instead of creating a local binding, it searches parent environments for an existing binding named `n` and modifies it in place. Without `<<-`, writing `n <- n + 1` would create a *local* `n` in the execution environment, shadowing the captured one, and the counter would always return 1 (the same broken non-counter from the top of the chapter).
+`<<-`\index{<<- (super-assignment)} is the super-assignment operator. Instead of creating a local binding, it searches parent environments for an existing binding named `n` and modifies it in place. Without `<<-`, writing `n <- n + 1` would create a *local* `n` in the execution environment, shadowing the captured one, and the counter would always return 1 (the same broken non-counter from the top of the chapter).
 
 Two counters are independent, because each call to `make_counter()` creates a separate execution environment with its own `n`:
 
@@ -243,7 +243,7 @@ Every closure you create in R is a beta reduction frozen mid-step. `make_adder(5
 
 ## `<<-` and mutable state {#sec-super-assignment}
 
-`<<-` is the only way to create mutable state in R's functional world, because it searches parent environments for an existing binding and modifies it there. If it doesn't find the variable in any parent, it creates one in the global environment. That is almost always a mistake.
+`<<-` is the only way to create mutable state\index{mutable state} in R's functional world, because it searches parent environments for an existing binding and modifies it there. If it doesn't find the variable in any parent, it creates one in the global environment. That is almost always a mistake.
 
 ```{r}
 #| error: true
@@ -346,7 +346,7 @@ acct$withdraw(30)
 acct$check()
 ```
 
-Three closures share a single environment containing one private variable, `balance`. From the outside, `acct` behaves like an object with methods; from the inside, it is just functions closing over a shared environment. Peter Norvig observed that "closures are poor man's objects, and objects are poor man's closures." R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment. @sec-s3-and-s7 explores where that equivalence leads.
+Three closures share a single environment containing one private variable, `balance`. From the outside, `acct` behaves like an object with methods; from the inside, it is just functions closing over a shared environment. Peter Norvig\index{Norvig, Peter} observed that "closures are poor man's objects, and objects are poor man's closures." R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment. @sec-s3-and-s7 explores where that equivalence leads.
 
 
 ### Exercises {.unnumbered}

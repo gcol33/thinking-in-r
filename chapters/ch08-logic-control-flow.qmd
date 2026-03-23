@@ -5,12 +5,12 @@
 source(here::here("_common.R"))
 ```
 
-In @sec-coercion, you saw that `TRUE` becomes 1 and `FALSE` becomes 0 when R needs a number. That was a hint. Logical values are not second-class citizens in R; they are a full type with their own operators, and they drive every decision your code makes. This chapter covers logical vectors, comparisons, boolean operators, and `if/else`. In R, `if/else` is an expression that returns a value, not a statement that directs traffic.
+In @sec-coercion, you saw that `TRUE` becomes 1 and `FALSE` becomes 0 when R needs a number. That was a hint. Logical values are not second-class citizens in R; they are a full type with their own operators, and they drive every decision your code makes. This chapter covers logical vectors, comparisons, boolean operators, and `if/else`. In R, `if/else` is an expression\index{control flow} that returns a value, not a statement that directs traffic.
 
 
 ## Logical vectors {#sec-logical-vectors}
 
-`TRUE` and `FALSE` are R's logical values. You already met them in @sec-atomic-vectors as one of the four main types (double, integer, character, logical).
+`TRUE` and `FALSE` are R's logical values\index{Boolean}. You already met them in @sec-atomic-vectors as one of the four main types (double, integer, character, logical).
 
 ```{r}
 x <- c(TRUE, FALSE, TRUE, TRUE, FALSE)
@@ -103,7 +103,7 @@ all.equal(0.1 + 0.2, 0.3)
 
 ## Boolean operators {#sec-boolean-operators}
 
-Logical values combine with `&` (and), `|` (or), and `!` (not):
+Logical values combine with `&` (and)\index{logical operator!AND}, `|` (or)\index{logical operator!OR}, and `!` (not)\index{logical operator!NOT}:
 
 ```{r}
 TRUE & FALSE
@@ -120,7 +120,7 @@ x > 2 & x < 6
 
 Each element is tested independently: is it greater than 2 *and* less than 6?
 
-R also has `&&` and `||`, which look similar but behave very differently. They examine only the first element of each operand and use *short-circuit evaluation*: if the left side of `&&` is `FALSE`, the right side is never touched, because the result must be `FALSE` regardless of what the right side contains. The same logic applies to `||` when the left side is `TRUE`.
+R also has `&&` and `||`, which look similar but behave very differently. They examine only the first element of each operand and use *short-circuit evaluation*\index{short-circuit evaluation}: if the left side of `&&` is `FALSE`, the right side is never touched, because the result must be `FALSE` regardless of what the right side contains. The same logic applies to `||` when the left side is `TRUE`.
 
 ```{r}
 FALSE && stop("this is never reached")
@@ -147,7 +147,7 @@ xor(TRUE, FALSE)
 xor(TRUE, TRUE)
 ```
 
-You won't need `xor()` often, but it exists. These four operations, `&`, `|`, `!`, and `xor()`, are not just software conventions; they correspond directly to the logic gates wired into every processor, described by the same truth tables George Boole formalized in 1854.
+You won't need `xor()` often, but it exists. These four operations, `&`, `|`, `!`, and `xor()`, are not just software conventions; they correspond directly to the logic gates\index{logic gate} wired into every processor, described by the same truth tables\index{truth table} George Boole\index{Boole, George} formalized in 1854.
 
 
 ### Exercises {.unnumbered}
@@ -160,7 +160,7 @@ You won't need `xor()` often, but it exists. These four operations, `&`, `|`, `!
 ::: {.callout-note collapse="true"}
 ## From logic gates to circuits
 
-The `&` you typed a moment ago to combine filter conditions is the same AND operation that electrical engineers wire into silicon, described by the same truth tables George Boole formalized in 1854. In his 1937 master's thesis, Claude Shannon showed that these truth tables could be implemented with electrical switches, and that insight bridged the gap between abstract algebra and physical circuitry. Every digital circuit is built from these operations.
+The `&` you typed a moment ago to combine filter conditions is the same AND operation that electrical engineers wire into silicon, described by the same truth tables George Boole formalized in 1854. In his 1937 master's thesis, Claude Shannon\index{Shannon, Claude} showed that these truth tables could be implemented with electrical switches, and that insight bridged the gap between abstract algebra and physical circuitry. Every digital circuit is built from these operations.
 
 The `&`, `|`, `!`, and `xor()` you use in R correspond to physical circuits called *logic gates* inside every processor.
 
@@ -178,8 +178,9 @@ A  B  out        A  B  out        A  B  out        A  out
 These are the same truth tables as R's `&`, `|`, `xor()`, and `!`. When you write `TRUE & FALSE` in R, the CPU evaluates it using an AND gate (or a chain of them, for vectors). When you write `TRUE & FALSE` in R, the CPU evaluates the same Boolean operation using an AND gate.
 
 Everything a computer does, from adding numbers to rendering video, is built from combinations of these four gates. We can design a circuit the way electrical engineers do: start with inputs and outputs, build a truth table, find the minimal Boolean expression, then wire the gates.
+:::
 
-
+::: {.callout-note collapse="true"}
 ### Designing a half adder {#sec-half-adder}
 
 The simplest possible addition: two single bits, A and B. Two outputs: a sum bit and a carry bit (because 1 + 1 = 10 in binary, which is 0 with a carry of 1).
@@ -212,9 +213,9 @@ Carry = A AND B
 
 Two gates. This is a *half adder*. Before looking at the circuit, here are the standard symbols used in circuit diagrams. A filled dot where wires cross means they are connected (a junction); without the dot, wires simply cross without connecting.
 
-![Standard logic gate symbols. Inputs enter from the left, output exits to the right.](../images/gate_symbols.png){#fig-gate-symbols width=100% fig-align="left"}
+![Standard logic gate symbols. Inputs enter from the left, output exits to the right.](../images/gate_symbols.png){#fig-gate-symbols width=65% fig-align="left"}
 
-![A half adder: one XOR gate for the sum, one AND gate for the carry.](../images/half_adder.png){#fig-half-adder width=100% fig-align="left" fig-alt="Circuit diagram of a half adder showing one XOR gate producing Sum and one AND gate producing Carry, with inputs A and B."}
+![A half adder: one XOR gate for the sum, one AND gate for the carry.](../images/half_adder.png){#fig-half-adder width=65% fig-align="left" fig-alt="Circuit diagram of a half adder showing one XOR gate producing Sum and one AND gate producing Carry, with inputs A and B."}
 
 We can verify this in R, since R's `&`, `|`, `!`, and `xor()` are the same Boolean operations:
 
@@ -229,8 +230,9 @@ half_adder(TRUE, TRUE)
 ```
 
 `TRUE + TRUE` gives Sum = FALSE (0), Carry = TRUE (1). That's binary 10: the number 2. But real addition involves three inputs, not two.
+:::
 
-
+::: {.callout-note collapse="true"}
 ### From half adder to full adder {#sec-full-adder}
 
 When you add column by column in decimal, you carry from the previous column. Binary works the same way: each column receives A, B, and a carry-in (Cin) from the column to the right.
@@ -286,7 +288,7 @@ Sum = A XOR B XOR Cin
 
 **Step 4: build the circuit.** The Sum formula chains two XOR gates. The Cout formula uses two AND gates and one OR gate, but engineers noticed that `(B AND Cin) OR (A AND Cin)` can be rewritten as `((A XOR B) AND Cin)`, because the XOR captures whether exactly one of A, B is 1. The final circuit uses five gates: two XOR, two AND, one OR.
 
-![A full adder built from five logic gates. Two XOR gates compute the sum; two AND gates and one OR gate compute the carry-out.](../images/full_adder.png){#fig-full-adder width=100% fig-align="left" fig-alt="Circuit diagram of a full adder showing two XOR gates, two AND gates, and one OR gate connected with labeled wires for A, B, Cin, Sum, and Cout."}
+![A full adder built from five logic gates. Two XOR gates compute the sum; two AND gates and one OR gate compute the carry-out.](../images/full_adder.png){#fig-full-adder width=65% fig-align="left" fig-alt="Circuit diagram of a full adder showing two XOR gates, two AND gates, and one OR gate connected with labeled wires for A, B, Cin, Sum, and Cout."}
 
 ```{r}
 full_adder <- function(A, B, Cin) {
@@ -359,7 +361,7 @@ typeof(42L)
 
 ## `if/else` as an expression {#sec-if-else-expression}
 
-In most languages, `if/else` is a *statement*: it controls which code runs but does not produce a value. In R, `if/else` is an *expression*: it evaluates to the value of whichever branch is taken, and you can assign that value directly.
+In most languages, `if/else` is a *statement*: it controls which code runs but does not produce a value. In R, `if/else`\index{if/else} is an *expression*: it evaluates to the value of whichever branch is taken, and you can assign that value directly.
 
 ```{r}
 x <- -3
@@ -409,7 +411,7 @@ if (c(TRUE, FALSE)) "yes"
 
 ## Vectorized conditionals {#sec-vectorized-conditionals}
 
-`if/else` works on a single value. `ifelse()` works on vectors:
+`if/else` works on a single value. `ifelse()`\index{ifelse()} works on vectors:
 
 ```{r}
 x <- c(-2, 0, 3, -1, 5)
@@ -434,7 +436,7 @@ dplyr::if_else(TRUE, 1, "no")
 
 It refuses to mix types, catching bugs early rather than letting them propagate downstream.
 
-For multiple conditions, `dplyr::case_when()` replaces nested `ifelse()` chains:
+For multiple conditions, `dplyr::case_when()`\index{case\_when()} replaces nested `ifelse()` chains:
 
 ```{r}
 x <- c(-2, 0, 3, -1, 5)
@@ -468,7 +470,7 @@ Prefer `dplyr::case_when()` over nested `ifelse()`. Nesting `ifelse()` calls cre
 
 ## `switch()` {#sec-switch}
 
-When you need to dispatch on a single string value, `switch()` is cleaner than a chain of `if/else if`:
+When you need to dispatch on a single string value, `switch()`\index{switch()} is cleaner than a chain of `if/else if`:
 
 ```{r}
 describe <- function(day) {

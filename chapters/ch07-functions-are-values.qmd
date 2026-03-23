@@ -5,12 +5,12 @@
 source(here::here("_common.R"))
 ```
 
-In @sec-functions-are-values, you saw that a function is a value: you can assign `sqrt` to a new name and call it, the same way you'd assign a number. If functions are values, you can pass them to other functions, store them in lists, and build functions that create new functions.
+In @sec-functions-are-values, you saw that a function is a value\index{first-class function}: you can assign `sqrt` to a new name and call it, the same way you'd assign a number. If functions are values, you can pass them to other functions, store them in lists, and build functions that create new functions.
 
 
 ## Passing functions to functions {#sec-passing-functions}
 
-`sapply()` takes a vector and a function, and applies the function to every element:
+`sapply()`\index{sapply()} takes a vector and a function, and applies the function to every element:
 
 ```{r}
 sapply(1:5, sqrt)
@@ -30,9 +30,9 @@ sapply(c("hello", "world"), nchar)
 
 Any function that takes a single argument works here: `abs` computes absolute values, `nchar` counts characters, and you can pass either to `sapply` with the same syntax.
 
-`sapply` takes each element of the input, applies your function, and tries to simplify the results into a vector. When all the results have the same length (as they do here, since `sqrt` returns one number per input), you get a numeric vector back. When results differ in length or type, `sapply` returns a list instead. (@sec-iteration-without-loops covers the distinction in detail; for now, the simple cases are enough.)
+`sapply` takes each element of the input, applies your function, and tries to simplify the results into a vector. When all the results have the same length (as they do here, since `sqrt` returns one number per input), you get a numeric vector back. When results differ in length or type, `sapply` returns a list instead. `lapply()`\index{lapply()} is the stricter sibling that always returns a list. (@sec-iteration-without-loops covers the distinction in detail; for now, the simple cases are enough.)
 
-A function that takes another function as an argument is called a *higher-order function*. `sapply` is one; most of R's power comes from others. The pattern is the same one from @sec-vectorized-ops: apply a function to each element of a container, get back a container of the same shape. In @sec-vectorized-ops, R did this implicitly with vectorization (`sqrt(c(1,4,9))`). Here, `sapply` does it explicitly: you pick the function, `sapply` handles the iteration.
+A function that takes another function as an argument\index{function!as argument} is called a *higher-order function*\index{higher-order function}. `sapply` is one; most of R's power comes from others. The pattern is the same one from @sec-vectorized-ops: apply a function to each element of a container, get back a container of the same shape. In @sec-vectorized-ops, R did this implicitly with vectorization (`sqrt(c(1,4,9))`). Here, `sapply` does it explicitly: you pick the function, `sapply` handles the iteration.
 
 ::: {.callout-note collapse="true"}
 ## The lambda calculus connection
@@ -62,7 +62,7 @@ You can pass a named function like `sqrt` to `sapply`. But suppose you need to s
 sapply(1:5, function(x) x^2)
 ```
 
-`function(x) x^2` creates a function right where it is needed, with no name and no assignment; it exists only for this one call to `sapply`, and then it vanishes. This is an *anonymous function*, and you already saw a brief example in @sec-functions-are-values.
+`function(x) x^2` creates a function right where it is needed, with no name and no assignment; it exists only for this one call to `sapply`, and then it vanishes. This is an *anonymous function*\index{anonymous function}, and you already saw a brief example in @sec-functions-are-values.
 
 The `function(x)` prefix is verbose enough that many R programmers avoided anonymous functions for years, defaulting to named helpers even for throwaway operations. The language eventually responded.
 
@@ -161,7 +161,7 @@ make_adder <- function(n) {
 }
 ```
 
-`make_adder` takes a number `n` and returns a *new function* that adds `n` to its argument:
+`make_adder` takes a number `n` and returns a *new function*\index{function!as return value} that adds `n` to its argument:
 
 ```{r}
 add5 <- make_adder(5)
@@ -178,7 +178,7 @@ add10(3)
 
 When `make_adder(5)` runs, it creates a local environment where `n = 5`. The returned function `function(x) x + n` was defined inside that environment. When you later call `add5(3)`, R finds `n` through lexical scoping (@sec-scope-first-look): it looks in the environment where the function was defined and finds `n = 5`. But that environment was created during a function call that has already returned. The call is gone. So where does the environment live?
 
-A function that travels with its creation environment is called a *closure*. Every function in R is technically a closure, but the term earns its weight when a function returned by another function captures variables from the enclosing scope. Closures are powerful enough to deserve their own chapter (@sec-closures-and-scope); the mechanism that makes `make_adder` work has consequences far beyond adding numbers.
+A function that travels with its creation environment is called a *closure*\index{closure}. Every function in R is technically a closure, but the term earns its weight when a function returned by another function captures variables from the enclosing scope. Closures are powerful enough to deserve their own chapter (@sec-closures-and-scope); the mechanism that makes `make_adder` work has consequences far beyond adding numbers.
 
 ::: {.callout-note collapse="true"}
 ## The lambda calculus connection

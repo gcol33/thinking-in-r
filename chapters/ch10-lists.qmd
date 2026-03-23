@@ -5,12 +5,12 @@
 source(here::here("_common.R"))
 ```
 
-You have a penguin. It has a species (character), a body mass (double), and a vector of bill and flipper measurements (also doubles). Try cramming all of that into a single atomic vector and R will coerce everything to character, because vectors are strict: one type, no exceptions (@sec-coercion). The species survives, the numbers become strings, and the measurements lose their identity as a group. What you need is a container that keeps each piece intact, preserving its type and its shape, without flattening or coercing anything. R calls that container a list.
+You have a penguin. It has a species (character), a body mass (double), and a vector of bill and flipper measurements (also doubles). Try cramming all of that into a single atomic vector and R will coerce everything to character, because vectors are strict: one type, no exceptions (@sec-coercion). The species survives, the numbers become strings, and the measurements lose their identity as a group. What you need is a container that keeps each piece intact, preserving its type and its shape, without flattening or coercing anything. R calls that container a list\index{list}.
 
 
 ## Why lists exist {#sec-why-lists}
 
-Where a vector is homogeneous, a list is heterogeneous: each element can be a number, a string, a vector of arbitrary length, a function, or even another list, and all of them coexist without interference.
+Where a vector is homogeneous, a list is heterogeneous\index{heterogeneous}: each element can be a number, a string, a vector of arbitrary length, a function, or even another list, and all of them coexist without interference.
 
 ```{r}
 penguin <- list(
@@ -23,7 +23,7 @@ penguin
 
 `species` is a character scalar, `mass` is a numeric scalar, `measurements` is a numeric vector of length 3. No coercion, no flattening. A vector could not hold these together without reducing them all to a single type; a list simply keeps each element as it was.
 
-Technically, a list is a *recursive vector*, where "recursive" means its elements can themselves be lists, allowing arbitrary nesting. R's documentation calls lists "generic vectors" to distinguish them from atomic vectors (@sec-atomic-vectors), and `typeof()` confirms:
+Technically, a list is a *recursive vector*\index{recursive data structure}, where "recursive" means its elements can themselves be lists, allowing arbitrary nesting. R's documentation calls lists "generic vectors" to distinguish them from atomic vectors (@sec-atomic-vectors), and `typeof()` confirms:
 
 ```{r}
 typeof(penguin)
@@ -58,9 +58,9 @@ Named elements are easier to work with because you can refer to them by meaning 
 
 Think of a list as a train where each carriage holds its own cargo, and your choice of accessor determines whether you detach the carriage or reach inside it:
 
-- `x[1]` returns the first carriage still attached to the train. The result is a list of length 1.
-- `x[[1]]` opens the first carriage and pulls out what's inside. The result is the element itself.
-- `x$name` is shorthand for `x[["name"]]`.
+- `x[1]`\index{[ (single bracket)} returns the first carriage still attached to the train. The result is a list of length 1.
+- `x[[1]]`\index{[[ (double bracket)} opens the first carriage and pulls out what's inside. The result is the element itself.
+- `x$name`\index{\$ (dollar sign)} is shorthand for `x[["name"]]`.
 
 ![`x[1]` returns the carriage (still a list); `x[[1]]` pulls out the cargo (the element itself).](../images/list_train.png){#fig-list-train width=100%}
 
@@ -131,7 +131,7 @@ Default to `[[` and `$` for extracting elements. Use `[` only when you need a su
 
 ## Nested lists {#sec-nested-lists}
 
-A list element can be another list, which means that a single list can grow into a tree of arbitrary depth:
+A list element can be another list\index{list!nested}, which means that a single list can grow into a tree of arbitrary depth:
 
 ```{r}
 study <- list(
@@ -145,7 +145,7 @@ study <- list(
 )
 ```
 
-`str()` reveals the shape:
+`str()`\index{str()} reveals the shape:
 
 ```{r}
 str(study)
@@ -153,7 +153,7 @@ str(study)
 
 `str()` is the single most useful function for lists. It works on any R object, but with lists it shows you the nesting, the types, and the lengths in one compact summary. Get in the habit of calling it on anything you did not build yourself.
 
-Every nested list is a tree: sub-lists are branches, atomic values are leaves. File systems, the DOM, and JSON are all trees too, which is why R's lists map onto them so naturally.
+Every nested list is a tree: sub-lists are branches, atomic values are leaves. File systems, the DOM, and JSON\index{JSON} are all trees too, which is why R's lists map onto them so naturally.
 
 Inspecting is only half the problem. How do you reach into the tree and pull out what you need? Chain `[[` or `$`:
 

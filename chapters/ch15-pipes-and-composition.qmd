@@ -61,11 +61,11 @@ penguins |>
 
 Read it top to bottom: take `penguins`, select two columns, keep Adelie rows, sort by mass. Each line transforms the result of the previous one, and the reading order matches the execution order.
 
-`x |> f()` is syntactic sugar for `f(x)`. R literally rewrites it before the code runs. Chain two and `x |> f() |> g()` becomes `g(f(x))`, which is (g ∘ f)(x) written left-to-right instead of inside-out. That is function composition from @sec-church, just in friendlier notation.
+`x |> f()`\index{pipe}\index{native pipe} is syntactic sugar for `f(x)`. R literally rewrites it before the code runs. Chain two and `x |> f() |> g()` becomes `g(f(x))`, which is (g ∘ f)(x) written left-to-right instead of inside-out. That is function composition from @sec-church, just in friendlier notation.
 
 This is another monoid (@sec-data-transformation): `∘` is the operation, the identity function `\(x) x` is the identity element, and chaining any number of verbs always gives you back a data frame. The same structure shows up again with `Reduce()` in @sec-reduce-and-accumulate.
 
-The native pipe `|>` was introduced in R 4.1 (2021) and is built into the language, requiring no packages. The idea, however, is older than R itself: Doug McIlroy proposed the pipe concept for Unix in 1964, writing "we should have some ways of coupling programs like garden hose." The `|` operator in the Unix shell chains programs, each reading from standard input and writing to standard output; R's `|>` is the same idea applied to data frames, where each dplyr verb takes a data frame and returns one.
+The native pipe `|>` was introduced in R 4.1 (2021) and is built into the language, requiring no packages. The idea, however, is older than R itself: Doug McIlroy\index{McIlroy, Doug} proposed the pipe concept for Unix in 1964, writing "we should have some ways of coupling programs like garden hose." The `|` operator in the Unix shell chains programs, each reading from standard input and writing to standard output; R's `|>` is the same idea applied to data frames, where each dplyr verb takes a data frame and returns one.
 
 ::: callout-tip
 ## Opinion
@@ -123,7 +123,7 @@ Each verb does one thing: `filter` removes rows, `group_by` sets the grouping, `
 
 Lambda calculus (@sec-church) is built on applying functions to arguments. Composition is the next step: apply one function, then apply another to the result.
 
-`x |> f() |> g()` is `g(f(x))`. In mathematical notation, that is (g . f)(x): the composition of g and f, applied to x. The pipe rewrites composition from inside-out to left-to-right. Nothing else changes.
+`x |> f() |> g()` is `g(f(x))`. In mathematical notation, that is (g . f)(x): the composition\index{function composition} of g and f, applied to x. The pipe rewrites composition from inside-out to left-to-right. Nothing else changes.
 
 This is why dplyr verbs all follow the same contract: take a data frame as the first argument, return a data frame. Functions that follow this contract compose via the pipe; functions that don't (first argument is a formula, a filename, a model object) require workarounds. The convention exists precisely so that verbs snap together like sections of garden hose.
 
@@ -140,13 +140,13 @@ clean_and_summarise <- function(df) {
 penguins |> clean_and_summarise()
 ```
 
-Wrapping a pipeline in a function gives the composition a name. `clean_and_summarise` is a single function built from four composed steps; you can pass it around, store it in a list, or use it inside another pipeline. The pipeline describes the transformation without naming intermediates:
+Wrapping a pipeline\index{pipeline} in a function gives the composition a name. `clean_and_summarise` is a single function built from four composed steps; you can pass it around, store it in a list, or use it inside another pipeline. The pipeline describes the transformation without naming intermediates:
 
 ```r
 penguins |> filter(species == "Adelie") |> nrow()
 ```
 
-In Haskell, this style is called "point-free" or "tacit" programming, tracing back to combinatory logic (Schönfinkel, 1924): functions are composed without mentioning the data they act on. R's pipe enables a mild version of this. It isn't fully point-free (dplyr verbs still reference column names), but the same impulse is at work.
+In Haskell, this style is called "point-free"\index{point-free} or "tacit" programming, tracing back to combinatory logic (Schönfinkel\index{Sch\"{o}nfinkel, Moses}, 1924): functions are composed without mentioning the data they act on. R's pipe enables a mild version of this. It isn't fully point-free (dplyr verbs still reference column names), but the same impulse is at work.
 
 
 ## The placeholder `_` {#sec-placeholder}
@@ -159,7 +159,7 @@ penguins |>
   lm(body_mass_g ~ bill_length_mm, data = _)
 ```
 
-The `_` placeholder says "put the piped value here." It must appear as a named argument (`data = _`), and it can appear only once. This syntax requires R 4.2+.
+The `_` placeholder\index{placeholder} says "put the piped value here." It must appear as a named argument (`data = _`), and it can appear only once. This syntax requires R 4.2+.
 
 For anything more complex, use an anonymous function:
 
@@ -180,7 +180,7 @@ The `\(x)` syntax from @sec-anonymous-functions creates a function inline, and t
 
 ## `|>` vs `%>%` {#sec-pipe-comparison}
 
-The magrittr pipe `%>%` came first (2014). The native pipe `|>` arrived in R 4.1 (2021). Both do the same basic thing: insert the left side as the first argument of the right side. The differences are practical.
+The magrittr\index{magrittr (package)} pipe `%>%`\index{\%>\% (magrittr pipe)} came first (2014). The native pipe `|>` arrived in R 4.1 (2021). Both do the same basic thing: insert the left side as the first argument of the right side. The differences are practical.
 
 `|>` requires parentheses on the right side: `x |> sqrt()`, not `x |> sqrt`. It uses `_` as its placeholder (named argument only, once), while `%>%` uses `.` (anywhere, multiple times). The native pipe is faster because it is a syntax transformation: the parser rewrites `x |> f()` to `f(x)` before evaluation, whereas `%>%` is a function call carrying its own overhead. And `|>` needs no package, while `%>%` needs magrittr (loaded automatically by the tidyverse).
 

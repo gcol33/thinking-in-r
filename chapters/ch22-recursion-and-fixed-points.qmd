@@ -7,7 +7,7 @@ source(here::here("_common.R"))
 
 Suppose you need to process a tree of unknown depth, a structure that nests inside itself with no predetermined bottom. A `for` loop can't express this because you don't know how many levels to iterate; you would need a loop inside a loop inside a loop, turtles all the way down. The alternative is a function that calls itself, peeling away one layer of nesting each time until it reaches something solid. That function is recursive, and recursion predates loops by decades in the theory of computation.
 
-A recursive function calls itself. The sentence sounds circular because circularity is the point: you solve a problem by breaking it into smaller copies of the same problem, bottoming out when the copies are small enough to answer directly. You saw `Reduce()` in @sec-reduce-and-accumulate collapse a list into a single value by repeatedly applying a binary function, but `Reduce()` is just one specific recursive pattern wearing a loop's clothing. Recursion itself can express anything a loop can, and several things loops express awkwardly. What happens, though, when the chain of self-calls grows too long for R to handle?
+A recursive function\index{recursion} calls itself. The sentence sounds circular because circularity is the point: you solve a problem by breaking it into smaller copies of the same problem, bottoming out when the copies are small enough to answer directly. You saw `Reduce()` in @sec-reduce-and-accumulate collapse a list into a single value by repeatedly applying a binary function, but `Reduce()` is just one specific recursive pattern wearing a loop's clothing. Recursion itself can express anything a loop can, and several things loops express awkwardly. What happens, though, when the chain of self-calls grows too long for R to handle?
 
 
 ## Recursive functions {#sec-recursive-functions}
@@ -23,7 +23,7 @@ factorial_r <- function(n) {
 factorial_r(6)
 ```
 
-Two parts make this work. A *base case* stops the recursion (`n == 0` here), and a *recursive case* makes progress toward it (since `n - 1` is closer to 0 than `n` was). Forget the base case and you get infinite recursion, which in R means a stack overflow error, the computational equivalent of a sentence that never finds its period.
+Two parts make this work. A *base case*\index{base case} stops the recursion (`n == 0` here), and a *recursive case*\index{recursive case} makes progress toward it (since `n - 1` is closer to 0 than `n` was). Forget the base case and you get infinite recursion, which in R means a stack overflow\index{stack overflow} error, the computational equivalent of a sentence that never finds its period.
 
 Fibonacci numbers are the other classic:
 
@@ -117,7 +117,7 @@ factorial_r <- function(n) {
 
 After the recursive call returns, there is still work left: multiply the result by `n`. That pending multiplication means R cannot discard the current frame while waiting for the recursion to bottom out; every single frame in the chain must stay alive, holding onto its local `n`, until the deepest call finally returns 1 and the whole tower of deferred multiplications collapses upward.
 
-A *tail-recursive* version eliminates that pending work by threading the partial answer through an accumulator argument, so the recursive call becomes the very last operation the function performs:
+A *tail-recursive*\index{tail recursion} version eliminates that pending work by threading the partial answer through an accumulator argument, so the recursive call becomes the very last operation the function performs:
 
 ```{r}
 factorial_tail <- function(n, acc = 1) {
@@ -128,7 +128,7 @@ factorial_tail <- function(n, acc = 1) {
 factorial_tail(6)
 ```
 
-When the recursive call sits in *tail position* (nothing happens after it), a smart compiler can reuse the current frame instead of allocating a new one, converting O(n) stack usage to O(1). This is *tail-call optimization* (TCO), and Scheme guarantees it. Haskell effectively provides it. R does not. So `factorial_tail(10000)` will still overflow the stack, even though the function is logically a loop in disguise.
+When the recursive call sits in *tail position* (nothing happens after it), a smart compiler can reuse the current frame instead of allocating a new one, converting O(n) stack usage to O(1). This is *tail-call optimization*\index{tail-call optimization} (TCO), and Scheme guarantees it. Haskell effectively provides it. R does not. So `factorial_tail(10000)` will still overflow the stack, even though the function is logically a loop in disguise.
 
 The accumulator pattern still pays its rent, though. It clarifies intent (the accumulator carries the "answer so far"), it is the prerequisite for trampolining (next section), and it can convert exponential algorithms into linear ones. Here is Fibonacci rewritten with two accumulators, running in linear time instead of exponential:
 
@@ -153,7 +153,7 @@ Where the naive `fib()` needed millions of calls for `fib(30)`, this version mak
 
 ## Trampolining {#sec-trampolining}
 
-Since R refuses to optimize tail calls, you can do it by hand. The idea: instead of making a recursive call, return a *thunk* (a zero-argument function that represents the call you *would* have made). Then a loop, the *trampoline*, keeps calling thunks until it gets a non-function result:
+Since R refuses to optimize tail calls, you can do it by hand. The idea: instead of making a recursive call, return a *thunk*\index{thunk} (a zero-argument function that represents the call you *would* have made). Then a loop, the *trampoline*\index{trampoline}, keeps calling thunks until it gets a non-function result:
 
 ```{r}
 trampoline <- function(f, ...) {
@@ -195,9 +195,9 @@ Trampolining is clever, but if you catch yourself trampolining in production R c
 
 ## Divide and conquer {#sec-divide-conquer}
 
-Some problems split cleanly in half, and each half looks just like the original problem, only smaller. Split, solve each piece recursively, combine. This is the *divide and conquer* strategy, and recursion expresses it so naturally that the code almost reads like the definition.
+Some problems split cleanly in half, and each half looks just like the original problem, only smaller. Split, solve each piece recursively, combine. This is the *divide and conquer*\index{divide and conquer} strategy, and recursion expresses it so naturally that the code almost reads like the definition.
 
-Merge sort is the cleanest example: split the vector in half, sort each half, merge the sorted halves back together:
+Merge sort\index{merge sort} is the cleanest example: split the vector in half, sort each half, merge the sorted halves back together:
 
 ```{r}
 merge_sort <- function(x) {
@@ -231,7 +231,7 @@ merge_sort(c(5, 2, 8, 1, 9, 3))
 
 Each level of recursion halves the problem, giving O(log n) levels, and each level does O(n) work merging, so the total comes to O(n log n) as discussed in @sec-complexity. The recursion depth is only log2(n), which means even a million-element vector needs just 20 levels. Stack overflow is not a concern for balanced divide-and-conquer algorithms; the branching that makes them powerful also keeps them shallow.
 
-Binary search follows the same pattern but only recurses into one half:
+Binary search\index{binary search} follows the same pattern but only recurses into one half:
 
 ```{r}
 binary_search <- function(x, target, lo = 1, hi = length(x)) {
@@ -271,7 +271,7 @@ find_numbers(nested)
 
 The function dispatches on type: numbers come back directly, non-list non-numbers get discarded, and lists trigger a recursive `lapply` that peels off one layer at a time. This pattern of "check the base cases, recurse on the structure" is the backbone of all tree-processing code; once you see it, you see it everywhere.
 
-Base R provides `rapply()` for recursive application over lists:
+Base R provides `rapply()`\index{rapply()} for recursive application over lists:
 
 ```{r}
 rapply(nested, sqrt, classes = "numeric", how = "unlist")
@@ -321,9 +321,9 @@ The stack cost is the same as ordinary recursion, doubled: each round trip consu
 
 Here is an odd question. Can you write a recursive function without ever giving it a name? Named functions call themselves by name, so recursion seems to require naming. But what if you only have anonymous functions, nothing else?
 
-A *fixed point* of a function f is a value x where f(x) = x. The number 0 is a fixed point of `function(x) x^2`, because 0^2 = 0. A *fixed-point combinator* extends this idea to functions that return functions: it takes a "template" for recursion and threads the self-reference through automatically, producing a working recursive function from anonymous parts alone.
+A *fixed point* of a function f is a value x where f(x) = x. The number 0 is a fixed point of `function(x) x^2`, because 0^2 = 0. A *fixed-point combinator*\index{fixed point} extends this idea to functions that return functions: it takes a "template" for recursion and threads the self-reference through automatically, producing a working recursive function from anonymous parts alone.
 
-In lazy languages (Haskell, untyped lambda calculus), the Y combinator does this:
+In lazy languages (Haskell, untyped lambda calculus), the Y combinator\index{Y combinator} does this:
 ```
 Y = λf. (λx. f(x x))(λx. f(x x))
 ```
@@ -402,10 +402,10 @@ The table below summarizes when each approach fits:
 
 By the early twentieth century, mathematicians had built formal systems powerful enough to express most of mathematics. The natural next question was whether those systems could verify themselves: could a formal system prove that every true statement within it is provable? If yes, mathematics would be self-certifying, a closed loop with no loose ends. The systems were expressive enough to state any mathematical truth, so surely they were expressive enough to prove any mathematical truth. Hilbert had made exactly this bet (the same program that led to the Entscheidungsproblem in @sec-halting-problem), challenging mathematicians to prove their formal systems complete and consistent, but then in 1931 a twenty-five-year-old logician in Vienna found a way to make a formal system reason about its own proofs.
 
-He encoded logical statements as numbers using primitive recursive functions, turning each proof step into arithmetic. Once proofs were numbers, he could construct a statement inside the system that said, in effect, "this statement has no proof in this system." If the system could prove it, the statement would be false, and the system would be proving a falsehood. If the system could not prove it, the statement would be true, and there would be a true statement the system could never reach. Either way, the closed loop was shattered. Mathematics would always have blind spots: true statements that no amount of cleverness, no added axioms, no better proof strategies could ever capture. It became known as Godel's incompleteness theorem.
+He encoded logical statements as numbers using primitive recursive functions\index{primitive recursive function}, turning each proof step into arithmetic. Once proofs were numbers, he could construct a statement inside the system that said, in effect, "this statement has no proof in this system." If the system could prove it, the statement would be false, and the system would be proving a falsehood. If the system could not prove it, the statement would be true, and there would be a true statement the system could never reach. Either way, the closed loop was shattered. Mathematics would always have blind spots: true statements that no amount of cleverness, no added axioms, no better proof strategies could ever capture. It became known as Godel's incompleteness theorem\index{incompleteness theorem}\index{Gödel, Kurt}.
 
-Five years later, Church showed that recursion did not need to be a primitive at all: the fixed-point combinator could derive it from pure function application. Turing's machines provided the alternative model, and Church and Turing proved the two equivalent. But recursion stayed in mathematics until McCarthy gave it a programming language. LISP (1960) was the first language where recursive function calls served as the primary control structure; `car`, `cdr`, and `cons` made recursive list processing practical. Recursion was no longer a proof technique restricted to mathematics; it was how you wrote programs.
+Five years later, Church showed that recursion did not need to be a primitive at all: the fixed-point combinator could derive it from pure function application. Turing's machines provided the alternative model, and Church and Turing proved the two equivalent. But recursion stayed in mathematics until McCarthy\index{McCarthy, John} gave it a programming language. LISP\index{LISP} (1960) was the first language where recursive function calls served as the primary control structure; `car`, `cdr`, and `cons` made recursive list processing practical. Recursion was no longer a proof technique restricted to mathematics; it was how you wrote programs.
 
 The question that remained was efficiency. Landin's SECD machine (1964) showed how to mechanically evaluate expressions with closures and recursive calls. A decade later, Steele and Sussman proved something that surprised the programming world: tail-recursive calls and `goto` are the same thing. Their "Lambda the Ultimate" papers (1975-1980) showed that lambda expressions can replace every control structure, and that a sufficiently smart compiler can make functional code as fast as imperative code. Scheme guaranteed tail-call optimization as a consequence.
 
-R chose not to. S was designed for interactive statistical computing, where vectorized operations do the heavy lifting, not deep recursion. The absence of TCO reflects that priority: the language optimized for the common case (vectorized numerical work) at the cost of the uncommon one (recursive descent past a thousand frames).
+R chose not to. S was designed for interactive statistical computing, where vectorized operations do the heavy lifting, not deep recursion. The absence of TCO reflects that priority: the language optimized for the common case (vectorized numerical work) at the cost of the uncommon one (recursive descent past a thousand frames). But R did make another choice about evaluation that most languages avoided: when you pass an argument to a function, R does not evaluate it immediately.

@@ -5,24 +5,24 @@
 source(here::here("_common.R"))
 ```
 
-Try building a bar chart in base R, then a scatterplot, then a histogram. Each one calls a different function with different arguments, different parameter names, different assumptions about what your data looks like. You learn three APIs instead of one idea. ggplot2 takes the opposite approach: it gives you a grammar, a small vocabulary of composable pieces that describe *any* plot, and you assemble the pieces yourself. Once the grammar clicks, you stop asking "which function draws a heatmap?" and start asking "what mapping, what geometry, what coordinate system?"
+Try building a bar chart in base R, then a scatterplot, then a histogram. Each one calls a different function with different arguments, different parameter names, different assumptions about what your data looks like. You learn three APIs instead of one idea. ggplot2\index{ggplot2 (package)} takes the opposite approach: it gives you a grammar, a small vocabulary of composable pieces that describe *any* plot, and you assemble the pieces yourself. Once the grammar clicks, you stop asking "which function draws a heatmap?" and start asking "what mapping, what geometry, what coordinate system?"
 
 This chapter assumes you have tidy data (@sec-tidy-data), can reshape it with dplyr (@sec-data-transformation), and can pipe it through transformations (@sec-pipes-and-composition). The data is clean. Now you see it.
 
 
 ## The grammar of graphics {#sec-grammar-of-graphics}
 
-In 1999, Leland Wilkinson published *The Grammar of Graphics*, and the central argument was deceptively simple: a plot is not a type. Not a bar chart, not a scatterplot, not a heatmap. A plot is a mapping from data to visual properties, rendered by geometric objects, in a coordinate system; types are consequences of choices, not starting points. The intellectual roots stretch further back to Jacques Bertin's *Semiologie Graphique* (1967), which classified visual variables (position, size, shape, value, color, orientation, texture) and ranked their effectiveness for different data types. Wilkinson built on Bertin's foundation, and when ggplot2 maps a variable to `color` vs `size` vs `shape`, it is implementing Bertin's taxonomy: position is most effective for quantitative data, color for categorical.
+In 1999, Leland Wilkinson published *The Grammar of Graphics*\index{grammar of graphics}, and the central argument was deceptively simple: a plot is not a type. Not a bar chart, not a scatterplot, not a heatmap. A plot is a mapping from data to visual properties, rendered by geometric objects, in a coordinate system; types are consequences of choices, not starting points. The intellectual roots stretch further back to Jacques Bertin's *Semiologie Graphique* (1967), which classified visual variables (position, size, shape, value, color, orientation, texture) and ranked their effectiveness for different data types. Wilkinson built on Bertin's foundation, and when ggplot2 maps a variable to `color` vs `size` vs `shape`, it is implementing Bertin's taxonomy: position is most effective for quantitative data, color for categorical.
 
 Hadley Wickham turned this theory into software in 2005, building ggplot2 as a layered grammar where plots emerge from composing independent components:
 
 1. **Data**: a tidy data frame (@sec-tidy-data).
-2. **Aesthetics** (`aes()`): which variables map to which visual properties.
-3. **Geoms**: what shapes represent the data.
-4. **Stats**: statistical transformations (often implicit).
-5. **Scales**: how data values translate to aesthetic values (colors, sizes, axes).
-6. **Facets**: small multiples, splitting by a variable.
-7. **Themes**: non-data visual styling.
+2. **Aesthetics**\index{aesthetic} (`aes()`\index{aes()}): which variables map to which visual properties.
+3. **Geoms**\index{geom}: what shapes represent the data.
+4. **Stats**\index{stat}: statistical transformations (often implicit).
+5. **Scales**\index{scale}: how data values translate to aesthetic values (colors, sizes, axes).
+6. **Facets**\index{facet}: small multiples, splitting by a variable.
+7. **Themes**\index{theme}: non-data visual styling.
 
 Most plots need only three: data + aesthetics + geom. The rest are refinements you reach for when the defaults aren't enough.
 
@@ -39,7 +39,7 @@ ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g)) +
   geom_point()
 ```
 
-`ggplot()` sets up the coordinate system, `aes()` maps bill length to the x-axis and body mass to the y-axis, and `geom_point()` draws one point per row. The `+` adds the geom as a layer. Three lines, the entire grammar. But what happens when you want to encode a third variable?
+`ggplot()` sets up the coordinate system\index{coordinate system}, `aes()` maps bill length to the x-axis and body mass to the y-axis, and `geom_point()`\index{geom\_point()} draws one point per row. The `+` adds the geom as a layer\index{layer}. Three lines, the entire grammar. But what happens when you want to encode a third variable?
 
 
 ## Aesthetics: data to visuals {#sec-aesthetics}
@@ -48,8 +48,10 @@ ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g)) +
 
 ```{r}
 #| warning: false
-ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
-  geom_point()
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, fill = species, shape = species)) +
+  geom_point(stroke = 0.4, size = 2) +
+  scale_fill_viridis_d() +
+  scale_shape_manual(values = c(21, 22, 24))
 ```
 
 Writing `color = species` maps each species to a different color; ggplot2 picks the palette automatically and adds a legend. Common aesthetics include `x`, `y`, `color` (or `colour`), `fill`, `shape`, `size`, `alpha`, `linetype`, and `group`.
@@ -60,14 +62,16 @@ There is one distinction that trips up everyone, usually within the first hour. 
 #| warning: false
 # Color varies by species
 ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g)) +
-  geom_point(aes(color = species))
+  geom_point(aes(fill = species, shape = species), stroke = 0.4, size = 2) +
+  scale_fill_viridis_d() +
+  scale_shape_manual(values = c(21, 22, 24))
 ```
 
 ```{r}
 #| warning: false
 # All points are steel blue
 ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g)) +
-  geom_point(color = "steelblue")
+  geom_point(fill = "steelblue", shape = 21, stroke = 0.4, size = 2)
 ```
 
 ::: callout-tip
@@ -107,13 +111,13 @@ ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
   geom_point()
 ```
 
-`geom_histogram()` shows the distribution of one continuous variable, and you control the resolution with `bins` or `binwidth`:
+`geom_histogram()`\index{geom\_histogram()} shows the distribution of one continuous variable, and you control the resolution with `bins` or `binwidth`:
 
 ```{r}
 #| warning: false
 #| message: false
 ggplot(penguins, aes(x = body_mass_g)) +
-  geom_histogram(binwidth = 200)
+  geom_histogram(binwidth = 200, fill = "grey70", color = "white")
 ```
 
 `geom_boxplot()` summarizes distributions by group (median, quartiles, outliers):
@@ -121,24 +125,25 @@ ggplot(penguins, aes(x = body_mass_g)) +
 ```{r}
 #| warning: false
 ggplot(penguins, aes(x = species, y = body_mass_g)) +
-  geom_boxplot()
+  geom_boxplot(fill = "grey85", color = "grey30")
 ```
 
 `geom_density()` is a smooth alternative to the histogram that estimates probability density, making it easier to overlay and compare distributions:
 
 ```{r}
 #| warning: false
-ggplot(penguins, aes(x = body_mass_g, fill = species)) +
-  geom_density(alpha = 0.4)
+ggplot(penguins, aes(x = body_mass_g, fill = species, linetype = species)) +
+  geom_density(alpha = 0.4) +
+  scale_fill_viridis_d()
 ```
 
-`geom_line()` connects points from left to right, the standard geom for time series and trends. Order matters: if the data isn't sorted by x, the lines will zigzag into nonsense.
+`geom_line()`\index{geom\_line()} connects points from left to right, the standard geom for time series and trends. Order matters: if the data isn't sorted by x, the lines will zigzag into nonsense.
 
-`geom_col()` draws bars with heights taken directly from the data, while `geom_bar()` counts rows for you. The difference is the stat: `geom_bar()` applies `stat = "count"` internally, so you only map `x`; `geom_col()` uses `stat = "identity"`, so you map both `x` and `y`.
+`geom_col()` draws bars with heights taken directly from the data, while `geom_bar()`\index{geom\_bar()} counts rows for you. The difference is the stat: `geom_bar()` applies `stat = "count"` internally, so you only map `x`; `geom_col()` uses `stat = "identity"`, so you map both `x` and `y`.
 
 ```{r}
 ggplot(penguins, aes(x = species)) +
-  geom_bar()
+  geom_bar(fill = "grey70", color = "white")
 ```
 
 `geom_smooth()` adds a fitted line or curve, with `method = "lm"` for linear and `method = "loess"` for smooth:
@@ -180,21 +185,25 @@ Color scales control how values map to colors. For discrete variables, `scale_co
 
 ```{r}
 #| warning: false
-ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
-  geom_point() +
-  scale_color_viridis_d()
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, fill = species, shape = species)) +
+  geom_point(stroke = 0.4, size = 2) +
+  scale_fill_viridis_d() +
+  scale_shape_manual(values = c(21, 22, 24))
 ```
 
-`labs()` controls titles and labels. Always label your axes with units, because `bill_length_mm` is a column name, not a label:
+`labs()`\index{labs()} controls titles and labels. Always label your axes with units, because `bill_length_mm` is a column name, not a label:
 
 ```{r}
 #| warning: false
-ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
-  geom_point() +
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, fill = species, shape = species)) +
+  geom_point(stroke = 0.4, size = 2) +
+  scale_fill_viridis_d() +
+  scale_shape_manual(values = c(21, 22, 24)) +
   labs(
     x = "Bill length (mm)",
     y = "Body mass (g)",
-    color = "Species",
+    fill = "Species",
+    shape = "Species",
     title = "Palmer penguins"
   )
 ```
@@ -253,8 +262,10 @@ Themes control everything on a plot that isn't data: background, grid lines, fon
 
 ```{r}
 #| warning: false
-ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
-  geom_point() +
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, fill = species, shape = species)) +
+  geom_point(stroke = 0.4, size = 2) +
+  scale_fill_viridis_d() +
+  scale_shape_manual(values = c(21, 22, 24)) +
   theme_minimal()
 ```
 
@@ -262,8 +273,10 @@ Other useful defaults include `theme_classic()` (white background, no grid) and 
 
 ```{r}
 #| warning: false
-ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
-  geom_point() +
+ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, fill = species, shape = species)) +
+  geom_point(stroke = 0.4, size = 2) +
+  scale_fill_viridis_d() +
+  scale_shape_manual(values = c(21, 22, 24)) +
   theme_minimal() +
   theme(
     legend.position = "bottom",
@@ -298,15 +311,19 @@ Read this example like a sentence: take penguins, remove missing sex, map bill l
 #| message: false
 penguins |>
   dplyr::filter(!is.na(sex)) |>
-  ggplot(aes(x = bill_length_mm, y = body_mass_g, color = species)) +
-  geom_point(alpha = 0.6) +
-  geom_smooth(method = "lm", se = FALSE) +
+  ggplot(aes(x = bill_length_mm, y = body_mass_g, color = species, fill = species, shape = species, linetype = species)) +
+  geom_point(alpha = 0.6, stroke = 0.4, size = 2) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
   facet_wrap(~ sex) +
   scale_color_viridis_d() +
+  scale_fill_viridis_d() +
+  scale_shape_manual(values = c(21, 22, 24)) +
   labs(
     x = "Bill length (mm)",
     y = "Body mass (g)",
     color = "Species",
+    fill = "Species",
+    shape = "Species",
     title = "Bill length vs body mass by species and sex"
   ) +
   theme_minimal()

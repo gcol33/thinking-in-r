@@ -10,7 +10,7 @@ You email `analysis.R` to a colleague. They run it and get an error because they
 
 ## Why packages {#sec-why-packages}
 
-A package is the unit of shareable, testable, documented R code. Scripts depend on `source()` calls, hardcoded paths, and the hope that the right libraries happen to be installed; packages carry their dependencies, their documentation, and their tests as a single installable unit that either works or tells you exactly why it doesn't.
+A package\index{package} is the unit of shareable, testable, documented R code. Scripts depend on `source()` calls, hardcoded paths, and the hope that the right libraries happen to be installed; packages carry their dependencies, their documentation, and their tests as a single installable unit that either works or tells you exactly why it doesn't.
 
 Compare the email scenario with what happens when you share a package. Your colleague runs `pak::pak("username/mypackage")`, and everything installs: functions, documentation, dependencies. They type `?my_function` and see how to use it. No back-and-forth. No guessing.
 
@@ -33,7 +33,7 @@ The complete reference for everything in this chapter is *R Packages* (2nd editi
 
 ## The anatomy of a package {#sec-package-anatomy}
 
-The minimum viable package has three components: `DESCRIPTION`, `NAMESPACE`, and an `R/` directory. At its core, a package is a namespace of functions: the `R/` directory holds function definitions, `NAMESPACE` controls which ones are visible, and `DESCRIPTION` records metadata. A standard layout looks like this:
+The minimum viable package has three components: `DESCRIPTION`, `NAMESPACE`, and an `R/` directory. A package is a namespace of functions: the `R/` directory holds function definitions, `NAMESPACE` controls which ones are visible, and `DESCRIPTION` records metadata. A standard layout looks like this:
 
 ```
 mypackage/
@@ -48,7 +48,7 @@ mypackage/
 └── LICENSE           # license file
 ```
 
-**DESCRIPTION** is the most important file. It declares the package name, title, version, authors, license, and dependencies, and every field matters because CRAN checks it, `install.packages()` reads it, and other packages' `Imports` reference it. A minimal example:
+**DESCRIPTION**\index{DESCRIPTION} is the most important file. It declares the package name, title, version, authors, license, and dependencies, and every field matters because CRAN checks it, `install.packages()` reads it, and other packages' `Imports` reference it. A minimal example:
 
 ```
 Package: mypackage
@@ -65,7 +65,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 ```
 
-**NAMESPACE** controls what is visible to users (exports) and what you borrow from other packages (imports). Never edit it by hand; let roxygen2 generate it. Two hooks let you run code when the package loads: `.onLoad()` fires when the namespace is loaded (even by `::` access), while `.onAttach()` fires only when someone calls `library()`. Use `.onLoad()` for setup that must happen before any function runs (registering S3 methods, setting default options, initializing connections) and `.onAttach()` only for startup messages. Both go in `R/zzz.R` by convention. For full details, see R Packages (2e), chapter 10.
+**NAMESPACE**\index{NAMESPACE} controls what is visible to users (exports) and what you borrow from other packages (imports). Never edit it by hand; let roxygen2\index{roxygen2 (package)} generate it. Two hooks let you run code when the package loads: `.onLoad()` fires when the namespace is loaded (even by `::` access), while `.onAttach()` fires only when someone calls `library()`. Use `.onLoad()` for setup that must happen before any function runs (registering S3 methods, setting default options, initializing connections) and `.onAttach()` only for startup messages. Both go in `R/zzz.R` by convention. For full details, see R Packages (2e), chapter 10.
 
 The namespace is an environment (the concept from @sec-functions-returning-functions), and `NAMESPACE` defines what names are visible in that environment. When you call `dplyr::filter()`, R looks in dplyr's namespace environment; when you call just `filter()`, R searches the environment chain, and which `filter` it finds depends on what is attached. In lambda calculus terms, a package namespace is a closure at the module level: functions inside can reference each other because they share the namespace environment, but the outside world only sees what is explicitly exported. The `NAMESPACE` file marks the same boundary that a lambda abstraction marks between bound and free variables.
 
@@ -237,7 +237,7 @@ Minimize dependencies. Every dependency is a potential breakage point, and if yo
 
 ## Testing with testthat {#sec-testing-testthat}
 
-`usethis::use_testthat(edition = 3)` sets up the test infrastructure: `tests/testthat/`, `tests/testthat.R`, and the necessary `DESCRIPTION` fields.
+`usethis::use_testthat(edition = 3)`\index{use\_testthat()}\index{testthat (package)} sets up the test infrastructure: `tests/testthat/`, `tests/testthat.R`, and the necessary `DESCRIPTION` fields.
 
 `usethis::use_test("bmi")` creates `tests/testthat/test-bmi.R`. Tests are organized in `test_that()` blocks:
 
@@ -281,7 +281,7 @@ Test the contract, not the implementation. Your test should pass even if you rew
 
 ## Vignettes {#sec-vignettes}
 
-Function documentation is reference: you look up a specific function when you already know what you're looking for. Vignettes are the opposite. They show a newcomer how the pieces fit together, walking through a workflow from start to finish, and the difference between the two is the difference between a dictionary and a story.
+Function documentation is reference: you look up a specific function when you already know what you're looking for. Vignettes\index{vignette} are the opposite. They show a newcomer how the pieces fit together, walking through a workflow from start to finish, and the difference between the two is the difference between a dictionary and a story.
 
 ```{r}
 #| eval: false
@@ -329,7 +329,7 @@ The YAML header is boilerplate. The content is yours. Documentation and vignette
 
 ## R CMD check {#sec-r-cmd-check}
 
-`R CMD check` runs roughly 50 tests against your package: does the `NAMESPACE` match the exports? Do all examples run without error? Are all arguments documented? Do the tests pass? Is the package installable?
+`R CMD check`\index{R CMD check} runs roughly 50 tests against your package: does the `NAMESPACE` match the exports? Do all examples run without error? Are all arguments documented? Do the tests pass? Is the package installable?
 
 ```{r}
 #| eval: false
@@ -363,9 +363,9 @@ Run `check()` often during development, not just at the end. Each run should fin
 
 **GitHub**: push your package to GitHub. Users install with `pak::pak("username/mypackage")` or `devtools::install_github("username/mypackage")`. Lowest barrier to sharing.
 
-**pkgdown**: `usethis::use_pkgdown_github_pages()` builds a website from your documentation, README, and vignettes, with automatic deployment through GitHub Actions. Professional documentation for free.
+**pkgdown**\index{pkgdown (package)}: `usethis::use_pkgdown_github_pages()` builds a website from your documentation, README, and vignettes, with automatic deployment through GitHub Actions. Professional documentation for free.
 
-**CRAN**: the official repository. `devtools::submit_cran()`. Strict review: 0 errors, 0 warnings, ideally 0 notes, plus human reviewers who check CRAN policies. Worth the effort for packages with a broad audience.
+**CRAN**\index{CRAN}: the official repository. `devtools::submit_cran()`. Strict review: 0 errors, 0 warnings, ideally 0 notes, plus human reviewers who check CRAN policies. Worth the effort for packages with a broad audience.
 
 **R-universe** (`r-universe.dev`): automated package hosting with a lower barrier than CRAN but still discoverable. Point it at your GitHub repo, and it builds binaries for all platforms automatically.
 
@@ -380,9 +380,9 @@ For GitHub-hosted packages, continuous integration is nearly free:
 usethis::use_github_action("check-standard")
 ```
 
-This adds a GitHub Actions workflow that runs `R CMD check` on Linux, macOS, and Windows every time you push. If the check fails, GitHub shows a red X next to the commit; if it passes, you get a green checkmark and a badge for your README. The real value is catching platform-specific bugs you would never find on your own machine: path separators (Windows uses `\`, everything else uses `/`), case-sensitive file systems (Linux is case-sensitive, macOS and Windows are not), and system library availability.
+This adds a GitHub Actions\index{GitHub Actions}\index{CI/CD} workflow that runs `R CMD check` on Linux, macOS, and Windows every time you push. If the check fails, GitHub shows a red X next to the commit; if it passes, you get a green checkmark and a badge for your README. The real value is catching platform-specific bugs you would never find on your own machine: path separators (Windows uses `\`, everything else uses `/`), case-sensitive file systems (Linux is case-sensitive, macOS and Windows are not), and system library availability.
 
-Remember the colleague who couldn't run your script? A package with CI, documentation, and a one-line install command turns that two-day email chain into a single `pak::pak()` call.
+A package with CI, documentation, and a one-line install command turns a two-day email chain into a single `pak::pak()` call.
 
 A closure captures variables in its enclosing environment and exposes only the returned function (@sec-closures-and-scope). A package does the same thing at a larger scale: internal functions, data, and dependencies live in the namespace; only the functions listed in `NAMESPACE` are visible outside. `devtools`, `usethis`, and roxygen automate the mechanics.
 

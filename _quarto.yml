@@ -7,8 +7,8 @@ project:
 
 book:
   title: "Thinking in R"
-  date: "2026-03-08"
-  date-format: "MMMM D, YYYY"
+  author: "Gilles Colling"
+  date: "2026"
   reader-mode: true
   site-url: https://gillescolling.com/thinking-in-r/
   repo-url: https://github.com/gcol33/thinking-in-r/
@@ -90,7 +90,9 @@ format:
     code-block-border-left: false
     code-overflow: wrap
     highlight-style: github
-    fig-pos: "htbp"
+    fig-pos: "H"
+    fig-width: 5.5
+    fig-height: 3.5
     toc: true
     toc-depth: 2
     number-sections: true
@@ -98,7 +100,6 @@ format:
     link-citations: true
     callout-appearance: simple
     include-in-header: preamble.tex
-    include-before-body: covers/front-cover.tex
-    include-after-body: covers/back-cover.tex
+    include-after-body: printindex.tex
 
 editor: source

@@ -13,7 +13,7 @@ This chapter is about crossing it. CSV, Excel, databases, binary formats: each h
 
 ## File paths {#sec-file-paths}
 
-Every R session has a working directory, and all relative paths resolve from it:
+Every R session has a working directory\index{working directory}, and all relative paths\index{relative path} resolve from it:
 
 ```{r}
 #| eval: false
@@ -24,10 +24,10 @@ If your data lives at `data/penguins.csv` and your working directory happens to 
 
 ::: callout-tip
 ## Opinion
-Don't use `setwd()`. It welds your script to one machine, one folder hierarchy, one moment in time. Use RStudio projects or the `here` package instead; they let the project root follow the project, not the other way around.
+Don't use `setwd()`\index{setwd()}. It welds your script to one machine, one folder hierarchy, one moment in time. Use RStudio projects or the `here` package instead; they let the project root follow the project, not the other way around.
 :::
 
-The `here` package builds paths relative to the project root by searching upward for `.Rproj` files, `.git` directories, or similar markers, so the same call works regardless of which subdirectory your script lives in:
+The `here` package\index{here()} builds paths relative to the project root by searching upward for `.Rproj` files, `.git` directories, or similar markers, so the same call works regardless of which subdirectory your script lives in:
 
 ```{r}
 #| eval: false
@@ -36,7 +36,7 @@ here::here("data", "penguins.csv")
 
 It works on any machine, any OS, any nesting depth. Every file path in this chapter uses `here::here()`.
 
-Paths hide one more trap, and it is entirely cosmetic until it isn't: slash direction. Forward slashes work everywhere in R, even on Windows, so `"data/penguins.csv"` is always valid. Backslashes need escaping (`"data\\penguins.csv"`), which you will forget exactly once before switching to forward slashes permanently.
+Paths\index{file path}\index{absolute path} hide one more trap, and it is entirely cosmetic until it isn't: slash direction. Forward slashes work everywhere in R, even on Windows, so `"data/penguins.csv"` is always valid. Backslashes need escaping (`"data\\penguins.csv"`), which you will forget exactly once before switching to forward slashes permanently.
 
 Before reading any file, verify it exists. A clear error you write yourself beats a cryptic one from deep inside `read.csv()`:
 
@@ -62,9 +62,9 @@ Reading a file is a function: hand it a path, get back a data frame. You could w
 
 That trust has consequences. Every call to `read_csv()` implicitly assumes: this file has not changed since I last looked, the encoding is what I think it is, and the column that was numeric in row 1 is still numeric in row 4012. When any of those assumptions break, the failure is hard to diagnose because the function *looks* deterministic — same path, same call — but the world behind the path has shifted. This is why `readr` lets you specify `col_types` explicitly: you are declaring the contract the file must satisfy, and `readr` validates it on your behalf. Without that declaration, the function infers types from the first thousand rows and hopes the rest agree. Specifying types is the functional programmer's workaround for a function that cannot be pure.
 
-Comma-separated values date to the 1970s on IBM mainframes, and there is still no real standard. RFC 4180 (2005) tried, but Excel, R, Python, and most other tools disagree on quoting rules, newlines inside fields, and encoding. "My CSV won't load" is perhaps the only truly universal data experience.
+Comma-separated values\index{CSV} date to the 1970s on IBM mainframes, and there is still no real standard. RFC 4180 (2005) tried, but Excel, R, Python, and most other tools disagree on quoting rules, newlines inside fields, and encoding. "My CSV won't load" is perhaps the only truly universal data experience.
 
-Base R reads CSVs with `read.csv()`:
+Base R reads CSVs with `read.csv()`\index{read.csv()}:
 
 ```{r}
 #| eval: false
@@ -73,7 +73,7 @@ df <- read.csv(here::here("data", "penguins.csv"))
 
 It works, but the defaults are quirky. In older versions of R, `read.csv()` converted strings to factors automatically (`stringsAsFactors = TRUE`), the same pain point from @sec-data-frames. Since R 4.0 the default is `FALSE`, but you will still encounter old code and old advice that assume otherwise. The quirks, however, run deeper than `stringsAsFactors`.
 
-`readr::read_csv()` addresses most of them:
+`readr::read_csv()`\index{read\_csv()}\index{readr (package)} addresses most of them:
 
 ```{r}
 #| eval: false
@@ -126,7 +126,7 @@ read_delim(here::here("data", "pipes.txt"), delim = "|")
 
 ## Writing CSV files {#sec-writing-csv}
 
-`readr::write_csv()` writes a data frame to disk:
+`readr::write_csv()`\index{write\_csv()} writes a data frame to disk:
 
 ```{r}
 #| eval: false
@@ -155,7 +155,7 @@ CSV is the right format for small to medium data that needs to be human-readable
 
 ## Excel files {#sec-excel-files}
 
-The `readxl` package reads both `.xls` and `.xlsx` files with no external dependencies (no Java, no Perl, just C++ under the hood):
+The `readxl`\index{readxl (package)} package reads both `.xls` and `.xlsx`\index{Excel} files with no external dependencies (no Java, no Perl, just C++ under the hood):
 
 ```{r}
 #| eval: false
@@ -274,7 +274,7 @@ What these tools share is a common interface: you describe what you want, and th
 
 CSV is human-readable, which is wonderful for debugging and terrible for performance. The bottleneck is structural: CSV is row-oriented, storing each record as a unit, so reading a single column means scanning every row and throwing away everything you don't need. Columnar formats (Parquet, Feather, DuckDB's native format) flip this arrangement by storing each column contiguously, which makes analytical queries that touch few columns but many rows dramatically faster while also compressing far better because similar values sit next to each other. This row-versus-column distinction shapes every file format decision in data engineering.
 
-`saveRDS()` and `readRDS()` serialize any R object to disk:
+`saveRDS()`\index{saveRDS()} and `readRDS()`\index{readRDS()} serialize any R object to disk\index{RDS}:
 
 ```{r}
 #| eval: false

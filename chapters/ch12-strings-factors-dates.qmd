@@ -19,7 +19,7 @@ library(lubridate)
 
 ## Character vectors {#sec-character-vectors}
 
-A string in R is a character vector of length 1. There is no special string type: `"hello"` is `character(1)`, the same kind of atomic vector you met in @sec-atomic-vectors.
+A string\index{string}\index{character} in R is a character vector of length 1. There is no special string type: `"hello"` is `character(1)`, the same kind of atomic vector you met in @sec-atomic-vectors.
 
 ```{r}
 x <- "hello"
@@ -34,7 +34,7 @@ Double quotes and single quotes both work. Pick one and stick with it.
 Use double quotes. R's own style guide does, and so does most code you will encounter in the wild. Single quotes earn their keep inside double-quoted strings: `"it's easy"`.
 :::
 
-R uses UTF-8 as its modern string encoding, a scheme that Ken Thompson and Rob Pike designed on a placemat in a New Jersey diner in September 1992, one that is backward-compatible with ASCII, self-synchronizing, and variable-width (one to four bytes per character). If accented characters come out garbled, the file is probably Latin-1; `stringr::str_conv()` or `readr::locale(encoding = "latin1")` handles that.
+R uses UTF-8\index{UTF-8}\index{encoding} as its modern string encoding, a scheme that Ken Thompson and Rob Pike designed on a placemat in a New Jersey diner in September 1992, one that is backward-compatible with ASCII, self-synchronizing, and variable-width (one to four bytes per character). If accented characters come out garbled, the file is probably Latin-1; `stringr::str_conv()` or `readr::locale(encoding = "latin1")` handles that.
 
 Special characters use backslash escapes: `\n` (newline), `\t` (tab), `\\` (literal backslash). Compare `print()` and `cat()`:
 
@@ -54,7 +54,7 @@ paste0("Gentoo", "penguin")
 sprintf("The %s weighs %d grams", "Gentoo", 5200)
 ```
 
-`nchar()` counts characters, `paste()` joins with a space, `paste0()` joins without, and `sprintf()` does formatted substitution borrowing syntax from C. These work, but they are inconsistent in argument order and `NA` handling, and inconsistency compounds fast once you start chaining operations. What would a consistent interface look like?
+`nchar()` counts characters, `paste()`\index{paste()} joins with a space, `paste0()` joins without, and `sprintf()` does formatted substitution borrowing syntax from C. These work, but they are inconsistent in argument order and `NA` handling, and inconsistency compounds fast once you start chaining operations. What would a consistent interface look like?
 
 
 ### Exercises {.unnumbered}
@@ -66,9 +66,9 @@ sprintf("The %s weighs %d grams", "Gentoo", 5200)
 
 ## stringr: consistent string operations {#sec-stringr}
 
-Base R has `grep()`, `grepl()`, `sub()`, `gsub()` — they work, but the argument orders are inconsistent, the return types vary, and good luck guessing what `gsub` stands for. No convention ties them together, so you memorize each one separately.
+Base R has `grep()`\index{grep()}, `grepl()`, `sub()`, `gsub()`\index{gsub()} — they work, but the argument orders are inconsistent, the return types vary, and good luck guessing what `gsub` stands for. No convention ties them together, so you memorize each one separately.
 
-stringr fixes this with a single rule: every function starts with `str_`, takes the string as the first argument, and takes the pattern second. Once you know the convention, you can guess function names before you look them up.
+stringr\index{stringr (package)} fixes this with a single rule: every function starts with `str_`, takes the string as the first argument, and takes the pattern second. Once you know the convention, you can guess function names before you look them up.
 
 The essentials:
 
@@ -137,7 +137,7 @@ sum(str_detect(penguins$species, "Adelie"))
 
 You have seen `str_detect()` matching literal text. But what if you need to match "any string that starts with a capital letter and ends with a digit"? Literal matching cannot express that. Regular expressions can.
 
-Regular expressions are a mini-language for describing patterns in text. The syntax is not R-specific — the same patterns work in Python, JavaScript, and `grep` on the command line. What follows covers enough to read and write simple patterns; `?regex` has the full reference.
+Regular expressions\index{regular expression}\index{regex} are a mini-language for describing patterns in text\index{pattern matching}. The syntax is not R-specific — the same patterns work in Python, JavaScript, and `grep` on the command line. What follows covers enough to read and write simple patterns; `?regex` has the full reference.
 
 The core building blocks:
 
@@ -156,7 +156,7 @@ The core building blocks:
 | `\\s` | Whitespace |
 | `\\w` | Word character (letter, digit, underscore) |
 
-The doubled backslashes (`\\d` instead of `\d`) exist because R strings process backslashes first: to get a literal `\d` to the regex engine, you write `"\\d"` in R. Regular expressions themselves come from formal language theory, where Stephen Kleene defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and `grep` in 1973; the `*` quantifier is still called the *Kleene star* after him.
+The doubled backslashes (`\\d` instead of `\d`) exist because R strings process backslashes first: to get a literal `\d` to the regex engine, you write `"\\d"` in R. Regular expressions themselves come from formal language theory, where Stephen Kleene\index{Kleene, Stephen} defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and `grep` in 1973; the `*` quantifier is still called the *Kleene star* after him.
 
 `str_view()` lets you see what a pattern matches, making it the best tool for building and debugging:
 
@@ -194,7 +194,7 @@ You do not need to memorize regex. Know that it exists, know the basics from the
 
 ## Why factors exist {#sec-why-factors}
 
-Strings handle free text. But many columns are not free text: species, island, treatment group. These columns have a fixed set of values, and the order of those values matters for plots and models. That is where factors come in.
+Strings handle free text. But many columns are not free text: species, island, treatment group. These columns have a fixed set of values, and the order of those values matters for plots and models. That is where factors\index{factor} come in.
 
 Try plotting penguin species as a bar chart. The bars come out in alphabetical order: Adelie, Chinstrap, Gentoo. You want them ordered by count, or by body mass, or by some logic that makes sense for your story. Character vectors do not carry ordering information, so you cannot tell the plot "put Gentoo first" without something more.
 
@@ -242,9 +242,9 @@ sizes <- factor(c("small", "medium", "large"), levels = c("small", "medium", "la
 sizes
 ```
 
-The `levels` argument controls the allowed values and their order. Without it, R defaults to alphabetical, which is why "high" comes before "low" and plots look wrong. But manually specifying levels for every factor in every analysis gets tedious fast, and tedium breeds errors.
+The `levels`\index{levels} argument controls the allowed values and their order. Without it, R defaults to alphabetical, which is why "high" comes before "low" and plots look wrong. But manually specifying levels for every factor in every analysis gets tedious fast, and tedium breeds errors.
 
-forcats provides cleaner tools, all starting with `fct_`:
+forcats\index{forcats (package)} provides cleaner tools, all starting with `fct_`:
 
 ```{r}
 # Reorder levels manually
@@ -298,8 +298,8 @@ Add one month to January 31. What do you get? February 28? February 31 (which do
 
 R has three date-time classes:
 
-- `Date`: date only, stored as days since 1970-01-01
-- `POSIXct`: date + time, stored as seconds since 1970-01-01 (compact, use in data frames)
+- `Date`\index{Date}: date only, stored as days since 1970-01-01
+- `POSIXct`\index{POSIXct}: date + time, stored as seconds since 1970-01-01 (compact, use in data frames)
 - `POSIXlt`: date + time as a named list of components (rarely needed)
 
 ```{r}
@@ -341,7 +341,7 @@ The `format` argument uses `%Y` (4-digit year), `%m` (month), `%d` (day), and si
 
 ## lubridate: dates for humans {#sec-lubridate}
 
-Remember the `%Y/%m/%d` format codes? lubridate lets you forget them. Its parsing functions are named after the order of components, so the function name *is* the format:
+Those `%Y/%m/%d` format codes? lubridate\index{lubridate (package)} lets you forget them. Its parsing functions are named after the order of components, so the function name *is* the format:
 
 ```{r}
 ymd("2026-03-07")

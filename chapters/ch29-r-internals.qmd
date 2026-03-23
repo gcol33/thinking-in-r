@@ -19,14 +19,14 @@ A running program has two regions of memory. The *stack* is small, fast, and aut
 
 ## Every object is a SEXP {#sec-sexp}
 
-In R's C source code, every R object, without exception, is represented as a `SEXP`: a pointer to a `SEXPREC` struct. The name stands for "S expression," inherited from Lisp. When you write `x <- c(1, 2, 3)`, R allocates a `SEXPREC` on the heap, fills it with the data for a three-element numeric vector, and stores the pointer in the binding for `x`.
+In R's C source code, every R object, without exception, is represented as a `SEXP`\index{SEXP}: a pointer to a `SEXPREC`\index{SEXPREC} struct. The name stands for "S expression," inherited from Lisp. When you write `x <- c(1, 2, 3)`, R allocates a `SEXPREC` on the heap, fills it with the data for a three-element numeric vector, and stores the pointer in the binding for `x`.
 
 The `SEXPREC` struct has two parts. The header is the same for every object, and it contains:
 
-- A **type tag** (SEXPTYPE): an integer identifying what kind of object this is (integer vector, closure, environment, etc.).
+- A **type tag**\index{type tag} (SEXPTYPE): an integer identifying what kind of object this is (integer vector, closure, environment, etc.).
 - **GC information**: flags the garbage collector uses to track whether the object is reachable.
-- **Reference count**: how many names point to this object (used to decide whether copy-on-modify needs to copy).
-- **Attributes**: a pointer to a pairlist of attributes (names, class, dim, etc.).
+- **Reference count**\index{reference counting}: how many names point to this object (used to decide whether copy-on-modify needs to copy).
+- **Attributes**: a pointer to a pairlist\index{pairlist}\index{LISTSXP} of attributes (names, class, dim, etc.).
 
 The payload varies by type. For a numeric vector, it is a contiguous block of C `double` values. For a closure, it is three pointers (formals, body, environment). For an environment, it is a hash table plus a pointer to the parent environment. So every R object, from a humble integer to a deeply nested list of data frames, wears the same uniform; only the payload inside differs.
 
@@ -43,19 +43,19 @@ typeof(sum)
 typeof(mean)
 ```
 
-`typeof()` returns the SEXPTYPE name as a string. The mapping between R concepts and SEXPTYPEs is direct:
+`typeof()`\index{TYPEOF()} returns the SEXPTYPE name as a string. The mapping between R concepts and SEXPTYPEs is direct:
 
 | R concept          | SEXPTYPE   | C constant |
 |--------------------|------------|------------|
-| Integer vector     | `integer`  | `INTSXP`   |
-| Double vector      | `double`   | `REALSXP`  |
-| Character vector   | `character`| `STRSXP`   |
-| Logical vector     | `logical`  | `LGLSXP`   |
-| List               | `list`     | `VECSXP`   |
-| Function (closure) | `closure`  | `CLOSXP`   |
+| Integer vector     | `integer`  | `INTSXP`\index{INTSXP}   |
+| Double vector      | `double`   | `REALSXP`\index{REALSXP}  |
+| Character vector   | `character`| `STRSXP`\index{STRSXP}   |
+| Logical vector     | `logical`  | `LGLSXP`\index{LGLSXP}   |
+| List               | `list`     | `VECSXP`\index{VECSXP}   |
+| Function (closure) | `closure`  | `CLOSXP`\index{CLOSXP}   |
 | Built-in function  | `builtin`  | `BUILTINSXP` |
 | Special function   | `special`  | `SPECIALSXP` |
-| Environment        | `environment` | `ENVSXP` |
+| Environment        | `environment` | `ENVSXP`\index{ENVSXP} |
 | Promise            | `promise`  | `PROMSXP`  |
 | Language object    | `language` | `LANGSXP`  |
 | Symbol (name)      | `symbol`   | `SYMSXP`   |
@@ -135,7 +135,7 @@ The contiguous layout is why vectorized operations are fast. When R computes `x 
 
 An integer vector (`INTSXP`) has the same layout but with `int` instead of `double`. A logical vector (`LGLSXP`) also uses `int` (not `char`), which is why logicals take 4 bytes per element, not 1.
 
-Character vectors are a different beast entirely. A `STRSXP` is a vector of *pointers to* `CHARSXP` objects, where each `CHARSXP` holds an immutable C string. R interns (deduplicates) these strings globally, so two identical strings share the same `CHARSXP`:
+Character vectors are a different beast entirely. A `STRSXP` is a vector of *pointers to* `CHARSXP` objects, where each `CHARSXP` holds an immutable C string. R interns (deduplicates) these strings globally\index{global string pool}, so two identical strings share the same `CHARSXP`:
 
 ```{r}
 a <- "hello"
@@ -221,9 +221,9 @@ Reference counting is why you should not worry too much about "R copies everythi
 
 Objects get created; reference counts rise and fall; eventually some objects have no references at all. What happens to them?
 
-R uses a tracing garbage collector with a mark-and-sweep algorithm. When R runs low on memory, the collector pauses execution, traces all reachable objects by following pointers from the known roots (the global environment, the call stack, the symbol table), marks them, and sweeps away everything unmarked. If a SEXP has no path back to any root, it ceases to exist.
+R uses a tracing garbage collector with a mark-and-sweep\index{mark-and-sweep} algorithm. When R runs low on memory, the collector pauses execution, traces all reachable objects by following pointers from the known roots (the global environment, the call stack, the symbol table), marks them, and sweeps away everything unmarked. If a SEXP has no path back to any root, it ceases to exist.
 
-The collector is *generational*, dividing objects into three generations based on how long they have survived. New objects are generation 0; objects that survive one collection get promoted to generation 1, then to generation 2. The insight behind this design is that most objects die young (temporary vectors in a loop, intermediate results in a pipeline), so collecting generation 0 frequently and generation 2 rarely is efficient. It is the same principle behind most modern garbage collectors, from Java's G1 to Go's concurrent collector.
+The collector is *generational*\index{generational garbage collection}, dividing objects into three generations based on how long they have survived. New objects are generation 0; objects that survive one collection get promoted to generation 1, then to generation 2. The insight behind this design is that most objects die young (temporary vectors in a loop, intermediate results in a pipeline), so collecting generation 0 frequently and generation 2 rarely is efficient. It is the same principle behind most modern garbage collectors, from Java's G1 to Go's concurrent collector.
 
 You can trigger collection manually and see the results:
 
@@ -368,7 +368,7 @@ Every user-defined function in R is a CLOSXP. Even a bare `function(x) x + 1` ca
 
 R provides three mechanisms for calling compiled code. They differ in age, safety, and flexibility.
 
-**`.Primitive()`** is the oldest and most restrictive. Primitive functions are built into the R interpreter itself; you cannot write new ones, because they are defined in a table in `names.c` in the R source. Examples include `+`, `[`, `if`, `for`, `c()`, and `sum()`. Primitives skip normal argument matching (some evaluate arguments before the call, some do not), which is why they are fast but also why their behavior sometimes surprises you.
+**`.Primitive()`**\index{.Primitive()} is the oldest and most restrictive. Primitive functions are built into the R interpreter itself; you cannot write new ones, because they are defined in a table in `names.c` in the R source. Examples include `+`, `[`, `if`, `for`, `c()`, and `sum()`. Primitives skip normal argument matching (some evaluate arguments before the call, some do not), which is why they are fast but also why their behavior sometimes surprises you.
 
 ```{r}
 sum
@@ -377,7 +377,7 @@ sum
 
 The `.Primitive("...")` form shows that these functions are entry points into the C code of the interpreter itself.
 
-**`.Internal()`** calls C functions that are registered in R's internal table but not exposed as primitives. They go through normal argument matching first, so many base R functions are thin R wrappers around `.Internal()` calls:
+**`.Internal()`**\index{.Internal()} calls C functions that are registered in R's internal table but not exposed as primitives. They go through normal argument matching first, so many base R functions are thin R wrappers around `.Internal()` calls:
 
 ```{r}
 #| eval: false

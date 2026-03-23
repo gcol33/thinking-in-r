@@ -14,13 +14,13 @@ You have a list of data frames from an API and you need to merge them all into o
 
 ## Left fold {#sec-left-fold}
 
-`Reduce()` takes a binary function and a list, then combines the elements pairwise from left to right:
+`Reduce()`\index{Reduce()} takes a binary function and a list, then combines the elements pairwise from left to right:
 
 ```{r}
 Reduce(`+`, 1:5)
 ```
 
-That computes `((((1 + 2) + 3) + 4) + 5)`. The first call is `f(1, 2)`, which gives 3; then `f(3, 3)`, giving 6; then `f(6, 4)`, giving 10; then `f(10, 5)`, giving 15. Each intermediate result becomes the left argument of the next call, which is why this is called a *left fold*: the parentheses nest to the left.
+That computes `((((1 + 2) + 3) + 4) + 5)`. The first call is `f(1, 2)`, which gives 3; then `f(3, 3)`, giving 6; then `f(6, 4)`, giving 10; then `f(10, 5)`, giving 15. Each intermediate result becomes the left argument of the next call, which is why this is called a *left fold*\index{fold}\index{left fold}: the parentheses nest to the left.
 
 The name comes from Haskell's `foldl`. APL had the same operation in 1962, spelled `+/1 2 3 4 5`.
 
@@ -48,9 +48,9 @@ An error, because there is nothing to return and no identity to fall back on. Th
 Reduce(`+`, list(), init = 0)
 ```
 
-With `init`, the fold starts by calling `f(init, x[[1]])` instead of `f(x[[1]], x[[2]])`, which means the fold always has something to work with, even when the list is empty. The value you pass as `init` should be the identity element for the operation: 0 for addition, 1 for multiplication, `""` for `paste0`, `NULL` for `c()`. For `intersect` you would want the universal set, though R has no such thing, so you typically peel off the first element yourself.
+With `init`, the fold starts by calling `f(init, x[[1]])` instead of `f(x[[1]], x[[2]])`, which means the fold always has something to work with, even when the list is empty. The value you pass as `init` should be the identity element\index{identity element} for the operation: 0 for addition, 1 for multiplication, `""` for `paste0`, `NULL` for `c()`. For `intersect` you would want the universal set, though R has no such thing, so you typically peel off the first element yourself.
 
-This connection between an operation, its identity element, and associativity has a name in algebra: a *monoid*. Integers under addition with identity 0 form a monoid. Strings under concatenation with identity `""` form a monoid. Lists under `c()` with identity `NULL` form a monoid. The pattern shows up everywhere, and recognizing it tells you something immediately practical: if your operation is associative, the fold can be split across chunks, parallelized, and recombined without changing the result. Google's MapReduce (Dean and Ghemawat, 2004) is literally `map()` followed by a monoid fold, scaled to warehouses full of machines.
+This connection between an operation, its identity element, and associativity\index{associativity} has a name in algebra: a *monoid*\index{monoid}. Integers under addition with identity 0 form a monoid. Strings under concatenation with identity `""` form a monoid. Lists under `c()` with identity `NULL` form a monoid. The pattern shows up everywhere, and recognizing it tells you something immediately practical: if your operation is associative, the fold can be split across chunks, parallelized, and recombined without changing the result. Google's MapReduce (Dean and Ghemawat, 2004) is literally `map()` followed by a monoid fold, scaled to warehouses full of machines.
 
 `Reduce()` is the operation that collapses a monoid. Given a list and an associative binary function, it produces a single value. That description sounds specific to lists, but the same structure appears whenever you compose things sequentially: piping functions is folding over a list of functions with composition as the binary operation and the identity function as `init`; building a ggplot layer by layer is folding over a list of layers with `+` as the operation and `ggplot()` as `init`. Tallying, concatenating, composing, intersecting: all of them are folds over a monoid.
 
@@ -62,7 +62,7 @@ Always pass `init` to `Reduce()`. Without it, your code breaks on empty input an
 
 ## Right fold {#sec-right-fold}
 
-`Reduce()` folds from the left by default. Setting `right = TRUE` reverses the nesting:
+`Reduce()` folds from the left by default. Setting `right = TRUE` reverses the nesting\index{right fold}:
 
 ```{r}
 Reduce(`-`, 1:4)
@@ -89,7 +89,7 @@ Sometimes the final result is not enough. You want every intermediate step: the 
 Reduce(`+`, 1:5, accumulate = TRUE)
 ```
 
-Running totals: `1, 3, 6, 10, 15`. This is the *scan* operation (Haskell's `scanl`, APL's `\`). Where fold collapses a list to a single value, scan collapses it to a list of all the values the fold passed through on its way to the answer. Running maxima, cumulative sums, progressive string construction: they all fall out of the same pattern.
+Running totals: `1, 3, 6, 10, 15`. This is the *scan*\index{scan} operation (Haskell's `scanl`, APL's `\`). Where fold collapses a list to a single value, scan collapses it to a list of all the values the fold passed through on its way to the answer. Running maxima, cumulative sums, progressive string construction: they all fall out of the same pattern.
 
 ```{r}
 Reduce(max, c(3, 1, 4, 1, 5, 9, 2, 6), accumulate = TRUE)
@@ -106,7 +106,7 @@ A sentence assembling itself one word at a time.
 
 ## purrr::reduce() and purrr::accumulate() {#sec-purrr-reduce}
 
-The purrr package provides `reduce()` and `accumulate()` as tidyverse-flavored alternatives:
+The purrr package provides `reduce()`\index{reduce()} and `accumulate()`\index{accumulate()} as tidyverse-flavored alternatives:
 
 ```{r}
 reduce(1:5, `+`)
@@ -214,13 +214,13 @@ Each row's `a`, `b`, and `c` values are collected into a vector, summed, and sto
 
 ## When to fold and when not to {#sec-when-to-fold}
 
-`Reduce()` is the right tool when you have a binary operation and a list of things to combine: merging data frames, chaining set operations, collapsing nested structures. It is the wrong tool when a vectorized function already exists. `sum(x)` is faster and clearer than `Reduce(`+`, x)`. `paste(x, collapse = " ")` beats `Reduce(paste, x)`. The base R cumulative functions (`cumsum`, `cumprod`, `cummax`, `cummin`) are compiled C and will always outperform `accumulate(`+`, x)`.
+`Reduce()` is the right tool when you have a binary operation and a list of things to combine: merging data frames, chaining set operations, collapsing nested structures. It is the wrong tool when a vectorized function already exists. `sum(x)` is faster and clearer than `Reduce(`+`, x)`. `paste(x, collapse = " ")` beats `Reduce(paste, x)`. The base R cumulative functions (`cumsum`\index{cumsum()}, `cumprod`\index{cumprod()}, `cummax`, `cummin`) are compiled C and will always outperform `accumulate(`+`, x)`.
 
 The rule is simple: if a specialized function exists, use it. Reach for `Reduce()` when your binary operation has no built-in vectorized cousin.
 
 `Reduce()` also becomes awkward when the accumulator needs complex state. If your fold carries a list with multiple fields and each step updates several of them conditionally, you are no longer folding; you are writing a state machine with the fold syntax as a straitjacket. That is better expressed as an explicit loop or a recursive function (@sec-recursion), where the state updates are visible and the control flow is honest.
 
-Graham Hutton proved in 1999 that fold can express *any* function on finite lists. This is a theoretical universality result, not practical advice. Just because you *can* write something as a fold does not mean it will be readable, or maintainable, or that the person who inherits your code (including future you) will thank you for it.
+Graham Hutton\index{Hutton, Graham} proved in 1999 that fold can express *any* function on finite lists. This is a theoretical universality result, not practical advice. Just because you *can* write something as a fold does not mean it will be readable, or maintainable, or that the person who inherits your code (including future you) will thank you for it.
 
 ::: callout-tip
 ## Opinion

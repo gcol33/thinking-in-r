@@ -11,12 +11,12 @@ Type `42` in R.
 42
 ```
 
-That `[1]` has been there since Chapter 1, quietly announcing something you probably didn't notice: you never made a number. You made a vector.
+That `[1]` has been there since Chapter 1, quietly announcing something you probably didn't notice: you never made a number. You made a vector\index{atomic vector}.
 
 
 ## There are no scalars {#sec-no-scalars}
 
-In C or Python, a single number and a collection of numbers are fundamentally different types: one is a scalar, the other is an array or list. R erases that distinction. Every value in R is a vector: `42` is a numeric vector of length 1, `"hello"` is a character vector of length 1, and `TRUE` is a logical vector of length 1.
+In C or Python, a single number and a collection of numbers are fundamentally different types: one is a scalar, the other is an array or list. R erases that distinction. Every value in R is a vector: `42` is a numeric vector\index{vector!numeric} of length 1, `"hello"` is a character vector\index{vector!character} of length 1, and `TRUE` is a logical vector\index{vector!logical} of length 1.
 
 ```{r}
 length(42)
@@ -60,7 +60,7 @@ Each step replaces a name or function call with its value. `morning` becomes `c(
 
 ::: callout-note
 ## For the curious
-`c()` has two properties worth noticing. First, it is *associative*: `c(c(1, 2), c(3, 4))` and `c(1, c(2, c(3, 4)))` both produce `c(1, 2, 3, 4)`. Grouping doesn't matter. Second, `c(x, NULL)` returns `x` unchanged, so `NULL` acts as an *identity element*: combining with it does nothing. An operation that is associative and has an identity element is called a *monoid*. Addition with 0 is a monoid. String concatenation with `""` is a monoid. `c()` with `NULL` is a monoid. The pattern keeps showing up: dplyr pipelines (@sec-data-transformation), function composition (@sec-pipes-and-composition), and `Reduce()` (@sec-reduce-and-accumulate) all rely on it.
+`c()` has two properties worth noticing. First, it is *associative*: `c(c(1, 2), c(3, 4))` and `c(1, c(2, c(3, 4)))` both produce `c(1, 2, 3, 4)`. Grouping doesn't matter. Second, `c(x, NULL)` returns `x` unchanged, so `NULL`\index{NULL} acts as an *identity element*: combining with it does nothing. An operation that is associative and has an identity element is called a *monoid*. Addition with 0 is a monoid. String concatenation with `""` is a monoid. `c()` with `NULL` is a monoid. The pattern keeps showing up: dplyr pipelines (@sec-data-transformation), function composition (@sec-pipes-and-composition), and `Reduce()` (@sec-reduce-and-accumulate) all rely on it.
 :::
 
 A few shortcuts for common patterns:
@@ -88,7 +88,7 @@ typeof("hello")
 typeof(TRUE)
 ```
 
-`double` is a decimal number (even `42` is stored as a double by default), while `integer` needs an `L` suffix: `42L`. `character` is text, `logical` is `TRUE` or `FALSE`. The other two types, `complex` and `raw`, exist for specialized work; you can ignore them.
+`double`\index{double} is a decimal number (even `42` is stored as a double by default), while `integer`\index{integer} needs an `L` suffix: `42L`. `character` is text, `logical` is `TRUE` or `FALSE`. The other two types, `complex` and `raw`, exist for specialized work; you can ignore them.
 
 Every element in a vector must be the same type. `typeof()` and `length()` answer the two most basic questions about any vector: what type are the elements, and how many are there? But what happens when you try to break that same-type rule?
 
@@ -108,7 +108,7 @@ Try mixing types in a vector:
 c(1, "two", 3)
 ```
 
-R converted the numbers to text. No warning, no error. This is called *coercion*, and R follows a fixed hierarchy: logical < integer < double < character. When you mix types, everything gets promoted to the most general one.
+R converted the numbers to text. No warning, no error. This is called *coercion*\index{coercion}, and R follows a fixed hierarchy: logical < integer < double < character. When you mix types, everything gets promoted to the most general one.
 
 ```{r}
 c(TRUE, 1, "hello")
@@ -148,7 +148,7 @@ temperatures <- c(72, 85, 61, 90, 78)
 (temperatures - 32) * 5/9
 ```
 
-One expression, no loop. The subtraction, multiplication, and division each apply to every element at once. This is a *vectorized operation*, and it is the default way of working in R.
+One expression, no loop. The subtraction, multiplication, and division each apply to every element at once. This is a *vectorized operation*\index{vectorization}, and it is the default way of working in R.
 
 Comparisons are vectorized too:
 
@@ -213,7 +213,7 @@ What happens when you operate on two vectors of different lengths?
 c(1, 2, 3, 4) + c(10, 20)
 ```
 
-R *recycled* the shorter vector, reusing `10, 20` to match the length of the longer one: `1+10, 2+20, 3+10, 4+20`. This is also how `temperatures - 32` works: `32` is a vector of length 1, and R recycles it five times to match the length of `temperatures`.
+R *recycled*\index{recycling} the shorter vector, reusing `10, 20` to match the length of the longer one: `1+10, 2+20, 3+10, 4+20`. This is also how `temperatures - 32` works: `32` is a vector of length 1, and R recycles it five times to match the length of `temperatures`.
 
 When the lengths don't divide evenly, R warns you:
 
@@ -236,7 +236,7 @@ Recycling is useful when the shorter vector has length 1 (e.g., `x * 2`, `x > 0`
 
 ## Indexing {#sec-indexing}
 
-You often need specific elements from a vector, and the `[` operator extracts them. There are four ways to use it.
+You often need specific elements from a vector, and the `[` operator\index{subsetting} extracts them. There are four ways to use it.
 
 **By position:**
 
@@ -260,7 +260,7 @@ Everything except the second element.
 temperatures[temperatures > 75]
 ```
 
-`temperatures > 75` produces `c(FALSE, TRUE, FALSE, TRUE, TRUE)`, and `[` keeps only the `TRUE` elements. You're asking a yes/no question of every element and keeping the ones that pass. This is filtering, and it will come back in a more powerful form when you learn `dplyr::filter()` (@sec-data-transformation).
+`temperatures > 75` produces `c(FALSE, TRUE, FALSE, TRUE, TRUE)`, and `[` keeps only the `TRUE` elements\index{subsetting!logical}. You're asking a yes/no question of every element and keeping the ones that pass. This is filtering, and it will come back in a more powerful form when you learn `dplyr::filter()` (@sec-data-transformation).
 
 ```{r}
 hot <- temperatures > 75
@@ -295,7 +295,7 @@ This looks like it's changing the vector in place, but R is actually making a co
 
 ## Missing values {#sec-missing-values}
 
-A sensor fails, a patient skips a visit, a field is left blank. Real data has gaps, and R represents them with `NA` ("Not Available"):
+A sensor fails, a patient skips a visit, a field is left blank. Real data has gaps, and R represents them with `NA`\index{NA}\index{missing value} ("Not Available"):
 
 ```{r}
 readings <- c(23.1, NA, 22.5, 24.0, NA, 23.8)

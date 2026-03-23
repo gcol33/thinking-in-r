@@ -10,13 +10,13 @@ source(here::here("_common.R"))
 
 ## Anatomy of a function {#sec-anatomy-function}
 
-A function in R has three parts: a name, arguments, and a body.
+A function\index{function} in R has three parts: a name, arguments\index{argument}, and a body.
 
 ```{r}
 double <- function(x) x * 2
 ```
 
-`function(x)` declares one argument called `x`. The body, `x * 2`, is the expression R evaluates when you call the function, and `double` is the name you are binding this function to (the same way `x <- 3` binds a name to a number).
+`function(x)` declares one parameter\index{parameter} called `x`. The body, `x * 2`, is the expression R evaluates when you call the function, and `double` is the name you are binding this function to (the same way `x <- 3` binds a name to a number).
 
 Call it:
 
@@ -62,7 +62,7 @@ greet <- function(name, greeting = "Hello") {
 }
 ```
 
-`name` is required; `greeting` is optional, defaulting to `"Hello"` if you leave it out:
+`name` is required; `greeting` is optional, defaulting\index{default argument} to `"Hello"` if you leave it out:
 
 ```{r}
 greet("R")
@@ -97,7 +97,7 @@ shout("hello", "world")
 λx. λy. x + y
 ```
 
-This reads: "a function that takes `x` and returns *another function* that takes `y` and returns `x + y`." To add 3 and 5, you apply it twice: `(λx. λy. x + y)(3)(5)` = `(λy. 3 + y)(5)` = `3 + 5` = `8`. Each application replaces one argument, one step at a time. This is called *currying*, and R can do it too (@sec-function-factories). `...` is R's practical alternative: instead of nesting functions, you let a single function accept any number of arguments and decide what to do with them inside. `c()`, `paste()`, `sum()`: they all use `...`, which is why `c(1, 2, 3)` and `c(1, 2, 3, 4, 5, 6, 7)` both work. More on `...` in @sec-lazy-evaluation.
+This reads: "a function that takes `x` and returns *another function* that takes `y` and returns `x + y`." To add 3 and 5, you apply it twice: `(λx. λy. x + y)(3)(5)` = `(λy. 3 + y)(5)` = `3 + 5` = `8`. Each application replaces one argument, one step at a time. This is called *currying*\index{currying}, and R can do it too (@sec-function-factories). `...` is R's practical alternative: instead of nesting functions, you let a single function accept any number of arguments and decide what to do with them inside. `c()`, `paste()`, `sum()`: they all use `...`, which is why `c(1, 2, 3)` and `c(1, 2, 3, 4, 5, 6, 7)` both work. More on `...` in @sec-lazy-evaluation.
 
 
 ### Exercises {.unnumbered}
@@ -109,7 +109,7 @@ This reads: "a function that takes `x` and returns *another function* that takes
 
 ## Return values {#sec-return-values}
 
-R returns the value of the last expression in the body. No keyword needed:
+R returns the value\index{return value} of the last expression in the body. No keyword needed:
 
 ```{r}
 add_one <- function(x) x + 1
@@ -332,7 +332,7 @@ to_celsius <- function(f) {
 to_celsius("hot")
 ```
 
-`stopifnot()` checks a condition and stops with an error if it is `FALSE`. The message now tells you exactly what failed: `is.numeric(f)` is not TRUE. You can stack multiple checks in the same call:
+`stopifnot()`\index{stopifnot()} checks a condition and stops with an error if it is `FALSE`. The message now tells you exactly what failed: `is.numeric(f)` is not TRUE. You can stack multiple checks in the same call:
 
 ```{r}
 #| error: true
@@ -379,7 +379,7 @@ factorial(5)
 = 120
 ```
 
-This is *recursion*: a function defined in terms of itself. Look at the unfolding carefully. Each line replaces a function call with its value, the same term replacement from @sec-atomic-vectors, and no variable is being updated, no counter is ticking. The answer was implicit in the original expression `factorial(5)`; evaluation simply made it explicit.
+This is *recursion*\index{recursion}: a function defined in terms of itself. Look at the unfolding carefully. Each line replaces a function call with its value, the same term replacement from @sec-atomic-vectors, and no variable is being updated, no counter is ticking. The answer was implicit in the original expression `factorial(5)`; evaluation simply made it explicit.
 
 ![Recursive call stack for `factorial(5)`: each frame waits for the one below it. No variable changes — each frame holds its own `n`.](../images/factorial_stack.png){#fig-factorial-stack width=100%}
 
@@ -454,7 +454,7 @@ No variable is being mutated; each call just substitutes new values for `n`, `a`
 
 Any function with multiple recursive calls can be rewritten as a single recursive call with extra arguments that carry the intermediate results. For Fibonacci, the state to pass forward is the last two numbers; for a tree traversal, it might be an accumulator list.
 
-R has a limit on how deep recursion can go (around 1000 calls by default), and for most day-to-day R work, vectorized operations and functions like `map()` (@sec-iteration-without-loops) are better tools. But there is something strange about `factorial` that has nothing to do with performance: its base case and inductive step look exactly like a proof by mathematical induction.
+R has a limit on how deep recursion can go (around 1000 calls by default), and for most day-to-day R work, vectorized operations and functions like `map()` (@sec-iteration-without-loops) are better tools. But there is something strange about `factorial` that has nothing to do with performance: its base case and inductive step look exactly like a proof by mathematical induction\index{proof by induction}.
 
 
 ### Exercises {.unnumbered}
@@ -478,7 +478,7 @@ factorial <- function(n) {
 
 Two parts: a base case (when `n = 0`, return 1) and an inductive step (assume `factorial(n - 1)` gives the right answer, and use it to compute `factorial(n)`). If you have seen mathematical induction, you recognize the shape immediately. A proof by induction has a base case and an inductive step too. The resemblance is not a coincidence.
 
-In the 1930s and 1940s, the logician Haskell Curry (after whom the Haskell programming language is named, and from whom the term "currying" above comes) noticed something strange: the rules for combining types in a programming language looked identical to the rules for combining propositions in formal logic. A function that takes an `A` and returns a `B` had the same structure as a logical proof that "if A, then B." In 1969, William Howard made this precise: every type corresponds to a logical proposition, and every program of that type corresponds to a proof of that proposition. A recursive function that terminates is a proof by induction. This result is called the *Curry-Howard correspondence*.
+In the 1930s and 1940s, the logician Haskell Curry\index{Curry, Haskell} (after whom the Haskell programming language is named, and from whom the term "currying" above comes) noticed something strange: the rules for combining types in a programming language looked identical to the rules for combining propositions in formal logic. A function that takes an `A` and returns a `B` had the same structure as a logical proof that "if A, then B." In 1969, William Howard\index{Howard, William} made this precise: every type corresponds to a logical proposition, and every program of that type corresponds to a proof of that proposition. A recursive function that terminates is a proof by induction. This result is called the *Curry-Howard correspondence*\index{Curry-Howard correspondence}.
 
 Writing `factorial` constructs a proof by induction that the product `1 * 2 * ... * n` exists for every non-negative integer. The transformation from double-recursive `fibonacci` to tail-recursive `fibonacci_fast` is the same move a logician makes when they strengthen an inductive hypothesis to make a proof go through: the extra arguments (`a` and `b`) *are* the stronger hypothesis. Double induction reduces to simple induction with stronger invariants, which is why the same trick turns a slow recursive function into a fast one.
 

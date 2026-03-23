@@ -12,10 +12,10 @@ You already have the pieces: data frames from @sec-data-frames, verbs from @sec-
 
 ## What tidy means {#sec-what-tidy-means}
 
-Hadley Wickham's 2014 paper "Tidy data" defines three rules:
+Hadley Wickham's 2014 paper "Tidy data"\index{tidy data} defines three rules:
 
 1. Each variable is a column.
-2. Each observation is a row.
+2. Each observation is a row\index{tidy data!one observation per row}.
 3. Each type of observational unit is a table.
 
 They sound obvious. They aren't. Most real-world data breaks at least one of them, and recognizing which rule is broken (let alone fixing it) takes practice. The rules themselves are a simplified version of something database designers have known since the 1970s, when Edgar Codd defined normal forms (1NF through 5NF) to eliminate redundancy; tidy data corresponds roughly to third normal form, with no transitive dependencies and no repeating groups. The structural problem R programmers wrestle with today is the same one Codd solved in relational algebra before R existed.
@@ -34,7 +34,7 @@ pop_wide
 
 What is the variable here? Year. But "year" doesn't appear as a column; it's buried inside the names `pop_2020`, `pop_2021`, `pop_2022`, three columns where there should be one. Not tidy.
 
-![Wide and long formats contain the same information — the pivot is an isomorphism.](../images/wide_vs_long.png){#fig-wide-vs-long width=100%}
+![Wide\index{wide format} and long\index{long format} formats contain the same information — the pivot is an isomorphism.](../images/wide_vs_long.png){#fig-wide-vs-long width=100%}
 
 The tidy version has three columns: `country`, `year`, and `population`. One variable per column, one observation per row, nine values arranged so that every tool you've learned can reach them.
 
@@ -70,7 +70,7 @@ data.frame(
 
 ## `pivot_longer()`: columns to rows {#sec-pivot-longer}
 
-`pivot_longer()` from the tidyr package does the reshaping in one call:
+`pivot_longer()`\index{pivot\_longer()} from the tidyr\index{tidyr (package)} package does the reshaping in one call:
 
 ```{r}
 library(tidyr)
@@ -147,7 +147,7 @@ measurements <- data.frame(
 measurements
 ```
 
-Temperature and humidity are different variables, and cramming them into a single `value` column conflates two things that should be separate. `pivot_wider()` pulls them apart:
+Temperature and humidity are different variables, and cramming them into a single `value` column conflates two things that should be separate. `pivot_wider()`\index{pivot\_wider()} pulls them apart:
 
 ```{r}
 measurements |>
@@ -225,7 +225,7 @@ albums <- data.frame(
 
 Mutating joins add columns from the second table to the first.
 
-`left_join()` keeps all rows from the left table and attaches matching columns from the right, filling `NA` where no match exists:
+`left_join()`\index{left\_join()}\index{join} keeps all rows from the left table and attaches matching columns from the right, filling `NA` where no match exists:
 
 ```{r}
 bands |> left_join(albums, by = "name")
@@ -293,7 +293,7 @@ Pivoting handles structure; joins handle combination. A handful of other tidyr f
 
 ### Separating and uniting columns {.unnumbered}
 
-`separate_wider_delim()` splits one column into several by a delimiter:
+`separate_wider_delim()`\index{separate()} splits one column into several by a delimiter:
 
 ```{r}
 dates <- data.frame(
@@ -311,7 +311,7 @@ dates |>
 
 This replaces the older `separate()`, which relied on position-based splitting and was less predictable. For complex patterns, `separate_wider_regex()` lets you use regular expressions.
 
-`unite()` does the inverse, pasting columns together:
+`unite()`\index{unite()} does the inverse, pasting columns together:
 
 ```{r}
 data.frame(year = 2024, month = "03", day = 15) |>

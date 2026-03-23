@@ -7,13 +7,15 @@ source(here::here("_common.R"))
 
 By 1930, the dream was nearly complete. Three centuries of work — formalizing numbers, formalizing logic, formalizing proof — had brought mathematicians to the edge of something unprecedented: a mechanical method that could settle any mathematical question. Feed in a statement, turn the crank, get the answer. The greatest living mathematician stood before a crowd in Königsberg and declared it would be done. *Wir müssen wissen. Wir werden wissen.* We must know. We shall know.
 
-But to build the machine that turns the crank, someone first had to answer a question that nobody had thought to ask. What does it mean to compute?
+But to build the machine that turns the crank, someone first had to answer a question that nobody had thought to ask. What does it mean to compute?\index{computation}
 
-David Hilbert had spent thirty years building toward that question. To finish his life's work, he needed someone to define what "turning the crank" actually meant.
+David Hilbert\index{Hilbert, David} had spent thirty years building toward that question. To finish his life's work, he needed someone to define what "turning the crank" actually meant.
+
+***
 
 Once upon a time, four numbers had been left on the table: 3, 5, 2, 8.
 
-Mr. Tape came in through the front door. He was long and thin, and he walked in a straight line from the door to the table. Behind him came Mr. State, who took his place behind Mr. Tape and waited, as he always did. But they were not the only ones there. At the far end of the table someone was already sitting with his hands flat on the surface.
+Mr. Tape\index{Mr. Tape (allegory)} came in through the front door. He was long and thin, and he walked in a straight line from the door to the table. Behind him came Mr. State\index{Mr. State (allegory)}, who took his place behind Mr. Tape and waited, as he always did. But they were not the only ones there. At the far end of the table someone was already sitting with his hands flat on the surface.
 
 Mr. Tape touched the first number and read it aloud.
 
@@ -39,7 +41,7 @@ He was holding an 18. He could not have told you what he'd had a moment before.
 
 The man at the far end of the table had been watching.
 
-"Let's see," said Mr. Fold at last.
+"Let's see," said Mr. Fold\index{Mr. Fold (allegory)} at last.
 
 Mr. Fold picked up the 2 and the 8. He pressed their edges together and creased them flat. A 10 sat on the table. The 2 and the 8 were gone.
 
@@ -54,9 +56,9 @@ It was the same number.
 
 ## Instructions and state {#sec-turing}
 
-Mr. Tape and Mr. State are a computing machine. In 1936, a twenty-four-year-old graduate student at Cambridge proved that their method — read a symbol, update a state, move to the next — is enough to carry out any computation that can be precisely described. The graduate student was Alan Turing, who three years later would crack the German military's Enigma cipher in World War II. The machine he imagined is what we now call a computer.
+Mr. Tape and Mr. State are a computing machine. In 1936, a twenty-four-year-old graduate student at Cambridge proved that their method — read a symbol, update a state, move to the next — is enough to carry out any computation that can be precisely described. The graduate student was Alan Turing\index{Turing, Alan}, who three years later would crack the German military's Enigma cipher in World War II.
 
-A Turing machine *does* things: it reads, writes, moves, changes. It has memory (the tape), and that memory changes over time. A program, in this view, is a sequence of instructions that progressively modify stored values until the answer emerges.
+A Turing machine\index{Turing machine} *does* things: it reads, writes, moves, changes. It has memory (the tape), and that memory changes over time. A program, in this view, is a sequence of instructions that progressively modify stored values until the answer emerges.
 
 Here is what that looks like as pseudocode, for a simple sum of four numbers:
 
@@ -73,19 +75,19 @@ Turing's tape machine was an abstraction, but the first real computers were not 
 
 So is it?
 
-![Two models of computation: a Turing machine mutates state step by step; Church's lambda calculus reduces an expression to a value.](../images/turing_vs_church.svg){#fig-turing-vs-church width=100%}
+![Two models of computation: a Turing machine mutates state step by step; Church's lambda calculus reduces an expression to a value.](../images/turing_vs_church.svg){#fig-turing-vs-church width=75%}
 
 ## Expressions and functions {#sec-church}
 
 Mr. Fold used no tape and kept no state. He pressed numbers together, pair by pair, each pair replaced by its sum and the originals destroyed, until one remained. Replacement instead of memory, and yet the same answer as Mr. Tape and Mr. State. Can Mr. Fold match their infinite reading and rewriting power?
 
-Alonzo Church, who happened to be Turing's doctoral advisor at Princeton, was working on the same problem at the same time but from a completely different angle. Church built a notation called the *lambda calculus*. It has three things:
+Alonzo Church\index{Church, Alonzo}, who happened to be Turing's doctoral advisor at Princeton, was working on the same problem at the same time but from a completely different angle. Church built a notation called the *lambda calculus*\index{lambda calculus}. It has three things:
 
 1. Variables: `x`
 2. Functions: `λx. x + 1` (take `x`, return `x + 1`)
 3. Application: `(λx. x + 1)(5)` gives `6`
 
-There is no tape, no memory, no state that changes over time. You write an expression and simplify it by applying functions to arguments until you reach a value that can't be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing's machine. The equivalence, known as the Church-Turing thesis, meant that memory and instructions were never necessary for computation in the first place. Everything a Turing machine can do, pure expression can do without a single mutable cell.
+There is no tape, no memory, no state that changes over time. You write an expression\index{expression} and simplify it by applying functions to arguments until you reach a value that can't be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing's machine. The equivalence, known as the Church-Turing thesis\index{Church-Turing thesis}, meant that memory and instructions were never necessary for computation in the first place. Everything a Turing machine can do, pure expression can do without a single mutable cell.
 
 What does the same sum look like in this world?
 

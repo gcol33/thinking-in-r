@@ -12,7 +12,7 @@ This chapter walks through five tools (`here`, `renv`, Quarto, `targets`, Git) t
 
 ## What reproducibility means {#sec-what-reproducibility-means}
 
-Same code plus same data should equal the same results. That is reproducibility, and if you squint, it looks like referential transparency at the project level: your analysis script is an expression, and if that expression is reproducible, you can replace it with its value (the results) without changing meaning. A non-reproducible analysis is a function with hidden side effects; it depends on state you never declared.
+Same code plus same data should equal the same results. That is reproducibility\index{reproducibility}, and if you squint, it looks like referential transparency at the project level: your analysis script is an expression, and if that expression is reproducible, you can replace it with its value (the results) without changing meaning. A non-reproducible analysis is a function with hidden side effects; it depends on state you never declared.
 
 Every tool in this chapter addresses one category of hidden state. `here` makes file paths explicit, removing the dependency on which directory you happened to open. `renv` pins package versions to the project, so a colleague installing your code six months from now gets the same library you tested against. Quarto binds code to output in a single document, making it impossible for the prose and the numbers to drift apart. `targets` declares dependencies between pipeline steps and only reruns what has changed, turning a sequential script into a dependency graph that skips unnecessary work. Git records the reasoning behind each change, not just snapshots. Together these tools enforce the functional principle of referential transparency at the scale of a project: swap one execution for another and get identical results.
 
@@ -38,9 +38,9 @@ If your analysis requires a README that says "run these scripts in this order, b
 
 ## Projects and file paths {#sec-projects-file-paths}
 
-Every path you hardcode is a bet that your directory structure will never change. You will lose that bet. An RStudio project (`.Rproj` file) defines a working directory so that everything becomes relative to one root, and when you open the project, the working directory is set automatically.
+Every path you hardcode is a bet that your directory structure will never change. You will lose that bet. An RStudio project\index{RStudio project} (`.Rproj` file) defines a working directory so that everything becomes relative to one root, and when you open the project, the working directory is set automatically.
 
-`here::here()` builds paths relative to that root:
+`here::here()`\index{here()} builds paths relative to that root:
 
 ```{r}
 #| eval: false
@@ -86,7 +86,7 @@ If you would not email your project folder to a collaborator and expect it to wo
 
 `install.packages("dplyr")` today gives you a different version than six months from now, and when your code breaks or your results silently change, nothing in your source files will explain why.
 
-`renv` isolates your project's package library:
+`renv`\index{renv (package)} isolates your project's package library:
 
 ```{r}
 #| eval: false
@@ -95,7 +95,7 @@ renv::snapshot()   # record exact versions in renv.lock
 renv::restore()    # install exactly the versions in the lockfile
 ```
 
-`renv::init()` creates a private library for this project, isolating your package versions from every other project on your machine. `renv::snapshot()` writes `renv.lock`, a JSON file listing every package and its exact version: your dependency manifest, which you should commit to Git. `renv::restore()` reads that lockfile and installs exactly those versions, so a collaborator who clones your repo and runs `renv::restore()` gets the same packages you used.
+`renv::init()` creates a private library for this project, isolating your package versions from every other project on your machine. `renv::snapshot()` writes `renv.lock`\index{lockfile}, a JSON file listing every package and its exact version: your dependency manifest, which you should commit to Git. `renv::restore()` reads that lockfile and installs exactly those versions, so a collaborator who clones your repo and runs `renv::restore()` gets the same packages you used.
 
 The workflow: `init()` once, `snapshot()` after installing or updating packages, commit `renv.lock` to Git. That is all.
 
@@ -119,7 +119,7 @@ One practical detail worth knowing: when you switch between projects that use re
 
 You have a script that produces three figures. You have a Word document that describes those figures. You update the script, re-run it, forget to update the Word document, and now the text describes figures that no longer exist. The architecture guarantees drift: code and prose live in different files, so they drift apart.
 
-Quarto documents (`.qmd`) eliminate the gap by combining narrative text, code chunks, and their output in a single file. When you render the document, the code runs and the results appear inline:
+Quarto\index{Quarto} documents (`.qmd`) eliminate the gap by combining narrative text, code chunks, and their output in a single file. When you render the document, the code runs and the results appear inline:
 
 ```{r}
 #| eval: false
@@ -190,7 +190,7 @@ The citation is rendered in the output and a reference list is appended automati
 
 Your analysis has five steps: clean data, fit model, run diagnostics, make figures, render report. You run them by hand, in order, every time. One day you change the model but forget to re-run the diagnostics. The figures now describe a model that no longer exists. How long before you notice?
 
-`targets` prevents this by making you declare the pipeline: each step (target) is a function call with explicit inputs, and `targets` tracks what changed so it only re-runs what needs re-running.
+`targets`\index{targets (package)} prevents this by making you declare the pipeline\index{pipeline}: each step (target) is a function call with explicit inputs, and `targets` tracks what changed so it only re-runs what needs re-running.
 
 ```{r}
 #| eval: false
@@ -207,9 +207,11 @@ list(
 )
 ```
 
-`tar_make()` runs the pipeline. `tar_visnetwork()` visualizes the dependency graph. `tar_read(model)` retrieves a cached result.
+`tar_make()` runs the pipeline. `tar_visnetwork()` visualizes the dependency graph\index{dependency graph}. `tar_read(model)` retrieves a cached result.
 
 Each target is a function call. Functions are the unit of computation (@sec-functions-are-values-chapter); targets are the unit of caching. If `raw_data` has not changed, `clean_data` does not re-run. If you change `plot_results()`, only `fig` re-runs.
+
+The caching works precisely because the functions are pure: given the same inputs, `clean_penguins()` returns the same output, so `targets` can skip it when the inputs have not changed. A function with side effects (one that reads from a database, modifies a global variable, or depends on the current time) would break the caching, because the same inputs would no longer guarantee the same output. `targets` makes the functional discipline from @sec-closures-and-scope pay off at the project level: pure functions compose into pipelines that `targets` can reason about, cache, and selectively re-execute.
 
 Not every project needs `targets`. A single Quarto document handles simple analyses perfectly well. Reach for `targets` when you have long-running steps, many interdependent outputs, or pipelines that change frequently.
 
@@ -256,7 +258,7 @@ list(
 
 You have a working analysis. You try a new approach, and it breaks everything. You hit Ctrl+Z forty times, but the file is not quite back to where it was, and you are not sure which of the six files you changed. If only you had saved a snapshot before experimenting.
 
-Git is that snapshot system. Every change is recorded as a *commit*: a frozen image of your project at one moment, with a message describing what changed and why. You can go back to any previous snapshot, compare any two, and branch your work into parallel lines that merge back together.
+Git\index{Git}\index{version control} is that snapshot system. Every change is recorded as a *commit*: a frozen image of your project at one moment, with a message describing what changed and why. You can go back to any previous snapshot, compare any two, and branch your work into parallel lines that merge back together.
 
 Why Git for data analysis:
 
@@ -337,7 +339,7 @@ This section covers enough Git to track your work, collaborate, and recover from
 
 ## set.seed() and session info {#sec-seeds-sessions}
 
-Any analysis involving randomness (simulation, resampling, train/test splits) needs `set.seed()`:
+Any analysis involving randomness (simulation, resampling, train/test splits) needs `set.seed()`\index{set.seed()}\index{seed}:
 
 ```{r}
 set.seed(42)
@@ -389,7 +391,7 @@ A decision guide:
 | Has steps that take >30 seconds | targets |
 | Must run on a different OS | Docker or Nix |
 
-Each layer solves one failure mode. Together, they make "works on my machine" a non-issue.
+Each layer solves one failure mode. Together, they make "works on my machine" a non-issue.\index{workflow}
 
 The common thread across all of them is automation: `here` automates path construction, `renv` automates dependency tracking, Quarto automates the link between code and output, `targets` automates pipeline execution, and Git automates change tracking. Each requires a one-time setup cost and then runs automatically.
 
