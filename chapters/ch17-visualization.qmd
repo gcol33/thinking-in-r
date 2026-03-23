@@ -312,7 +312,7 @@ Read this example like a sentence: take penguins, remove missing sex, map bill l
 penguins |>
   dplyr::filter(!is.na(sex)) |>
   ggplot(aes(x = bill_length_mm, y = body_mass_g, color = species, fill = species, shape = species, linetype = species)) +
-  geom_point(alpha = 0.6, stroke = 0.4, size = 2) +
+  geom_point(alpha = 0.6, stroke = 0.4, size = 2, color = "grey30") +
   geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
   facet_wrap(~ sex) +
   scale_color_viridis_d() +
@@ -324,6 +324,7 @@ penguins |>
     color = "Species",
     fill = "Species",
     shape = "Species",
+    linetype = "Species",
     title = "Bill length vs body mass by species and sex"
   ) +
   theme_minimal()
