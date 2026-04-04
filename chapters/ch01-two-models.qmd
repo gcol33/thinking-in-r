@@ -9,7 +9,7 @@ By 1930, the dream was nearly complete. Three centuries of work — formalizing 
 
 But to build the machine that turns the crank, someone first had to answer a question that nobody had thought to ask. What does it mean to compute?\index{computation}
 
-David Hilbert\index{Hilbert, David} had spent thirty years building toward that question. To finish his life's work, he needed someone to define what "turning the crank" actually meant.
+David Hilbert\index{Hilbert, David} had spent thirty years building toward that question. To finish his life's work, he needed someone to define what "turning the crank" actually meant. Two people did — within months of each other, working independently, arriving at completely different answers. One built a machine. The other wrote a sentence. Both were right, and the split between them runs through every programming language that exists today, including R. We'll get to the formalism. First, the intuition.
 
 ***
 
