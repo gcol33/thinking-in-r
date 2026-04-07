@@ -16,8 +16,8 @@ set -euo pipefail
 quarto render --profile bw --to pdf
 
 if [[ "${1:-}" == "--gs" ]]; then
-  in="docs/Thinking-in-R-BW.pdf"
-  out="docs/Thinking-in-R-BW-gray.pdf"
+  in="book/Thinking-in-R-BW.pdf"
+  out="book/Thinking-in-R-BW-gray.pdf"
   gs \
     -sDEVICE=pdfwrite \
     -sProcessColorModel=DeviceGray \

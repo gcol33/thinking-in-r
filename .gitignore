@@ -3,6 +3,7 @@
 
 # Build artifacts
 _book/
+book/
 __pycache__/
 # LaTeX / PDF build intermediates
 Thinking-in-R.tex
