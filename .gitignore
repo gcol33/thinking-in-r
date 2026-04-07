@@ -6,6 +6,7 @@ _book/
 __pycache__/
 # LaTeX / PDF build intermediates
 Thinking-in-R.tex
+docs/Thinking-in-R.pdf
 index.*
 !index.qmd
 
