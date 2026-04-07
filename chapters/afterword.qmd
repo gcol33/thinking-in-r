@@ -17,6 +17,4 @@ If you go looking you will find more of these connections, between R and Haskell
 
 The connections are still forming. R 4.1 gave the language a native pipe (`|>`) and a one-character lambda (`\(x)`). R 4.4 moved the null-coalescing operator (`%||%`) into base R and patched the internal dispatch machinery so that S7, a class system built entirely out of functions, could sit on top of it. duckplyr routes dplyr verbs through DuckDB without changing a line of user code, because the verbs were designed as a functional interface: data frame in, data frame out, no side effects. The Polars data frame engine, written in Rust, connects to R through extendr, and Rust's ownership model maps onto R's copy-on-modify semantics closely enough that the two languages share data without defensive copying. The tidyverse's AI toolkit (ellmer for calling language models, ragnar for retrieval-augmented generation, mcptools for exposing R functions as tools that language models can call) is built on the same pattern: pure functions composed into pipelines. Church published the lambda calculus in 1936. Ninety years later, the architecture has not needed replacing.
 
-I have been down this rabbit hole for years. I am nowhere near the bottom.
-
 Thank you for reading.
