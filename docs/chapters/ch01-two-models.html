@@ -663,9 +663,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 for each number in [3, 5, 2, 8]:
     total = total + number
 return total</code></pre>
-<p><code>total</code> starts at 0, becomes 3, becomes 8, becomes 10, becomes 18. Mr.&nbsp;Tape read the numbers; Mr.&nbsp;State held the running total, forgetting each previous value the moment the next one arrived. The variable <em>varies</em>; the answer lives in its final state. This pattern dominated programming for the next seventy years.</p>
-<p>Turing’s tape machine was an abstraction, but the first real computers were not far off. ENIAC, built at the University of Pennsylvania, weighed 30 tons, stretched 100 feet long, and filled an entire room. It was programmed by wiring plugboards and flipping switches, one instruction at a time. The language that crystallized this model for a generation of programmers was C, designed by Dennis Ritchie at Bell Labs in the early 1970s. In C, the programmer allocates memory, reads from it, writes to it, and frees it when done. The language does not manage any of this for you. R itself is written in C. And every popular language that followed inherited the same picture, even when they made it friendlier. Python handles memory for you and reads almost like pseudocode, yet underneath, variables are still containers and a program is still a sequence of instructions changing what’s inside them. The <code>for</code> loop above could be Python with one character changed. JavaScript, created at Netscape (Brendan Eich wrote the first version in ten days), has since become the most widely used programming language in the world. All of them share the same underlying model of what computation is. It dominates so thoroughly that you might assume it’s the only one there is.</p>
-<p>So is it?</p>
+<p><code>total</code> starts at 0, becomes 3, becomes 8, becomes 10, becomes 18. Mr.&nbsp;Tape read the numbers; Mr.&nbsp;State held the running total, forgetting each previous value the moment the next one arrived. The variable <em>varies</em>; the answer lives in its final state.</p>
+<p>Turing’s tape was an abstraction. ENIAC, built a decade later at the University of Pennsylvania, was not. It weighed thirty tons. To program it, you walked between cabinets and rewired plugboards by hand, instruction by instruction, switch by switch, the machine’s “memory” a literal physical configuration of cables. Every popular language since has inherited that picture, even when they hid the cables. A variable is still a box. A program is still a sequence of things you do to what’s inside it.</p>
+<p>So is that what computation <em>is</em>?</p>
 <div id="fig-turing-vs-church" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-turing-vs-church-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -680,13 +680,10 @@ Figure&nbsp;1.1: Two models of computation: a Turing machine mutates state step 
 <section id="sec-church" class="level2" data-number="1.2">
 <h2 data-number="1.2" class="anchored" data-anchor-id="sec-church"><span class="header-section-number">1.2</span> Expressions and functions</h2>
 <p>Mr.&nbsp;Fold used no tape and kept no state. He pressed numbers together, pair by pair, each pair replaced by its sum and the originals destroyed, until one remained. Replacement instead of memory, and yet the same answer as Mr.&nbsp;Tape and Mr.&nbsp;State. Can Mr.&nbsp;Fold match their infinite reading and rewriting power?</p>
-<p>Alonzo Church, who happened to be Turing’s doctoral advisor at Princeton, was working on the same problem at the same time but from a completely different angle. Church built a notation called the <em>lambda calculus</em>. It has three things:</p>
-<ol type="1">
-<li>Variables: <code>x</code></li>
-<li>Functions: <code>λx. x + 1</code> (take <code>x</code>, return <code>x + 1</code>)</li>
-<li>Application: <code>(λx. x + 1)(5)</code> gives <code>6</code></li>
-</ol>
-<p>There is no tape, no memory, no state that changes over time. You write an expression and simplify it by applying functions to arguments until you reach a value that can’t be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing’s machine. The equivalence, known as the Church-Turing thesis, meant that memory and instructions were never necessary for computation in the first place. Everything a Turing machine can do, pure expression can do without a single mutable cell.</p>
+<p>Alonzo Church, who happened to be Turing’s doctoral advisor at Princeton, was working on the same problem from a completely different angle. His notation had no tape and no memory. You wrote down an expression, something like <code>(λx. x + 1)(5)</code>, and you simplified it. The <code>5</code> slid into the <code>x</code>. What was left was <code>6</code>. Nothing had been stored anywhere. Nothing had been overwritten. The arithmetic had simply <em>unfolded</em>, the way Mr.&nbsp;Fold had folded.</p>
+<p>He called it the <em>lambda calculus</em>, and it has only three pieces: variables (<code>x</code>), functions (<code>λx. x + 1</code>, meaning <em>take <code>x</code>, return <code>x + 1</code></em>), and application (writing one next to the other). That is the entire grammar. You write an expression and simplify it by applying functions to arguments until you reach a value that can’t be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing’s machine.</p>
+<p>Memory and instructions were never necessary for computation in the first place.</p>
+<p>The result is known as the Church-Turing thesis. Everything a Turing machine can do, pure expression can do without a single mutable cell.</p>
 <p>What does the same sum look like in this world?</p>
 <pre><code>sum([3, 5, 2, 8])
 = add(3, sum([5, 2, 8]))
@@ -712,14 +709,14 @@ Figure&nbsp;1.1: Two models of computation: a Turing machine mutates state step 
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>count</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This works, and R can do it. But there is a variable (<code>count</code>) that gets modified in a loop, one step at a time. <code>count</code> starts at 0, becomes 1, becomes 2, becomes 3, becomes 4. One slate, always overwritten. Here is the same problem in the expression-and-function style:</p>
+<p>This works, and R can do it. But there is a variable, <code>count</code>, that gets modified in a loop, one step at a time. It starts at 0, becomes 1, becomes 2, becomes 3, becomes 4. One slate, always overwritten. Here is the same problem in the expression-and-function style:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>scores <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">65</span>, <span class="dv">82</span>, <span class="dv">71</span>, <span class="dv">90</span>, <span class="dv">55</span>, <span class="dv">78</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(scores <span class="sc">&gt;</span> <span class="dv">70</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>One line. <code>scores &gt; 70</code> produces a vector of <code>TRUE</code> and <code>FALSE</code> values; <code>sum()</code> counts the <code>TRUE</code>s. The expression describes the answer, and R evaluates it.</p>
-<p>Both give the answer 4. But the second version is shorter, easier to read, and (as you’ll learn in <a href="ch04-vectors.html" class="quarto-xref"><span>Chapter 4</span></a>) faster, because R was <em>designed</em> for it. The loop version works against the grain; the expression version works with it.</p>
+<p>Both give the answer 4. The second one is a piece of mathematics from 1936, written before electronic computers existed, and in 2026 it still outruns the loop. The loop works against the grain. The expression works with it.</p>
 <p>The same pattern runs through the rest of the language:</p>
 <ul>
 <li><p><code>if/else</code> returns a value, so you can assign its result directly. In most languages, <code>if</code> is a statement that <em>does</em> something; in R, it’s an expression that <em>produces</em> something (<a href="ch03-expressions-names.html" class="quarto-xref"><span>Chapter 3</span></a>):</p>
