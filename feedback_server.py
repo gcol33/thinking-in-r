@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 DOCS_DIR = Path(__file__).parent / "docs"
 FEEDBACK_FILE = Path(__file__).parent / "_feedback.md"
-PORT = 8080
+PORT = 9000
 
 INJECT = r"""
 <style>
