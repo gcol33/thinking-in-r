@@ -2,146 +2,146 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://gillescolling.com/thinking-in-r/index.html</loc>
-    <lastmod>2026-03-23T15:09:48.135Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.251Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/foreword.html</loc>
-    <lastmod>2026-03-23T15:53:26.137Z</lastmod>
+    <lastmod>2026-05-04T00:23:04.284Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch01-two-models.html</loc>
-    <lastmod>2026-04-09T09:32:11.041Z</lastmod>
+    <lastmod>2026-05-04T00:19:30.182Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch02-family-tree.html</loc>
-    <lastmod>2026-03-23T16:21:16.614Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch03-expressions-names.html</loc>
-    <lastmod>2026-03-23T16:21:52.676Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch04-vectors.html</loc>
-    <lastmod>2026-03-23T17:18:01.708Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch05-first-function.html</loc>
-    <lastmod>2026-03-23T18:00:33.472Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch06-numerical-computing.html</loc>
-    <lastmod>2026-03-23T18:00:33.472Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch07-functions-are-values.html</loc>
-    <lastmod>2026-03-23T18:00:33.473Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch08-logic-control-flow.html</loc>
-    <lastmod>2026-03-23T18:03:50.662Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch09-complexity-and-algorithms.html</loc>
-    <lastmod>2026-03-23T16:26:56.124Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch10-lists.html</loc>
-    <lastmod>2026-03-23T18:00:33.473Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch11-data-frames.html</loc>
-    <lastmod>2026-03-23T18:03:50.662Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch12-strings-factors-dates.html</loc>
-    <lastmod>2026-03-23T18:00:33.474Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.193Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch13-reading-writing-data.html</loc>
-    <lastmod>2026-04-07T10:26:17.586Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch14-data-transformation.html</loc>
-    <lastmod>2026-03-23T18:03:50.663Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch15-pipes-and-composition.html</loc>
-    <lastmod>2026-03-23T18:00:56.591Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch16-tidy-data.html</loc>
-    <lastmod>2026-03-23T18:03:50.663Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch17-visualization.html</loc>
-    <lastmod>2026-04-07T10:26:56.514Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch18-closures-and-scope.html</loc>
-    <lastmod>2026-03-23T18:00:33.475Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch19-iteration-without-loops.html</loc>
-    <lastmod>2026-03-23T18:03:50.664Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch20-function-factories.html</loc>
-    <lastmod>2026-03-23T18:00:33.476Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.196Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch21-reduce-and-accumulate.html</loc>
-    <lastmod>2026-03-23T18:00:33.476Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch22-recursion-and-fixed-points.html</loc>
-    <lastmod>2026-03-23T18:00:33.477Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch23-lazy-evaluation.html</loc>
-    <lastmod>2026-03-23T18:56:54.389Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch24-s3-and-s7.html</loc>
-    <lastmod>2026-03-23T18:03:50.665Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch25-contracts-and-defensive-code.html</loc>
-    <lastmod>2026-03-23T18:00:33.477Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch26-metaprogramming.html</loc>
-    <lastmod>2026-03-23T18:00:33.478Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch27-building-a-dsl.html</loc>
-    <lastmod>2026-04-07T10:26:32.576Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch28-performance.html</loc>
-    <lastmod>2026-03-23T18:57:07.713Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.198Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch29-r-internals.html</loc>
-    <lastmod>2026-03-23T18:00:33.478Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.200Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch30-r-as-mathematics.html</loc>
-    <lastmod>2026-03-23T16:22:59.897Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.200Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch31-connecting-to-other-languages.html</loc>
-    <lastmod>2026-04-07T11:03:04.494Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.200Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch32-building-packages.html</loc>
-    <lastmod>2026-04-07T11:06:05.532Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.200Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/ch33-reproducibility-and-workflow.html</loc>
-    <lastmod>2026-04-07T10:30:14.377Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.200Z</lastmod>
   </url>
   <url>
     <loc>https://gillescolling.com/thinking-in-r/chapters/afterword.html</loc>
-    <lastmod>2026-04-07T12:07:42.229Z</lastmod>
+    <lastmod>2026-05-03T16:07:33.192Z</lastmod>
   </url>
 </urlset>
