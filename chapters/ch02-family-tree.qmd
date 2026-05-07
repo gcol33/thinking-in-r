@@ -37,12 +37,8 @@ McCarthy had written a mathematical description of how Lisp should evaluate expr
 What does this look like in R?
 
 ```{r}
-#| eval: false
 my_function <- function(x) x + 1
 my_function(5)
-```
-```
-#> [1] 6
 ```
 
 `my_function` is a value. You could put it in a list, pass it to another function, or replace it with something else entirely. That idea came straight from Lisp. But Lisp itself had a problem: by the 1970s, it had grown enormous, splintered into competing dialects, and accumulated features nobody could agree on. Two people at MIT decided to strip it back to the bones.
@@ -61,16 +57,12 @@ Out of that realization came Scheme\index{Scheme}, first described in a 1975 AI 
 Here is lexical scoping in R. Don't worry about the details yet; just notice that it works:
 
 ```{r}
-#| eval: false
 make_adder <- function(n) {
   function(x) x + n
 }
 
 add_ten <- make_adder(10)
 add_ten(3)
-```
-```
-#> [1] 13
 ```
 
 `add_ten` remembers that `n` was 10 when it was created, even though `make_adder` has already finished running. The function looks for `n` where it was *defined* (inside `make_adder`), not where it's *called*. That's lexical scoping. @sec-closures-and-scope builds on this to create functions that remember things.
@@ -94,12 +86,8 @@ S made design decisions that R carries to this day:
 Try this:
 
 ```{r}
-#| eval: false
 temperatures <- c(72, 85, 61, 90, 78)
 temperatures - 32
-```
-```
-#> [1] 40 53 29 58 46
 ```
 
 No loop. You subtracted 32 from five numbers in one expression. In Fortran or C you would write a loop, manage an index, and store the result somewhere; S (and R after it) made this the default way of working with data.
