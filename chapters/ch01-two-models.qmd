@@ -62,7 +62,7 @@ It was the same number.
 
 ## Instructions and state {#sec-turing}
 
-Mr. Tape and Mr. State are a computing machine. In 1936, a twenty-four-year-old graduate student at Cambridge proved that their method — read a symbol, update a state, move to the next — is enough to carry out any computation that can be precisely described. The graduate student was Alan Turing\index{Turing, Alan}, who three years later would crack the German military's Enigma cipher in World War II.
+Mr. Tape and Mr. State are a computing machine. In 1936, a twenty-four-year-old graduate student at Cambridge proved that their method (read a symbol, update a state, move to the next) is enough to carry out any computation that can be precisely described. The graduate student was Alan Turing\index{Turing, Alan}, who three years later would crack the German military's Enigma cipher in World War II.
 
 A Turing machine\index{Turing machine} *does* things: it reads, writes, moves, changes. It has memory (the tape), and that memory changes over time. A program, in this view, is a sequence of instructions that progressively modify stored values until the answer emerges.
 
