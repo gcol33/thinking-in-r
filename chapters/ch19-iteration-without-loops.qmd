@@ -10,7 +10,7 @@ library(dplyr)
 
 You have a list of three data frames and you want to compute the mean of a column in each one. Six lines of `for` loop, or one line of `map()`. The `map()` version is shorter, but the real difference is structural.
 
-Functions are values (@sec-functions-are-values-chapter) and you can pass them to other functions (@sec-passing-functions). A *functional* builds on that idea: it is a higher-order function that handles the iteration\index{iteration} for you. You give it a function and a collection; it applies the function to each element, manages the indexing and pre-allocation, and returns the results.
+Functions are values (@sec-functions-are-values-chapter) and you can pass them to other functions (@sec-passing-functions).
 
 This chapter uses three packages. Load them now if you are following along:
 
@@ -54,6 +54,8 @@ map_dbl(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 
 Same answer. No index variable, no pre-allocation, no name copying. You said what to compute; `map_dbl` handled the iteration.
 
+A *functional* builds on that idea: it is a higher-order function that handles the iteration\index{iteration} for you. You give it a function and a collection; it applies the function to each element, manages the indexing and pre-allocation, and returns the results.
+
 The problem with `for` loops is not performance; in modern R, a well-written loop is fast. The problem is that loops mix the *mechanism* of iteration (allocate, index, store) with the *content* of the computation (compute a mean). Functionals separate the two. The mechanism disappears inside the functional; the content lives in the function you pass to it. And once those two concerns are separated, each becomes easier to read, test, and reuse.
 
 ::: callout-tip
@@ -69,7 +71,7 @@ For loops are not bad R. They are verbose R. If you find yourself writing the sa
 
 ## `lapply()` and `sapply()`: base R functionals {#sec-lapply-sapply}
 
-The idea of handing a function to something that applies it to every element in a collection is older than R, older than S, older than most programming languages people still use. John McCarthy's 1960 paper described `mapcar`, a Lisp function that takes a function and a list and returns a new list with the function applied to each element. The name `map` became standard in later languages (Scheme, ML, Haskell), and R inherited the concept twice: once through `lapply()` in base R, and again through `purrr::map()` in the tidyverse. The mechanism is always the same. You separate *what to do* from *how to iterate*, and let the language handle the second part. `lapply()` is R's oldest version of that idea:
+The idea of handing a function to something that applies it to every element in a collection is older than R, older than S, older than most programming languages people still use. John McCarthy's 1960 paper described `mapcar`, a Lisp function that takes a function and a list and returns a new list with the function applied to each element. The name `map` became standard in later languages (Scheme, ML, Haskell), and R inherited the concept twice: once through `lapply()` in base R, and again through `purrr::map()` in the tidyverse. `lapply()` is R's oldest version of that idea:
 
 ```{r}
 lapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
@@ -140,9 +142,9 @@ penguins_split |>
   map_dbl(\(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-Third, you may encounter the formula shorthand in older code: `~ mean(.x$body_mass_g, na.rm = TRUE)`. This was purrr's anonymous function syntax before R 4.1 introduced `\(x)`. You will see it in existing codebases. Prefer `\(x)` in new code.
+Third, you may encounter the formula shorthand `~ mean(.x$body_mass_g, na.rm = TRUE)`, purrr's anonymous function syntax from before R 4.1 introduced `\(x)`. You will still see it in existing codebases, but prefer `\(x)` in new code.
 
-`map()` returns a list. Always. `map_dbl()` returns a double vector. Always. This type stability is the core advantage over `sapply()`, and it matters more than it sounds: in a long pipeline, knowing the exact shape of every intermediate result is the difference between debugging for five seconds and debugging for an hour.
+`map()` always returns a list and `map_dbl()` always returns a double vector, regardless of the data. This type stability is the core advantage over `sapply()`, and it matters more than it sounds: in a long pipeline, knowing the exact shape of every intermediate result is the difference between debugging for five seconds and debugging for an hour.
 
 ::: callout-note
 ## Functors and the shape of iteration
@@ -150,7 +152,7 @@ Third, you may encounter the formula shorthand in older code: `~ mean(.x$body_ma
 `map()` embodies a pattern from category theory: the *functor*. `map(xs, f)` applies `f` to each element of `xs`, preserving the container structure (a list of three elements in, a list of three elements out). A functor lifts a function between values (`f :: A -> B`) to a function between containers (`map(f) :: List(A) -> List(B)`). You do not need the theory to use `map()`, but recognizing the pattern explains why `map()` feels the same whether you apply it to a list, a vector, or a set of data frame columns with `across()`: it is the same structural idea in different containers.
 :::
 
-A `for` loop iterates by maintaining a counter variable: `i` goes from 1 to `n`, and the body runs once per increment. You declare the counter, increment it, read it. With `map()`, the counter disappears. The list has three elements, so the function runs three times; the structure itself determines how many applications occur. You stop managing the iteration and let the data's shape manage it for you.
+With `map()`, the list has three elements, so the function runs three times; the structure itself determines how many applications occur. You stop managing the iteration and let the data's shape manage it for you.
 
 The typed variants enforce something even stricter.
 
@@ -305,7 +307,7 @@ The `walk()` prints a line for each species, then passes `penguins_split` throug
 
 Not everything should be a functional. Loops earn their place in three situations.
 
-**When iterations depend on each other.** If the result of iteration `i` feeds into iteration `i + 1`, a functional cannot help you, because functionals assume independence between elements. Simulation chains, iterative algorithms, and accumulating state all need explicit loops. (purrr's `reduce()` and `accumulate()` handle some of these sequential cases, and you will meet them in @sec-reduce-and-accumulate. In the language of category theory, a fold that tears down a list one element at a time is a *catamorphism*\index{split-apply-combine}, the most general recursion pattern: any loop that starts with an accumulator, walks a list, and returns the accumulator is a catamorphism in disguise.)
+**When iterations depend on each other.** If the result of iteration `i` feeds into iteration `i + 1`, a functional cannot help you, because functionals assume independence between elements. Simulation chains, iterative algorithms, and accumulating state all need explicit loops. (purrr's `reduce()` and `accumulate()` handle some of these sequential cases, and you will meet them in @sec-reduce-and-accumulate.)
 
 ```{r}
 # Random walk: each step depends on the previous
@@ -358,7 +360,7 @@ penguins |>
 
 `across()` replaces the older `summarise_at()`, `summarise_if()`, and `summarise_all()`, which are now superseded. If you encounter them in older code, they do the same thing with less flexible syntax.
 
-Under the hood, `across()` iterates over the selected columns, applies the function to each one, and assembles the results. That is the same thing `map()` does over list entries and `sapply()` does over vector values. The `for` loop at the start of this chapter, `lapply()`, `map_dbl()`, `across()`: each separates *what to do* from *how to iterate*, and each walks a different container with the same logic. The `for` loop, `lapply()`, `map_dbl()`, and `across()` all apply a function to each element of a collection; they differ only in which container they walk and what they return.
+Under the hood, `across()` iterates over the selected columns, applies the function to each one, and assembles the results. That is the same thing `map()` does over list entries and `sapply()` does over vector values. The `for` loop at the start of this chapter, `lapply()`, `map_dbl()`, `across()`: each separates *what to do* from *how to iterate*, and each walks a different container with the same logic.
 
 ### Exercises {.unnumbered}
 

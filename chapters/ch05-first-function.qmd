@@ -97,7 +97,9 @@ shout("hello", "world")
 λx. λy. x + y
 ```
 
-This reads: "a function that takes `x` and returns *another function* that takes `y` and returns `x + y`." To add 3 and 5, you apply it twice: `(λx. λy. x + y)(3)(5)` = `(λy. 3 + y)(5)` = `3 + 5` = `8`. Each application replaces one argument, one step at a time. This is called *currying*\index{currying}, and R can do it too (@sec-function-factories). `...` is R's practical alternative: instead of nesting functions, you let a single function accept any number of arguments and decide what to do with them inside. `c()`, `paste()`, `sum()`: they all use `...`, which is why `c(1, 2, 3)` and `c(1, 2, 3, 4, 5, 6, 7)` both work. More on `...` in @sec-lazy-evaluation.
+This reads: "a function that takes `x` and returns *another function* that takes `y` and returns `x + y`." To add 3 and 5, you apply it twice: `(λx. λy. x + y)(3)(5)` = `(λy. 3 + y)(5)` = `3 + 5` = `8`. Each application replaces one argument, one step at a time.
+
+This is called *currying*\index{currying}, and R can do it too (@sec-function-factories). `...` is R's practical alternative: instead of nesting functions, you let a single function accept any number of arguments and decide what to do with them inside. `c()`, `paste()`, `sum()`: they all use `...`, which is why `c(1, 2, 3)` and `c(1, 2, 3, 4, 5, 6, 7)` both work. More on `...` in @sec-lazy-evaluation.
 
 
 ### Exercises {.unnumbered}
@@ -116,7 +118,7 @@ add_one <- function(x) x + 1
 add_one(10)
 ```
 
-The body is `x + 1`. R evaluates it and returns the result. In Python or Java you would need to write `return` explicitly, but R treats the last expression as the return value. A function is an expression that evaluates to a value, the same idea from the lambda calculus in @sec-lisp.
+The body is `x + 1`. R evaluates it and returns the result. In Python or Java you would need to write `return` explicitly. A function is an expression that evaluates to a value, the same idea from the lambda calculus in @sec-lisp.
 
 When you call `add_one(10)`, R substitutes `10` for `x` in the body, turning `x + 1` into `10 + 1`, then evaluates it. Lambda calculus calls this *beta reduction*: `(λx. x + 1)(10)` reduces to `10 + 1`. Every function call in R is a beta reduction.
 
@@ -439,7 +441,7 @@ fibonacci_fast(10)
 fibonacci_fast(50)
 ```
 
-Instead of branching into two recursive calls, `fibonacci_fast` makes one call per step, passing the accumulated values along. Watch the reduction:
+The naive version cannot compute `fibonacci(50)` in any reasonable time; this one handles it instantly. Instead of branching into two recursive calls, `fibonacci_fast` makes one call per step, passing the accumulated values along. Watch the reduction:
 
 ```
 fibonacci_fast(4, 0, 1)
@@ -450,11 +452,13 @@ fibonacci_fast(4, 0, 1)
 = 3                           # n=0, return a
 ```
 
-No variable is being mutated; each call just substitutes new values for `n`, `a`, and `b` and hands them to the next call. This form is called *tail recursion* because the recursive call is the last thing the function does. The naive version cannot compute `fibonacci(50)` in any reasonable time. This one handles it instantly:
+No variable is being mutated; each call just substitutes new values for `n`, `a`, and `b` and hands them to the next call. This form is called *tail recursion* because the recursive call is the last thing the function does.
 
 Any function with multiple recursive calls can be rewritten as a single recursive call with extra arguments that carry the intermediate results. For Fibonacci, the state to pass forward is the last two numbers; for a tree traversal, it might be an accumulator list.
 
-R has a limit on how deep recursion can go (around 1000 calls by default), and for most day-to-day R work, vectorized operations and functions like `map()` (@sec-iteration-without-loops) are better tools. But there is something strange about `factorial` that has nothing to do with performance: its base case and inductive step look exactly like a proof by mathematical induction\index{proof by induction}.
+R has a limit on how deep recursion can go (around 1000 calls by default), and for most day-to-day R work, vectorized operations and functions like `map()` (@sec-iteration-without-loops) are better tools.
+
+But there is something strange about `factorial` that has nothing to do with performance: its base case and inductive step look exactly like a proof by mathematical induction\index{proof by induction}.
 
 
 ### Exercises {.unnumbered}
@@ -484,9 +488,7 @@ Writing `factorial` constructs a proof by induction that the product `1 * 2 * ..
 
 This was the landscape of the 1930s: Church, Godel, Curry, and Turing were all studying what could be *proved*, before computers existed, and they found that the answer was identical to what could be *computed*.
 
-Today, the Curry-Howard correspondence is the foundation of *formal verification*: software that proves other software is correct.
-
-The first practical tool to exploit this idea was Coq, developed at INRIA, the French national computer science institute, starting in the late 1980s. Thierry Coquand and Gerard Huet designed it around a type theory called the Calculus of Constructions (the "C-o-C" that gives Coq part of its name). In Coq, every program must come with a machine-checkable proof that it does what its type signature claims; if the proof has a gap, the code does not compile. This makes Coq painful for ordinary programming but powerful for building software where correctness matters more than convenience.
+Today, the Curry-Howard correspondence is the foundation of *formal verification*: software that proves other software is correct. The first practical tool to exploit it was Coq, developed at INRIA in the late 1980s. In Coq, every program must come with a machine-checkable proof that it does what its type signature claims; if the proof has a gap, the code does not compile. This makes Coq painful for ordinary programming but powerful for building software where correctness matters more than convenience.
 
 In 2013, Leonardo de Moura at Microsoft Research started Lean, a newer *proof assistant* with a more accessible syntax and a growing library of formalized mathematics called Mathlib. Coq grew out of theoretical computer science; Lean has attracted a broader community of mathematicians who are formalizing results from analysis, algebra, and number theory. In Lean, a proof that adding zero to any natural number gives back the same number looks like this:
 
@@ -515,7 +517,7 @@ fact(n)
 
 You might think: of course they are the same, we just wrote the definition. But `fact` and `fact(n)` are not the same thing. `fact` is a definition, a rule that says what to do with an argument; `fact(n)` is that rule applied to a specific (but arbitrary) `n`. The reduction above shows what happens when you apply the rule: you get a term that contains `fact(n - 1)`, the same program applied to a smaller argument. That relationship between `fact(n)` and `fact(n - 1)` is not something we assumed or proved; it fell out of one substitution. A tautology. And yet that tautology, together with the base case, constitutes a proof by induction that `fact` produces the right answer for every natural number. When `n = 0`, the expression reduces to `1`. The substitution gives you the step from `n - 1` to `n`.
 
-This is what Curry-Howard means in practice. The Lean proof above has the same structure as `factorial`: a base case (`zero`), a step that relates `n` to `n - 1` by definitional equivalence (`succ n`), and nothing else. Both work because the equivalence of two program states is a tautology that requires only substitution.
+This is what Curry-Howard means in practice: both the Lean proof and `factorial` work because the equivalence of two program states is a tautology that requires only substitution.
 
 The seL4 microkernel (used in military helicopters and autonomous vehicles) has a machine-checked proof that certain classes of errors in its code cannot occur, for any input. Not "we haven't found a bug yet": a mathematical guarantee, verified by a computer. The CompCert C compiler has a similar proof that it will never miscompile your code. Both proofs were written as programs in Coq. Traditional testing covers a finite set of inputs; a proof by induction, because it operates on the structure of the program rather than on specific values, covers all of them.
 

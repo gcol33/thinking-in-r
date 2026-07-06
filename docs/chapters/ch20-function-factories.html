@@ -669,8 +669,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 125</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>When you call <code>power(2)</code>, R creates an execution environment where <code>exponent</code> is 2, then returns an anonymous function that closes over that environment. <code>square</code> remembers <code>exponent = 2</code> forever; <code>cube</code> remembers <code>exponent = 3</code>. Same logic, different parameters. The factory produces a <em>family</em> of related functions, and each member of that family carries its own private copy of the parameter that distinguishes it from its siblings.</p>
-<p>This is exactly <code>make_adder</code> from <a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a>, with exponentiation instead of addition. That section introduced the idea without naming it. The name is <em>function factory</em>, and the functions it produces are <em>closures</em>.</p>
-<p>Function factories are <em>partial application</em> made explicit: <code>power(2)</code> fixes one argument of a two-argument operation and returns a function of the remaining argument. In lambda calculus, <code>power</code> is <code>λe. λx. x^e</code>; applying it to 2 gives <code>λx. x^2</code>. This decomposition of multi-argument functions into chains of single-argument functions is called <em>currying</em> (Schonfinkel 1924, Curry 1958). In Haskell, all functions are curried by default: <code>add 5 3</code> is really <code>(add 5) 3</code>, where <code>add 5</code> returns a function. R’s function factories are manual currying. In combinatory logic, the simplest factory is the K combinator (<code>K = λx.λy. x</code>): it takes a value and returns a function that always produces that value, ignoring its argument. <code>make_formatter("$")</code> is K applied: it captures <code>"$"</code> and returns a function that ignores everything except its argument.</p>
+<p>The name for this pattern is <em>function factory</em>, and the functions it produces are <em>closures</em>.</p>
+<p>Function factories are <em>partial application</em> made explicit: <code>power(2)</code> fixes one argument of a two-argument operation and returns a function of the remaining argument. In lambda calculus, <code>power</code> is <code>λe. λx. x^e</code>; applying it to 2 gives <code>λx. x^2</code>. This decomposition of multi-argument functions into chains of single-argument functions is called <em>currying</em> (Schonfinkel 1924, Curry 1958). In Haskell, all functions are curried by default: <code>add 5 3</code> is really <code>(add 5) 3</code>, where <code>add 5</code> returns a function. R’s function factories are manual currying.</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -811,7 +811,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.0000000 0.6931472 1.3862944</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Notice something subtle about that <code>if</code> statement: it runs once, when the factory is called, not every time the produced function is called. The factory picks the right formula at creation time and returns a function that does no branching at all.</p>
-<p>This is staged computation: you separate the cost of <em>choosing</em> behavior from the cost of <em>running</em> behavior. The <code>if</code> branch evaluates once, during construction; the produced function evaluates many times, during use, and pays nothing for the choice that was already made. The same pattern drives much of ggplot2. When you call <code>scale_color_brewer(palette = "Set1")</code>, the factory runs once at plot-build time, baking the palette into a function that maps data values to colors. If it re-evaluated the palette choice every time it colored a point, the plot would slow to a crawl on large datasets. ggplot2 gains its speed from that separation: the decision moves from the data path (runs per point) to the construction path (runs once). Every factory you write makes a version of the same trade. The returned function carries less weight because the decision has already been made, baked into the closure’s environment at creation time, and never revisited.</p>
+<p>This is staged computation: you separate the cost of <em>choosing</em> behavior from the cost of <em>running</em> behavior. The <code>if</code> branch evaluates once, during construction; the produced function evaluates many times, during use, and pays nothing for the choice that was already made. The same pattern drives much of ggplot2. When you call <code>scale_color_brewer(palette = "Set1")</code>, the factory runs once at plot-build time, baking the palette into a function that maps data values to colors. If it re-evaluated the palette choice every time it colored a point, the plot would slow to a crawl on large datasets. ggplot2 gains its speed from that separation: the decision moves from the data path (runs per point) to the construction path (runs once). Every factory you write makes a version of the same trade.</p>
 <p>The next section starts from the other direction: instead of building a function from parameters, you take a function that already exists and modify its behavior.</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
@@ -840,7 +840,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.00    0.00    1.03</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">fast_square</span>(<span class="dv">10</span>))</span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.02    0.00    0.00</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.02    0.00    0.02</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The first call takes about a second. The second is instant, because <code>memoise</code> recognizes the argument and returns the cached result without re-executing the function body.</p>
 <p><code>forget()</code> clears the cache:</p>
@@ -848,8 +848,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">forget</span>(fast_square)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>When to memoize:</strong> expensive computations with repeated inputs, API calls, simulations, recursive algorithms like Fibonacci, file parsing.</p>
-<p><strong>When not to:</strong> functions with side effects (plotting, writing files), functions whose inputs are large or unique every time (the cache grows without bound), functions that depend on external state (database contents, system time). Memoization trades memory for speed, and it only pays off when inputs recur.</p>
+<p><strong>When to memoize:</strong></p>
+<ul>
+<li>Expensive computations with repeated inputs</li>
+<li>API calls</li>
+<li>Simulations</li>
+<li>Recursive algorithms like Fibonacci</li>
+<li>File parsing</li>
+</ul>
+<p><strong>When not to:</strong></p>
+<ul>
+<li>Functions with side effects (plotting, writing files)</li>
+<li>Functions whose inputs are large or unique every time (the cache grows without bound)</li>
+<li>Functions that depend on external state (database contents, system time)</li>
+</ul>
+<p>Memoization trades memory for speed, and it only pays off when inputs recur.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -861,7 +874,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-function-operators" class="level2" data-number="20.5">
 <h2 data-number="20.5" class="anchored" data-anchor-id="sec-function-operators"><span class="header-section-number">20.5</span> Function operators</h2>
 <p>What do you do when a function might fail on some inputs, but you need to apply it to hundreds of values and cannot afford to let one error kill the whole pipeline? You could wrap every call in <code>tryCatch</code>. Or you could wrap the function itself once, producing a new function that handles errors gracefully everywhere it is called.</p>
-<p>A function operator takes a function as input and returns a modified function as output. Like a factory, but the raw material is a function rather than a number or string. This pattern is called a “decorator” in Python (where <code>@decorator</code> syntax makes it first-class) and appeared in the Gang of Four design patterns book (1994) as the Decorator Pattern. R has no <code>@</code>-syntax, but <code>safely()</code>, <code>memoise()</code>, and <code>with_logging()</code> are all decorators: they modify behavior by wrapping, without changing the original.</p>
+<p>A function operator takes a function as input and returns a modified function as output. Like a factory, but the raw material is a function rather than a number or string.</p>
 <p><code>safely()</code> wraps a function so it never errors, returning instead a list with <code>$result</code> and <code>$error</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
@@ -880,6 +893,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $error</span></span>
 <span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;simpleError in .f(...): non-numeric argument to mathematical function&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p>This wrapping is called a <em>decorator</em> in Python (where <code>@decorator</code> syntax makes it first-class) and appeared in the Gang of Four design patterns book (1994). R has no <code>@</code>-syntax, but <code>safely()</code>, <code>memoise()</code>, and <code>with_logging()</code> are all decorators: they modify behavior by wrapping, without changing the original.</p>
 <p><code>possibly()</code> is simpler: it returns a default value on error:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>careful_log <span class="ot">&lt;-</span> <span class="fu">possibly</span>(log, <span class="at">otherwise =</span> <span class="cn">NA</span>)</span>

@@ -655,11 +655,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>So now you can keep rows and pick columns. What you cannot yet do is create something that was not there before. <code>mutate()</code> adds new columns while the originals stay untouched — the same functor pattern from <a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>: apply a function inside a container, get back the same container with different contents. There, the container was a vector; here it is a data frame with 344 rows. You can now keep rows, pick columns, and compute new values from old ones. One operation remains: collapsing many rows into few.</p>
 <p>Are Gentoo penguins heavier than Adelie penguins? The <code>penguins</code> data has the answer, but getting there means filtering rows, picking columns, computing a mean, and grouping by species. Every data analysis you will ever write is some arrangement of those same moves, and the question that shapes this chapter is: what is the smallest set of operations that covers all of them?</p>
 <section id="sec-verbs-for-data" class="level2" data-number="14.1">
 <h2 data-number="14.1" class="anchored" data-anchor-id="sec-verbs-for-data"><span class="header-section-number">14.1</span> The idea: verbs for data</h2>
-<p>A dplyr verb takes a data frame and returns a data frame. The data frame goes in first, the result comes out the same shape, and nothing else changes. Five verbs cover most of what you need:</p>
+<p>A dplyr verb takes a data frame and returns a data frame: it goes in first, comes out the same shape, and nothing else changes. Five verbs cover most of what you need:</p>
 <ul>
 <li><code>filter()</code> keeps rows that match a condition.</li>
 <li><code>select()</code> picks columns by name.</li>
@@ -667,25 +666,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>summarise()</code> collapses rows into a summary.</li>
 <li><code>arrange()</code> reorders rows.</li>
 </ul>
-<p>You compose them for complex transformations (via pipes, <a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>), but each one does exactly one thing. A dplyr pipeline is function composition: each verb transforms a data frame and passes it to the next, the same composition from lambda calculus, (g ∘ f)(x) = g(f(x)), applied to tables instead of numbers.</p>
-<p>These verbs did not come from nowhere. Edgar Codd’s 1970 paper defined a <em>relational algebra</em>: a small set of operations on tables where every operation takes a table in and returns a table out. Restriction (keep rows), projection (keep columns), extension (add computed columns), aggregation (collapse groups). IBM resisted — they had a competing database product (IMS) — but the composability was too useful, and by the 1980s relational databases had won.</p>
+<p>You compose them for complex transformations (via pipes, <a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>), but each one does exactly one thing.</p>
+<p>These verbs did not come from nowhere. Edgar Codd’s 1970 paper defined a <em>relational algebra</em>: a small set of operations on tables where every operation takes a table in and returns a table out, among them restriction (keep rows) and projection (keep columns). IBM resisted at first, because it had a competing database product called IMS. The composability was too useful, and by the 1980s relational databases had won.</p>
 <p>dplyr is Codd’s algebra with friendlier names. The same ideas appear in SQL, pandas, and data.table because the operations are the same; only the syntax differs. <code>arrange()</code> is the one exception — ordering has no relational equivalent, but you need it for display.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     filter, lag</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: package 'palmerpenguins' was built under R version 4.6.1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     filter, lag</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>penguins</code> data frame (loaded by <code>palmerpenguins</code>) has 344 rows and 8 columns: species, island, bill measurements, flipper length, body mass, sex, and year. Every example in this chapter uses it.</p>
 <div class="cell">
@@ -733,7 +733,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(penguins, species <span class="sc">==</span> <span class="st">"Adelie"</span>, body_mass_g <span class="sc">&gt;</span> <span class="dv">4000</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This keeps only Adelie penguins heavier than 4000 grams. Comma means “and.” You can also write <code>&amp;</code> explicitly, but the comma is cleaner.</p>
+<p>This keeps only Adelie penguins heavier than 4000 grams. You can also write <code>&amp;</code> explicitly, but the comma is cleaner.</p>
 <p>For OR, use <code>|</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(penguins, species <span class="sc">==</span> <span class="st">"Adelie"</span> <span class="sc">|</span> species <span class="sc">==</span> <span class="st">"Chinstrap"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -927,7 +927,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 Gentoo        5076.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>summarise()</code> applied <code>mean()</code> within each group and returned one row per species.</p>
-<p>Compare the two calls. Without <code>group_by()</code>, <code>summarise()</code> collapsed everything into a single row — one mean, one answer. With <code>group_by(species)</code>, the same verb produced three rows, one per species, without any change to the <code>summarise()</code> call itself. The column you group by acts as a partitioning function: it splits the data into subsets, and <code>summarise()</code> runs independently inside each one. SQL spells this <code>GROUP BY</code>; Spark uses explicit partitioning; in functional programming the same idea appears as <code>foldByKey</code>, where a reduce operation runs per partition rather than globally. The underlying pattern — an aggregation function paired with a partitioning structure — is the same across all of them. What makes dplyr’s version distinctive is that the partition is invisible metadata attached to the data frame — <code>group_by()</code> changes nothing you can see in a printout, but it changes everything <code>summarise()</code> does. That silent metadata is powerful, and it is also the source of the most common grouping bugs.</p>
+<p>Compare the two calls. Without <code>group_by()</code>, <code>summarise()</code> collapsed everything into a single row — one mean, one answer. With <code>group_by(species)</code>, the same verb produced three rows, one per species, without any change to the <code>summarise()</code> call itself. The column you group by acts as a partitioning function: it splits the data into subsets, and <code>summarise()</code> runs independently inside each one.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Grouping in other languages
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>SQL spells this <code>GROUP BY</code>; Spark uses explicit partitioning; in functional programming the same idea appears as <code>foldByKey</code>, where a reduce operation runs per partition rather than globally. The underlying pattern — an aggregation function paired with a partitioning structure — is the same across all of them.</p>
+</div>
+</div>
+</div>
+<p>What makes dplyr’s version distinctive is that the partition is invisible metadata attached to the data frame — <code>group_by()</code> changes nothing you can see in a printout, but it changes everything <code>summarise()</code> does. That silent metadata is powerful, and it is also the source of the most common grouping bugs.</p>
 <p>You can group by multiple variables:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(</span>
@@ -1171,7 +1188,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>Call <code>show_query()</code> on a database-backed tibble to see the translation directly.</p>
-<p>The reason dplyr pipelines compose so cleanly is that every verb has the same type signature: data frame in, data frame out, column structure preserved. This is the same monoid pattern from <a href="ch04-vectors.html#sec-no-scalars" class="quarto-xref"><span>Section 4.1</span></a>: an associative operation (verb composition) with an identity element (a verb that returns the data frame unchanged). Compose any sequence of dplyr verbs and the result is still a data frame.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Verb composition is a monoid
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>A dplyr pipeline is function composition: each verb transforms a data frame and passes it to the next, the same composition from lambda calculus, (g ∘ f)(x) = g(f(x)), applied to tables instead of numbers. This is the same monoid pattern from <a href="ch04-vectors.html#sec-no-scalars" class="quarto-xref"><span>Section 4.1</span></a>: an associative operation (verb composition) with an identity element (a verb that returns the data frame unchanged). Compose any sequence of dplyr verbs and the result is still a data frame.</p>
+</div>
+</div>
+</div>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">

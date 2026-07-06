@@ -28,9 +28,9 @@ cube(5)
 
 When you call `power(2)`, R creates an execution environment where `exponent` is 2, then returns an anonymous function that closes over that environment. `square` remembers `exponent = 2` forever; `cube` remembers `exponent = 3`. Same logic, different parameters. The factory produces a *family* of related functions, and each member of that family carries its own private copy of the parameter that distinguishes it from its siblings.
 
-This is exactly `make_adder` from @sec-functions-returning-functions, with exponentiation instead of addition. That section introduced the idea without naming it. The name is *function factory*, and the functions it produces are *closures*.
+The name for this pattern is *function factory*, and the functions it produces are *closures*.
 
-Function factories are *partial application*\index{partial application} made explicit: `power(2)` fixes one argument of a two-argument operation and returns a function of the remaining argument. In lambda calculus, `power` is `λe. λx. x^e`; applying it to 2 gives `λx. x^2`. This decomposition of multi-argument functions into chains of single-argument functions is called *currying* (Schonfinkel 1924, Curry 1958). In Haskell, all functions are curried by default: `add 5 3` is really `(add 5) 3`, where `add 5` returns a function. R's function factories are manual currying. In combinatory logic, the simplest factory is the K combinator (`K = λx.λy. x`): it takes a value and returns a function that always produces that value, ignoring its argument. `make_formatter("$")` is K applied: it captures `"$"` and returns a function that ignores everything except its argument.
+Function factories are *partial application*\index{partial application} made explicit: `power(2)` fixes one argument of a two-argument operation and returns a function of the remaining argument. In lambda calculus, `power` is `λe. λx. x^e`; applying it to 2 gives `λx. x^2`. This decomposition of multi-argument functions into chains of single-argument functions is called *currying* (Schonfinkel 1924, Curry 1958). In Haskell, all functions are curried by default: `add 5 3` is really `(add 5) 3`, where `add 5` returns a function. R's function factories are manual currying.
 
 
 ### Exercises {.unnumbered}
@@ -175,7 +175,7 @@ bc0(c(1, 2, 4))
 
 Notice something subtle about that `if` statement: it runs once, when the factory is called, not every time the produced function is called. The factory picks the right formula at creation time and returns a function that does no branching at all.
 
-This is staged computation: you separate the cost of *choosing* behavior from the cost of *running* behavior. The `if` branch evaluates once, during construction; the produced function evaluates many times, during use, and pays nothing for the choice that was already made. The same pattern drives much of ggplot2. When you call `scale_color_brewer(palette = "Set1")`, the factory runs once at plot-build time, baking the palette into a function that maps data values to colors. If it re-evaluated the palette choice every time it colored a point, the plot would slow to a crawl on large datasets. ggplot2 gains its speed from that separation: the decision moves from the data path (runs per point) to the construction path (runs once). Every factory you write makes a version of the same trade. The returned function carries less weight because the decision has already been made, baked into the closure's environment at creation time, and never revisited.
+This is staged computation: you separate the cost of *choosing* behavior from the cost of *running* behavior. The `if` branch evaluates once, during construction; the produced function evaluates many times, during use, and pays nothing for the choice that was already made. The same pattern drives much of ggplot2. When you call `scale_color_brewer(palette = "Set1")`, the factory runs once at plot-build time, baking the palette into a function that maps data values to colors. If it re-evaluated the palette choice every time it colored a point, the plot would slow to a crawl on large datasets. ggplot2 gains its speed from that separation: the decision moves from the data path (runs per point) to the construction path (runs once). Every factory you write makes a version of the same trade.
 
 The next section starts from the other direction: instead of building a function from parameters, you take a function that already exists and modify its behavior.
 
@@ -215,9 +215,21 @@ The first call takes about a second. The second is instant, because `memoise` re
 forget(fast_square)
 ```
 
-**When to memoize:** expensive computations with repeated inputs, API calls, simulations, recursive algorithms like Fibonacci, file parsing.
+**When to memoize:**
 
-**When not to:** functions with side effects (plotting, writing files), functions whose inputs are large or unique every time (the cache grows without bound), functions that depend on external state (database contents, system time). Memoization trades memory for speed, and it only pays off when inputs recur.
+- Expensive computations with repeated inputs
+- API calls
+- Simulations
+- Recursive algorithms like Fibonacci
+- File parsing
+
+**When not to:**
+
+- Functions with side effects (plotting, writing files)
+- Functions whose inputs are large or unique every time (the cache grows without bound)
+- Functions that depend on external state (database contents, system time)
+
+Memoization trades memory for speed, and it only pays off when inputs recur.
 
 
 ### Exercises {.unnumbered}
@@ -230,7 +242,7 @@ forget(fast_square)
 
 What do you do when a function might fail on some inputs, but you need to apply it to hundreds of values and cannot afford to let one error kill the whole pipeline? You could wrap every call in `tryCatch`. Or you could wrap the function itself once, producing a new function that handles errors gracefully everywhere it is called.
 
-A function operator takes a function as input and returns a modified function as output.\index{adverb}\index{error handling} Like a factory, but the raw material is a function rather than a number or string. This pattern is called a "decorator" in Python (where `@decorator` syntax makes it first-class) and appeared in the Gang of Four design patterns book (1994) as the Decorator Pattern. R has no `@`-syntax, but `safely()`, `memoise()`, and `with_logging()` are all decorators: they modify behavior by wrapping, without changing the original.
+A function operator takes a function as input and returns a modified function as output.\index{adverb}\index{error handling} Like a factory, but the raw material is a function rather than a number or string.
 
 `safely()`\index{safely()} wraps a function so it never errors, returning instead a list with `$result` and `$error`:
 
@@ -242,6 +254,8 @@ safe_log <- safely(log)
 safe_log(10)
 safe_log("a")
 ```
+
+This wrapping is called a *decorator* in Python (where `@decorator` syntax makes it first-class) and appeared in the Gang of Four design patterns book (1994). R has no `@`-syntax, but `safely()`, `memoise()`, and `with_logging()` are all decorators: they modify behavior by wrapping, without changing the original.
 
 `possibly()`\index{possibly()} is simpler: it returns a default value on error:
 

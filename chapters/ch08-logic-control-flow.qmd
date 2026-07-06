@@ -20,7 +20,13 @@ length(x)
 
 Every comparison you write, every filter you apply, every conditional check you run produces one of these vectors. The trick from @sec-coercion is what makes expressions like `sum(x > 5)` work: `x > 5` produces a logical vector, `sum()` coerces `TRUE` to 1 and `FALSE` to 0, and suddenly you are counting how many elements pass the test without writing a single loop.
 
-A logical value is one of exactly two things: `TRUE` or `FALSE`. No third option, no grey area, no maybe. In type theory this is a *sum type* (also called a tagged union or variant): a type defined by listing its variants, so that `Bool = TRUE | FALSE`. Contrast this with a data frame row, which combines fields with AND (a penguin has a species AND a mass AND a flipper length); a sum type chooses one variant with OR. You will see sum types surface again when factors define a fixed set of levels (@sec-why-factors) and when S3 dispatch selects a method based on class (@sec-s3-basics). Where product types say "all of these together," sum types say "exactly one of these." What happens, then, when someone overrides one of the two options?
+A logical value is one of exactly two things: `TRUE` or `FALSE`. No third option, no grey area, no maybe. What happens, then, when someone overrides one of the two options?
+
+::: {.callout-note collapse="true"}
+## Sum types
+
+In type theory this is a *sum type* (also called a tagged union or variant): a type defined by listing its variants, so that `Bool = TRUE | FALSE`. Contrast this with a data frame row, which combines fields with AND (a penguin has a species AND a mass AND a flipper length); a sum type chooses one variant with OR. You will see sum types surface again when factors define a fixed set of levels (@sec-why-factors) and when S3 dispatch selects a method based on class (@sec-s3-basics). Where product types say "all of these together," sum types say "exactly one of these."
+:::
 
 R has `T` and `F` as shortcuts for `TRUE` and `FALSE`. Do not use them.
 
@@ -160,9 +166,7 @@ You won't need `xor()` often, but it exists. These four operations, `&`, `|`, `!
 ::: {.callout-note collapse="true"}
 ## From logic gates to circuits
 
-The `&` you typed a moment ago to combine filter conditions is the same AND operation that electrical engineers wire into silicon, described by the same truth tables George Boole formalized in 1854. In his 1937 master's thesis, Claude Shannon\index{Shannon, Claude} showed that these truth tables could be implemented with electrical switches, and that insight bridged the gap between abstract algebra and physical circuitry. Every digital circuit is built from these operations.
-
-The `&`, `|`, `!`, and `xor()` you use in R correspond to physical circuits called *logic gates* inside every processor.
+The `&` you typed a moment ago to combine filter conditions is the same AND operation that electrical engineers wire into silicon. In his 1937 master's thesis, Claude Shannon\index{Shannon, Claude} showed that these truth tables could be implemented with electrical switches, and that insight bridged the gap between abstract algebra and physical circuitry. Every digital circuit is built from these operations.
 
 An AND gate has two input wires and one output wire; the output is 1 (high voltage) only when both inputs are 1. An OR gate outputs 1 when at least one input is 1. A NOT gate (also called an inverter) has one input and flips it: 1 becomes 0, 0 becomes 1. An XOR gate outputs 1 when the inputs differ.
 
@@ -175,7 +179,7 @@ A  B  out        A  B  out        A  B  out        A  out
 1  1   1         1  1   1         1  1   0
 ```
 
-These are the same truth tables as R's `&`, `|`, `xor()`, and `!`. When you write `TRUE & FALSE` in R, the CPU evaluates it using an AND gate (or a chain of them, for vectors). When you write `TRUE & FALSE` in R, the CPU evaluates the same Boolean operation using an AND gate.
+These are the same truth tables as R's `&`, `|`, `xor()`, and `!`. When you write `TRUE & FALSE` in R, the CPU evaluates it using an AND gate (or a chain of them, for vectors).
 
 Everything a computer does, from adding numbers to rendering video, is built from combinations of these four gates. We can design a circuit the way electrical engineers do: start with inputs and outputs, build a truth table, find the minimal Boolean expression, then wire the gates.
 :::
@@ -392,7 +396,7 @@ classify(-2)
 
 R has no `elif` keyword; you chain conditions with `else if`, which is just an `else` followed by another `if`. Long chains get hard to read, and when you have more than two or three branches, consider `switch()` (@sec-switch) or `dplyr::case_when()` (@sec-vectorized-conditionals).
 
-The connection to lambda calculus runs deeper than it might seem. In @sec-recursion, we saw Church's encoding of booleans, where `TRUE = λx. λy. x` (pick the first) and `FALSE = λx. λy. y` (pick the second). R's `if/else` does the same thing: it takes a condition and two branches, and returns whichever branch the condition selects, just as Church's booleans select an argument. The Curry-Howard correspondence takes this further, mapping logical propositions to types and proofs to programs; under this lens, `TRUE` and `FALSE` are proof and refutation, and an `if/else` expression is a case analysis on evidence. Typed functional languages like Haskell make this connection explicit; R keeps it implicit, but the structure is the same.
+The connection to lambda calculus runs deeper than it might seem. In @sec-recursion, we saw Church's encoding of booleans, where `TRUE = λx. λy. x` (pick the first) and `FALSE = λx. λy. y` (pick the second). R's `if/else` does the same thing: it takes a condition and two branches, and returns whichever branch the condition selects, just as Church's booleans select an argument.
 
 ```{r}
 #| error: true

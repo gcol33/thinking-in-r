@@ -1,4 +1,3 @@
-So you can name values and use them later. But what exactly counts as an expression?
 # Expressions and names {#sec-expressions-names}
 
 ```{r}
@@ -28,7 +27,7 @@ When you open R, you see a prompt: `>`. R is waiting. When you type something an
 
 This is called a REPL\index{REPL} (Read-Eval-Print Loop). There is no "compile" step, no "run" button; you type an expression, you see its value immediately.
 
-In compiled languages (C, Java, and Go, which Google created in 2009 because even their best engineers were waiting too long for C++ to compile), you write the whole program first, then a compiler translates it into machine code before anything runs. R is *interpreted*: it reads and evaluates one expression at a time, immediately. Python and JavaScript work the same way. The tradeoff is speed: a compiler can optimize the whole program in advance, so compiled code runs faster. But interpreted languages let you experiment and see results as you go, which is why they dominate in data analysis.
+In compiled languages (C, Java, Go), you write the whole program first, then a compiler translates it into machine code before anything runs. R is *interpreted*: it reads and evaluates one expression at a time, immediately. Python and JavaScript work the same way. The tradeoff is speed: a compiler can optimize the whole program in advance, so compiled code runs faster. But interpreted languages let you experiment and see results as you go, which is why they dominate in data analysis.
 
 In practice, the line between compiled and interpreted is blurry. R itself is written in C, and many R functions are thin wrappers around compiled C or Fortran code. When you type `sum(x)`, the actual arithmetic happens in compiled machine code underneath. You get the interactive interface; the heavy computation still runs at full speed.
 
@@ -102,7 +101,7 @@ x
 y
 ```
 
-This "names are labels, not containers" model is a consequence of R's functional design. Values in R are immutable\index{referential transparency}; when you "change" something, R creates a new value and moves the name to point at it. The old value stays untouched (and gets cleaned up automatically when nothing points to it anymore; R's *garbage collector*\index{garbage collection} periodically scans memory and reclaims anything that no name points to anymore, a mechanism R inherited from Lisp (@sec-lisp); @sec-stack-and-heap covers how this works at the implementation level). If names were containers, you would need to worry about two containers sharing the same contents and one of them mutating behind your back. With labels and immutable values, that problem vanishes.
+This "names are labels, not containers" model is a consequence of R's functional design. Values in R are immutable\index{referential transparency}; when you "change" something, R creates a new value and moves the name to point at it. The old value stays untouched, and gets cleaned up automatically when nothing points to it anymore. R's *garbage collector*\index{garbage collection} periodically scans memory and reclaims anything that no name points to, a mechanism R inherited from Lisp (@sec-lisp); @sec-stack-and-heap covers how this works at the implementation level. If names were containers, you would need to worry about two containers sharing the same contents and one of them mutating behind your back. With labels and immutable values, that problem vanishes.
 
 Think about what vanishes with it. In C, you learn to watch for *aliasing*: two pointers to the same block of memory, one of them writing while the other reads stale data. In Python, you learn that `a = b` for a list means both names see the same mutable object, and modifying through one surprises anyone holding the other. Entire chapters of software engineering textbooks are devoted to defensive copying, synchronization, and ownership protocols — machinery whose sole purpose is to keep shared mutable state from corrupting your program. R sidesteps all of it by removing the condition that makes the checks necessary. Values do not change, so there is nothing to corrupt, no mutable state for two references to fight over. That category of bugs\index{side effect} — aliasing, stale reads, defensive-copy failures — is structurally absent, which frees you to think about the problem you sat down to solve instead of the bookkeeping.
 
@@ -141,7 +140,7 @@ result <- if (x > 0) "positive" else "non-positive"
 result
 ```
 
-You can store the result of `if/else` in a name because `if/else` *is* an expression that evaluates to a value, just like `1 + 1`. In Python or C, you cannot do this because `if` is a statement that performs an action rather than producing a result.
+You can store the result of `if/else` in a name because `if/else` *is* an expression that evaluates to a value, just like `1 + 1`.
 
 A block of code in curly braces `{ }` returns the value of its last expression:
 
@@ -226,7 +225,7 @@ So is `<-`:
 w
 ```
 
-Everything that happens in R is a function call. When you write `3 + 5`, R translates it to `` `+`(3, 5) ``: a function called `+`, applied to two arguments. There is no special syntax for arithmetic, no operators baked into the language at a level below functions. `+` is a function, `3 + 5` is function application, and in the lambda calculus the only thing you can do is apply a function to an argument. R took that idea literally.
+Everything that happens in R is a function call. When you write `3 + 5`, R translates it to `` `+`(3, 5) ``: a function called `+`, applied to two arguments. There is no special syntax for arithmetic, no operators baked into the language at a level below functions. In the lambda calculus, the only thing you can do is apply a function to an argument. R took that idea literally.
 
 
 ### Exercises {.unnumbered}
@@ -268,4 +267,4 @@ Try this:
 environment()
 ```
 
-R returns `<environment: R_GlobalEnv>`. The workspace is an object, the same kind of thing as the numbers and strings you have been binding to names. You can pass it to `ls.str()` and get back every binding in it. The container that holds your names is itself a value with a name.
+R returns `<environment: R_GlobalEnv>`. You can pass it to `ls.str()` and get back every binding in it. The container that holds your names is itself a value with a name.

@@ -9,9 +9,9 @@ You have written a function that computes a rate from two columns of a data fram
 
 Every line of code between the bad input and the discovery was wasted work. The function that produced the `NA` could have stopped the pipeline in the first line, with a message that said exactly what went wrong. It didn't, because nobody wrote that check. This was the problem a young man faced in the 1980s while working at Électricité de France, where a wrong number in a pipeline could mean a miscalculated load on a reactor.
 
-After nine years of watching functions accept garbage and hand it downstream, he left and decided to build a programming language where that could not happen. His name was Bertrand Meyer\index{Meyer, Bertrand}; the language he was building was called Eiffel\index{Eiffel (language)}, which was defined by one central idea he called *Design by Contract*\index{Design by Contract}. It was simple: every function states a precondition\index{precondition} (what must be true before it runs), a postcondition\index{postcondition} (what it guarantees after it runs), and an invariant\index{invariant} (what stays true throughout). If a precondition fails, the caller broke the deal. If a postcondition fails, the function broke it. Either way, execution stops with a message that names the broken obligation.
+After nine years of watching functions accept garbage and hand it downstream, he left and decided to build a programming language where that could not happen. His name was Bertrand Meyer\index{Meyer, Bertrand}; the language he was building was called Eiffel\index{Eiffel (language)}, which was defined by one central idea he called *Design by Contract*\index{Design by Contract}. It was simple: every function states a precondition\index{precondition} (what must be true before it runs) and a postcondition\index{postcondition} (what it guarantees after it runs). It also states an invariant\index{invariant}: what stays true throughout. If a precondition fails, the caller broke the deal. If a postcondition fails, the function broke it. Either way, execution stops with a message that names the broken obligation.
 
-R has no contract\index{contract} syntax. But `stop()` at the top of a function is a precondition. `stopifnot()`\index{stopifnot()} before the return value is a postcondition. The validator in a constructor/validator/helper pattern (@sec-s3-classes-properly) is a class invariant. The tools are manual; the discipline is the same. State your assumptions, halt the moment one is violated, and make the error message say what went wrong.
+R has no contract\index{contract} syntax. But `stop()` at the top of a function is a precondition, `stopifnot()`\index{stopifnot()} before the return value is a postcondition, and the validator in a constructor/validator/helper pattern (@sec-s3-classes-properly) is a class invariant. The tools are manual; the discipline is the same. State your assumptions, halt the moment one is violated, and make the error message say what went wrong.
 
 
 ## The case for validation {#sec-case-for-validation}
@@ -47,14 +47,16 @@ Check inputs at the boundary, where data enters your function, not in the guts w
 
 R has no static types, no compiler, no ahead-of-time guarantees. Every precondition you want enforced must be enforced by code you write. That sounds like a burden, but it has an upside: every assumption is visible in the function body when you revisit it six months later. `if (!is.numeric(price)) stop(...)` is verbose, but it is also impossible to miss.
 
-The Ariane 5 rocket self-destructed 37 seconds after launch in 1996 because a 64-bit float was silently converted to a 16-bit integer, overflowing without a check. A single `stop()` equivalent would have saved a $370 million rocket. A 2003 NASA study found that 40% of aerospace software failures came from *missing* code: checks the programmers never wrote. When your function returns `NA` instead of erroring on bad input, you are in the same category of silent failure. `stop()` with a clear message forces the caller to deal with the problem immediately, before the bad value propagates through fifty lines of downstream code.
+The Ariane 5 rocket self-destructed 37 seconds after launch in 1996 because a 64-bit float was silently converted to a 16-bit integer, overflowing without a check. A single `stop()` equivalent would have saved a $370 million rocket.
+
+A 2003 NASA study found that 40% of aerospace software failures came from *missing* code: checks the programmers never wrote. When your function returns `NA` instead of erroring on bad input, you are in the same category of silent failure.
+
+`stop()` with a clear message forces the caller to deal with the problem immediately, before the bad value propagates through fifty lines of downstream code.
 
 ::: {.callout-note collapse="true"}
 ## The type theory connection
 A `stop()`\index{assertion} that fires on wrong input is a runtime proof by contradiction: "if this value were numeric, execution would continue; it isn't, so we halt." The Curry-Howard correspondence formalizes this: types are propositions, programs are proofs, and a function with signature `A -> B` is a proof that "if A then B." Dependently typed languages (Idris, Agda) encode preconditions in the type system itself, making runtime `stop()` calls unnecessary. R sits at the opposite end of that spectrum. The question both approaches answer is the same: "what must hold for this computation to be sound?"
 :::
-
-(This is about functions you write for yourself and for others, not about validating user input in a Shiny app.)
 
 
 ## `stop()`, `warning()`, and `message()` {#sec-stop-warning-message}
@@ -298,9 +300,9 @@ result <- try(log("a"), silent = TRUE)
 class(result)
 ```
 
-`try()` is convenient for quick scripts, but `tryCatch()` gives you more control.
+`try()` is convenient for quick scripts, but `tryCatch()` lets you run a handler and catch warnings and messages, not just errors.
 
-For functional programming, `purrr::safely()` and `purrr::possibly()` wrap a function to make it error-tolerant. Together with `tryCatch()`, these form R's condition\index{condition} handling system. `safely()` returns a list with `$result` and `$error`, while `possibly()` returns a default value on failure. Both are designed for use with `map()` when applying a function that might fail on some elements:
+For functional programming, `purrr::safely()` wraps a function to make it error-tolerant. It returns a list with `$result` and `$error`, designed for use with `map()` when applying a function that might fail on some elements:
 
 ```{r}
 safe_log <- purrr::safely(log)
@@ -308,9 +310,11 @@ safe_log(10)
 safe_log("a")
 ```
 
+`purrr::possibly()` is a variation: it returns a default value on failure instead of the `$result`/`$error` list. Together with `tryCatch()`, these form R's condition\index{condition} handling system.
+
 Erlang (1986, Ericsson) takes this philosophy to its extreme: instead of preventing crashes with validation, Erlang designs *supervisors* that detect and restart failed processes. Ericsson's telecom switches achieved 99.9999999% uptime using this "let it crash" philosophy, and R's `tryCatch()` is a mild version of the same idea. Both philosophies agree on the essential point: silent failures are the real enemy. But what does a disciplined version of "catch and recover" look like as a data structure?
 
-In functional programming, the answer is the *Either* type (or *Result* in Rust): a computation either succeeds with a value or fails with an error. `tryCatch` runs the expression; if it succeeds, you get the result; if it throws, you get the error handler's output. This is the same "value or absence" logic as `NA` propagation (@sec-missing-values), but for errors instead of missing data. `NA` implements Maybe (present or absent); `tryCatch` implements Either (success or failure). Both thread the possibility of failure through a computation without crashing. Haskell and Rust make these patterns explicit with monadic types; R keeps them implicit in `NA` semantics and `tryCatch` mechanics, but the underlying structure is identical.
+In functional programming, the answer is the *Either* type (or *Result* in Rust): a computation either succeeds with a value or fails with an error. `tryCatch` runs the expression; if it succeeds, you get the result; if it throws, you get the error handler's output.
 
 ::: callout-tip
 ## Opinion
@@ -364,7 +368,7 @@ The `"x"` prefix marks the main error; `"i"` marks informational context. `{.arg
 
 If you have ever wondered why tidyverse error messages look so polished, with colored bullets and formatted argument names, `cli::cli_abort()` is the answer. You don't need cli-formatted errors in scripts, but knowing they exist helps you read the error messages that tidyverse packages produce.
 
-`rlang` also provides `rlang::arg_match()`, a stricter alternative to `match.arg()` that produces tidyverse-styled error messages and does *not* support partial matching, which makes it safer for package APIs where partial matching can cause subtle bugs.
+`rlang` also provides `rlang::arg_match()`, a stricter alternative to `match.arg()`. It produces tidyverse-styled error messages and does *not* support partial matching, which makes it safer for package APIs where partial matching can cause subtle bugs.
 
 
 ### Exercises {.unnumbered}

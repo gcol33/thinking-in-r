@@ -648,7 +648,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Pipes give you composition. <a href="ch19-iteration-without-loops.html#sec-purrr-map" class="quarto-xref"><span>Section 19.3</span></a> asks the next question: how do you apply the same transformation to many things at once?</p>
 <p>Consider a line of code that selects columns, filters rows, and sorts the result. Written with nested function calls, you read it inside-out: the first operation you want is buried deepest, and by the third level of parentheses you are counting closing parens by hand. The order you write the code runs backwards from the order you think about the problem.</p>
 <section id="sec-nesting-problem" class="level2" data-number="15.1">
 <h2 data-number="15.1" class="anchored" data-anchor-id="sec-nesting-problem"><span class="header-section-number">15.1</span> The problem with nesting</h2>
@@ -678,43 +677,59 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="15.2" class="anchored" data-anchor-id="sec-pipe"><span class="header-section-number">15.2</span> The pipe: <code>|&gt;</code></h2>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     filter, lag</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(species, body_mass_g) <span class="sc">|&gt;</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Adelie"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(body_mass_g)</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 152 × 2</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    species body_mass_g</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    &lt;fct&gt;         &lt;int&gt;</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1 Adelie         2850</span></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  2 Adelie         2850</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3 Adelie         2900</span></span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  4 Adelie         2900</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  5 Adelie         2900</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  6 Adelie         2925</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  7 Adelie         2975</span></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  8 Adelie         3000</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  9 Adelie         3000</span></span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 10 Adelie         3050</span></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # ℹ 142 more rows</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: package 'palmerpenguins' was built under R version 4.6.1</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     filter, lag</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(species, body_mass_g) <span class="sc">|&gt;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Adelie"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(body_mass_g)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 152 × 2</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    species body_mass_g</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    &lt;fct&gt;         &lt;int&gt;</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1 Adelie         2850</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  2 Adelie         2850</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3 Adelie         2900</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  4 Adelie         2900</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  5 Adelie         2900</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  6 Adelie         2925</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  7 Adelie         2975</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  8 Adelie         3000</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  9 Adelie         3000</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 10 Adelie         3050</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # ℹ 142 more rows</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Read it top to bottom: take <code>penguins</code>, select two columns, keep Adelie rows, sort by mass. Each line transforms the result of the previous one, and the reading order matches the execution order.</p>
 <p><code>x |&gt; f()</code> is syntactic sugar for <code>f(x)</code>. R literally rewrites it before the code runs. Chain two and <code>x |&gt; f() |&gt; g()</code> becomes <code>g(f(x))</code>, which is (g ∘ f)(x) written left-to-right instead of inside-out. That is function composition from <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>, just in friendlier notation.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The pipe is a monoid
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <p>This is another monoid (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>): <code>∘</code> is the operation, the identity function <code>\(x) x</code> is the identity element, and chaining any number of verbs always gives you back a data frame. The same structure shows up again with <code>Reduce()</code> in <a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a>.</p>
+</div>
+</div>
+</div>
 <p>The native pipe <code>|&gt;</code> was introduced in R 4.1 (2021) and is built into the language, requiring no packages. The idea, however, is older than R itself: Doug McIlroy proposed the pipe concept for Unix in 1964, writing “we should have some ways of coupling programs like garden hose.” The <code>|</code> operator in the Unix shell chains programs, each reading from standard input and writing to standard output; R’s <code>|&gt;</code> is the same idea applied to data frames, where each dplyr verb takes a data frame and returns one.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -755,7 +770,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 Adelie        3701.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>“Take penguins, remove NAs, group by species, compute mean mass, sort descending.” The code reads like the sentence.</p>
-<p>Build incrementally: run the first line, check the output, add the next step, check again. You grow a pipeline one verb at a time, inspecting the intermediate data frame at each stage, and when the result looks right the pipeline is done.</p>
+<p>Build incrementally: run the first line, check the output, add the next step, check again.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(flipper_length_mm), <span class="sc">!</span><span class="fu">is.na</span>(body_mass_g)) <span class="sc">|&gt;</span></span>
@@ -775,7 +790,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 Chinstrap Dream        68         196.     3733.</span></span>
 <span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 Gentoo    Biscoe      123         217.     5076.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Each verb does one thing: <code>filter</code> removes rows, <code>group_by</code> sets the grouping, <code>summarise</code> collapses groups to summaries, <code>arrange</code> sorts. You compose them into a pipeline the same way you compose sentences into a paragraph, one idea at a time, in order. But what happens when you want to reuse a pipeline across different data sets, or embed one inside a larger computation?</p>
+<p>You compose verbs into a pipeline the same way you compose sentences into a paragraph, one idea at a time, in order. But what happens when you want to reuse a pipeline across different data sets, or embed one inside a larger computation?</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -788,7 +803,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-function-composition" class="level2" data-number="15.4">
 <h2 data-number="15.4" class="anchored" data-anchor-id="sec-function-composition"><span class="header-section-number">15.4</span> Function composition</h2>
 <p>Lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>) is built on applying functions to arguments. Composition is the next step: apply one function, then apply another to the result.</p>
-<p><code>x |&gt; f() |&gt; g()</code> is <code>g(f(x))</code>. In mathematical notation, that is (g . f)(x): the composition of g and f, applied to x. The pipe rewrites composition from inside-out to left-to-right. Nothing else changes.</p>
 <p>This is why dplyr verbs all follow the same contract: take a data frame as the first argument, return a data frame. Functions that follow this contract compose via the pipe; functions that don’t (first argument is a formula, a filename, a model object) require workarounds. The convention exists precisely so that verbs snap together like sections of garden hose.</p>
 <p>Functions are values you can pass around (<a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>), and they are also things you compose. Passing and composing are the two fundamental operations on functions, and together they account for most of what makes R code concise.</p>
 <div class="cell">
@@ -809,7 +823,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Wrapping a pipeline in a function gives the composition a name. <code>clean_and_summarise</code> is a single function built from four composed steps; you can pass it around, store it in a list, or use it inside another pipeline. The pipeline describes the transformation without naming intermediates:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span> <span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Adelie"</span>) <span class="sc">|&gt;</span> <span class="fu">nrow</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Point-free style
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <p>In Haskell, this style is called “point-free” or “tacit” programming, tracing back to combinatory logic (Schönfinkel, 1924): functions are composed without mentioning the data they act on. R’s pipe enables a mild version of this. It isn’t fully point-free (dplyr verbs still reference column names), but the same impulse is at work.</p>
+</div>
+</div>
+</div>
 </section>
 <section id="sec-placeholder" class="level2" data-number="15.5">
 <h2 data-number="15.5" class="anchored" data-anchor-id="sec-placeholder"><span class="header-section-number">15.5</span> The placeholder <code>_</code></h2>
@@ -847,10 +876,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-pipe-comparison" class="level2" data-number="15.6">
 <h2 data-number="15.6" class="anchored" data-anchor-id="sec-pipe-comparison"><span class="header-section-number">15.6</span> <code>|&gt;</code> vs <code>%&gt;%</code></h2>
 <p>The magrittr pipe <code>%&gt;%</code> came first (2014). The native pipe <code>|&gt;</code> arrived in R 4.1 (2021). Both do the same basic thing: insert the left side as the first argument of the right side. The differences are practical.</p>
-<p><code>|&gt;</code> requires parentheses on the right side: <code>x |&gt; sqrt()</code>, not <code>x |&gt; sqrt</code>. It uses <code>_</code> as its placeholder (named argument only, once), while <code>%&gt;%</code> uses <code>.</code> (anywhere, multiple times). The native pipe is faster because it is a syntax transformation: the parser rewrites <code>x |&gt; f()</code> to <code>f(x)</code> before evaluation, whereas <code>%&gt;%</code> is a function call carrying its own overhead. And <code>|&gt;</code> needs no package, while <code>%&gt;%</code> needs magrittr (loaded automatically by the tidyverse).</p>
+<p>The placeholder is the difference that matters most: <code>|&gt;</code> uses <code>_</code> as a named argument, once, while <code>%&gt;%</code> uses <code>.</code> anywhere and any number of times. The rest are smaller. <code>|&gt;</code> requires parentheses on the right side (<code>x |&gt; sqrt()</code>, not <code>x |&gt; sqrt</code>) and needs no package, while <code>%&gt;%</code> needs magrittr (loaded automatically by the tidyverse). The native pipe is also faster: the parser rewrites <code>x |&gt; f()</code> to <code>f(x)</code> before evaluation, whereas <code>%&gt;%</code> is a function call carrying its own overhead.</p>
 <p>The theoretical distinction runs deeper. The base pipe <code>|&gt;</code> is pure composition: (g . f)(x), with no implicit variable and no branching. The magrittr pipe <code>%&gt;%</code> is reminiscent of what Haskell calls <em>Kleisli composition</em>, where you chain functions of the form a -&gt; m b and m is some context (a list, a maybe, an I/O action). The analogy is loose — <code>%&gt;%</code> carries no monadic structure, no <code>return</code>, no bind that satisfies the monad laws — but the shape rhymes: the <code>.</code> pronoun threads the result through, allowing you to refer to it multiple times, branch on it, or pass it to non-first arguments. This is why the following works with <code>%&gt;%</code> but has no direct equivalent with <code>|&gt;</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>x <span class="sc">%&gt;%</span> { <span class="cf">if</span> (<span class="fu">nrow</span>(.) <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="fu">filter</span>(., cond) <span class="cf">else</span> . }</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The magrittr pipe echoes the shape of the monadic bind operator <code>&gt;&gt;=</code> more than it does simple composition — both chain computations while giving a name to the intermediate result — but the resemblance is structural, not formal. If this sounds abstract, think of it concretely: <code>|&gt;</code> is “apply the next function,” while <code>%&gt;%</code> is “apply the next function, and here is a name for what you are working with.” That extra naming power makes <code>%&gt;%</code> more flexible but also more complex, which is precisely why the base pipe chose to omit it.</p>
+<p>If this sounds abstract, think of it concretely: <code>|&gt;</code> is “apply the next function,” while <code>%&gt;%</code> is “apply the next function, and here is a name for what you are working with.” That extra naming power makes <code>%&gt;%</code> more flexible but also more complex, which is precisely why the base pipe chose to omit it.</p>
 <p>Either way, pipes make substitution visible. When you write <code>x |&gt; f() |&gt; g() |&gt; h()</code>, you are watching data flow through a chain of function applications, each one receiving the previous result. The same computation written as <code>h(g(f(x)))</code> hides the substitution order inside nested parentheses — you have to read from the innermost call outward, which reverses the sequence. Lambda calculus is agnostic about direction; <code>(h ∘ g ∘ f)(x)</code> and <code>x |&gt; f |&gt; g |&gt; h</code> denote the same reduction. But human readers are not agnostic. Left-to-right pipelines follow the order in which things actually happen, and that alignment between notation and execution is why pipes took over R code within a few years of magrittr’s release. No new computational power was involved; the same reductions were always available. Pipes made them legible.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># These are equivalent</span></span>

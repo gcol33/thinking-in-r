@@ -28,7 +28,7 @@ Why it breaks:
 - Random seeds not set.
 - Outputs separated from the code that produced them.
 
-The fix is structural, not behavioral. Do not rely on discipline ("I will remember to run script 3 first"); build a system that makes the wrong thing hard. Each tool in this chapter eliminates one failure mode: `here` eliminates path problems, `renv` eliminates version problems, Quarto eliminates the code/output sync problem, `targets` eliminates the run-order problem, and Git eliminates the "which version was it?" problem. The first one costs nothing to adopt.
+The fix is structural, not behavioral. Do not rely on discipline ("I will remember to run script 3 first"); build a system that makes the wrong thing hard. Each tool in this chapter eliminates one failure mode, and the first one costs nothing to adopt.
 
 ::: callout-tip
 ## Opinion
@@ -68,7 +68,7 @@ Raw data is sacred: never modify it. Read it, transform it in code, write output
 
 A common mistake is placing data-cleaning code in a different project from the analysis, so that reproducing the analysis requires finding and running a separate project first. Keep everything in one project, or use `targets` (@sec-targets) to formalize the dependency.
 
-Another common mistake: using `rm(list = ls())` at the top of a script to "clean up." This clears your workspace but does not restart R, so hidden state (loaded packages, modified options, changed working directories) persists. Instead, restart R (Ctrl+Shift+F10 in RStudio) for a true clean slate. Clean paths solve the "where is my file?" problem; but what about the "which version of dplyr was I using?" problem?
+Another common mistake: using `rm(list = ls())` at the top of a script to "clean up." This clears your workspace but does not restart R, so hidden state (loaded packages, modified options, changed working directories) persists. Instead, restart R (Ctrl+Shift+F10 in RStudio) for a true clean slate.
 
 ::: callout-tip
 ## Opinion
@@ -95,18 +95,18 @@ renv::snapshot()   # record exact versions in renv.lock
 renv::restore()    # install exactly the versions in the lockfile
 ```
 
-`renv::init()` creates a private library for this project, isolating your package versions from every other project on your machine. `renv::snapshot()` writes `renv.lock`\index{lockfile}, a JSON file listing every package and its exact version: your dependency manifest, which you should commit to Git. `renv::restore()` reads that lockfile and installs exactly those versions, so a collaborator who clones your repo and runs `renv::restore()` gets the same packages you used.
+`renv::init()` creates a private library for this project, isolating your package versions from every other project on your machine. `renv::snapshot()` writes `renv.lock`\index{lockfile}, a JSON file listing every package and its exact version: your dependency manifest. `renv::restore()` reads that lockfile and installs exactly those versions, so a collaborator who clones your repo and runs `renv::restore()` gets the same packages you used.
 
 The workflow: `init()` once, `snapshot()` after installing or updating packages, commit `renv.lock` to Git. That is all.
 
-renv does not version R itself. If the R version matters, document it; Docker solves this completely (see @sec-reproducibility-stack), but is beyond this book. Should you commit `renv.lock` to Git? Always. It is small (a few KB of JSON), and it is the entire point of renv. Without the lockfile in version control, a collaborator cannot restore your environment. The `renv/` directory itself, which contains the actual installed packages, is typically git-ignored.
+renv does not version R itself. If the R version matters, document it; Docker solves this completely (see @sec-reproducibility-stack), but is beyond this book. The `renv/` directory itself, which contains the actual installed packages, is typically git-ignored.
 
 ::: callout-tip
 ## Opinion
 `renv.lock` is boring. That is the point. Boring is reproducible.
 :::
 
-One practical detail worth knowing: when you switch between projects that use renv, you do not need to do anything special, because each project has its own library and renv activates automatically when you open the project. Packages installed in one project are invisible to another, which prevents the classic problem of updating a package for one analysis and breaking a different one. Code and dependencies are now pinned; but what about the prose, the figures, the narrative that wraps around your analysis?
+One practical detail worth knowing: when you switch between projects that use renv, you do not need to do anything special, because each project has its own library and renv activates automatically when you open the project. Packages installed in one project are invisible to another, which prevents the classic problem of updating a package for one analysis and breaking a different one.
 
 ### Exercises {.unnumbered}
 
@@ -149,7 +149,9 @@ quarto render analysis.qmd --to docx
 
 The `format` field in the YAML header sets the default (html, pdf, docx, revealjs for slides), and the `--to` flag overrides it. HTML needs no extra software. PDF requires a LaTeX installation; `quarto install tinytex` handles that. Word output produces a `.docx` that collaborators who do not use R can read and comment on. In RStudio, the "Render" button (Ctrl+Shift+K) does the same thing without the terminal.
 
-Quarto is the successor to R Markdown, and the core idea (literate programming) dates back to Donald Knuth in 1984: write programs as documents where the prose explains the code, not the other way around. The lineage runs from WEB (Pascal/TeX) through Sweave (2002), knitr (2012), R Markdown, and finally Quarto (2022), each generation bringing better tooling and broader language support. If you know R Markdown, you already know Quarto. The main differences: Quarto uses `#|` for chunk options instead of the chunk header, supports Python, Julia, and Observable in addition to R, and has better defaults for academic output (cross-references, citations, callouts).
+Quarto is the successor to R Markdown, and the core idea (literate programming) dates back to Donald Knuth in 1984: write programs as documents where the prose explains the code, not the other way around. The lineage runs from WEB (Pascal/TeX) through Sweave (2002), knitr (2012), R Markdown, and finally Quarto (2022), each generation bringing better tooling and broader language support.
+
+If you know R Markdown, you already know Quarto. The main differences: Quarto uses `#|` for chunk options instead of the chunk header, supports Python, Julia, and Observable in addition to R, and has better defaults for academic output (cross-references, citations, callouts).
 
 Output formats include HTML, PDF, Word, presentations, websites, and books (this book is written in Quarto). The format is flexible, but the real control comes from chunk options, which you place at the top of each chunk with the `#|` prefix:
 
@@ -208,13 +210,13 @@ list(
 
 `tar_make()` runs the pipeline. `tar_visnetwork()` visualizes the dependency graph\index{dependency graph}. `tar_read(model)` retrieves a cached result.
 
-Each target is a function call. Functions are the unit of computation (@sec-functions-are-values-chapter); targets are the unit of caching. If `raw_data` has not changed, `clean_data` does not re-run. If you change `plot_results()`, only `fig` re-runs.
+Each target is a function call. Functions are the unit of computation (@sec-functions-are-values-chapter); targets are the unit of caching. If `raw_data` has not changed, `clean_data` does not re-run. If you change `plot_results()`, only `fig` re-runs. This matters most when a step is expensive: if a model takes an hour to fit, `targets` caches the result and re-fits only when the model code or its inputs change, so tweaking a color on a plot re-runs the plot in seconds off the cached model.
 
 The caching works precisely because the functions are pure: given the same inputs, `clean_penguins()` returns the same output, so `targets` can skip it when the inputs have not changed. A function with side effects (one that reads from a database, modifies a global variable, or depends on the current time) would break the caching, because the same inputs would no longer guarantee the same output. `targets` makes the functional discipline from @sec-closures-and-scope pay off at the project level: pure functions compose into pipelines that `targets` can reason about, cache, and selectively re-execute.
 
 Not every project needs `targets`. A single Quarto document handles simple analyses perfectly well. Reach for `targets` when you have long-running steps, many interdependent outputs, or pipelines that change frequently.
 
-The real power shows when your pipeline is expensive: if a model takes an hour to fit, you do not want to re-fit it every time you tweak a color on a plot. `targets` caches the model result and only re-fits when the model code or its inputs change, so the plot target re-runs in seconds because it reads the cached model. `tar_visnetwork()` produces a dependency graph showing which targets are up to date (green), outdated (blue), or errored (red), which makes debugging complex pipelines far easier than staring at a collection of numbered scripts.
+`tar_visnetwork()` produces a dependency graph showing which targets are up to date (green), outdated (blue), or errored (red), which makes debugging complex pipelines far easier than staring at a collection of numbered scripts.
 
 ::: callout-tip
 ## Opinion
@@ -377,8 +379,6 @@ Here is when to reach for each tool:
 5. **targets**: for multi-step pipelines with long-running computations.
 6. **Docker**: for complete environment reproducibility (R version, system libraries). Beyond this book, but worth knowing it exists.
 
-You do not need all of these for every project. Start with projects + here + Git, add renv when versions matter, add Quarto when you write reports, add targets when your pipeline grows.
-
 A decision guide:
 
 | If your project... | You need |
@@ -391,8 +391,6 @@ A decision guide:
 | Must run on a different OS | Docker or Nix |
 
 Each layer solves one failure mode. Together, they make "works on my machine" a non-issue.\index{workflow}
-
-The common thread across all of them is automation: `here` automates path construction, `renv` automates dependency tracking, Quarto automates the link between code and output, `targets` automates pipeline execution, and Git automates change tracking. Each requires a one-time setup cost and then runs automatically.
 
 
 ## Beyond renv: full-stack reproducibility {#sec-nix-docker}

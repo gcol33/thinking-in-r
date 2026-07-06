@@ -646,7 +646,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>So you can name values and use them later. But what exactly counts as an expression?</p>
 <p>Open R. Type <code>1 + 1</code> and press Enter.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span></span>
@@ -664,7 +663,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>R <strong>loops</strong> back to step 1 and waits again.</li>
 </ol>
 <p>This is called a REPL (Read-Eval-Print Loop). There is no “compile” step, no “run” button; you type an expression, you see its value immediately.</p>
-<p>In compiled languages (C, Java, and Go, which Google created in 2009 because even their best engineers were waiting too long for C++ to compile), you write the whole program first, then a compiler translates it into machine code before anything runs. R is <em>interpreted</em>: it reads and evaluates one expression at a time, immediately. Python and JavaScript work the same way. The tradeoff is speed: a compiler can optimize the whole program in advance, so compiled code runs faster. But interpreted languages let you experiment and see results as you go, which is why they dominate in data analysis.</p>
+<p>In compiled languages (C, Java, Go), you write the whole program first, then a compiler translates it into machine code before anything runs. R is <em>interpreted</em>: it reads and evaluates one expression at a time, immediately. Python and JavaScript work the same way. The tradeoff is speed: a compiler can optimize the whole program in advance, so compiled code runs faster. But interpreted languages let you experiment and see results as you go, which is why they dominate in data analysis.</p>
 <p>In practice, the line between compiled and interpreted is blurry. R itself is written in C, and many R functions are thin wrappers around compiled C or Fortran code. When you type <code>sum(x)</code>, the actual arithmetic happens in compiled machine code underneath. You get the interactive interface; the heavy computation still runs at full speed.</p>
 <p>Try a few:</p>
 <div class="cell">
@@ -727,7 +726,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>y</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This “names are labels, not containers” model is a consequence of R’s functional design. Values in R are immutable; when you “change” something, R creates a new value and moves the name to point at it. The old value stays untouched (and gets cleaned up automatically when nothing points to it anymore; R’s <em>garbage collector</em> periodically scans memory and reclaims anything that no name points to anymore, a mechanism R inherited from Lisp (<a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>); <a href="ch29-r-internals.html#sec-stack-and-heap" class="quarto-xref"><span>Section 29.1</span></a> covers how this works at the implementation level). If names were containers, you would need to worry about two containers sharing the same contents and one of them mutating behind your back. With labels and immutable values, that problem vanishes.</p>
+<p>This “names are labels, not containers” model is a consequence of R’s functional design. Values in R are immutable; when you “change” something, R creates a new value and moves the name to point at it. The old value stays untouched, and gets cleaned up automatically when nothing points to it anymore. R’s <em>garbage collector</em> periodically scans memory and reclaims anything that no name points to, a mechanism R inherited from Lisp (<a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>); <a href="ch29-r-internals.html#sec-stack-and-heap" class="quarto-xref"><span>Section 29.1</span></a> covers how this works at the implementation level. If names were containers, you would need to worry about two containers sharing the same contents and one of them mutating behind your back. With labels and immutable values, that problem vanishes.</p>
 <p>Think about what vanishes with it. In C, you learn to watch for <em>aliasing</em>: two pointers to the same block of memory, one of them writing while the other reads stale data. In Python, you learn that <code>a = b</code> for a list means both names see the same mutable object, and modifying through one surprises anyone holding the other. Entire chapters of software engineering textbooks are devoted to defensive copying, synchronization, and ownership protocols — machinery whose sole purpose is to keep shared mutable state from corrupting your program. R sidesteps all of it by removing the condition that makes the checks necessary. Values do not change, so there is nothing to corrupt, no mutable state for two references to fight over. That category of bugs — aliasing, stale reads, defensive-copy failures — is structurally absent, which frees you to think about the problem you sat down to solve instead of the bookkeeping.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -766,7 +765,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>result</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "positive"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>You can store the result of <code>if/else</code> in a name because <code>if/else</code> <em>is</em> an expression that evaluates to a value, just like <code>1 + 1</code>. In Python or C, you cannot do this because <code>if</code> is a statement that performs an action rather than producing a result.</p>
+<p>You can store the result of <code>if/else</code> in a name because <code>if/else</code> <em>is</em> an expression that evaluates to a value, just like <code>1 + 1</code>.</p>
 <p>A block of code in curly braces <code>{ }</code> returns the value of its last expression:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> {</span>
@@ -834,7 +833,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>w</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 99</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Everything that happens in R is a function call. When you write <code>3 + 5</code>, R translates it to <code>`+`(3, 5)</code>: a function called <code>+</code>, applied to two arguments. There is no special syntax for arithmetic, no operators baked into the language at a level below functions. <code>+</code> is a function, <code>3 + 5</code> is function application, and in the lambda calculus the only thing you can do is apply a function to an argument. R took that idea literally.</p>
+<p>Everything that happens in R is a function call. When you write <code>3 + 5</code>, R translates it to <code>`+`(3, 5)</code>: a function called <code>+</code>, applied to two arguments. There is no special syntax for arithmetic, no operators baked into the language at a level below functions. In the lambda calculus, the only thing you can do is apply a function to an argument. R took that idea literally.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -873,7 +872,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>R returns <code>&lt;environment: R_GlobalEnv&gt;</code>. The workspace is an object, the same kind of thing as the numbers and strings you have been binding to names. You can pass it to <code>ls.str()</code> and get back every binding in it. The container that holds your names is itself a value with a name.</p>
+<p>R returns <code>&lt;environment: R_GlobalEnv&gt;</code>. You can pass it to <code>ls.str()</code> and get back every binding in it. The container that holds your names is itself a value with a name.</p>
 
 
 </section>

@@ -662,19 +662,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>We will use the <code>palmerpenguins</code> dataset throughout. Load it now:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'lubridate'</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     date, intersect, setdiff, union</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: package 'palmerpenguins' was built under R version 4.6.1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'lubridate'</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     date, intersect, setdiff, union</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="sec-character-vectors" class="level2" data-number="12.1">
 <h2 data-number="12.1" class="anchored" data-anchor-id="sec-character-vectors"><span class="header-section-number">12.1</span> Character vectors</h2>
@@ -700,7 +701,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Use double quotes. R’s own style guide does, and so does most code you will encounter in the wild. Single quotes earn their keep inside double-quoted strings: <code>"it's easy"</code>.</p>
 </div>
 </div>
-<p>R uses UTF-8 as its modern string encoding, a scheme that Ken Thompson and Rob Pike designed on a placemat in a New Jersey diner in September 1992, one that is backward-compatible with ASCII, self-synchronizing, and variable-width (one to four bytes per character). If accented characters come out garbled, the file is probably Latin-1; <code>stringr::str_conv()</code> or <code>readr::locale(encoding = "latin1")</code> handles that.</p>
+<p>R uses UTF-8 as its modern string encoding. If accented characters come out garbled, the file is probably Latin-1; <code>stringr::str_conv()</code> or <code>readr::locale(encoding = "latin1")</code> handles that.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where UTF-8 comes from
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>UTF-8 was designed by Ken Thompson and Rob Pike on a placemat in a New Jersey diner in September 1992. It is backward-compatible with ASCII, self-synchronizing, and variable-width (one to four bytes per character).</p>
+</div>
+</div>
+</div>
 <p>Special characters use backslash escapes: <code>\n</code> (newline), <code>\t</code> (tab), <code>\\</code> (literal backslash). Compare <code>print()</code> and <code>cat()</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"line one</span><span class="sc">\n</span><span class="st">line two"</span>)</span>
@@ -733,8 +750,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-stringr" class="level2" data-number="12.2">
 <h2 data-number="12.2" class="anchored" data-anchor-id="sec-stringr"><span class="header-section-number">12.2</span> stringr: consistent string operations</h2>
-<p>Base R has <code>grep()</code>, <code>grepl()</code>, <code>sub()</code>, <code>gsub()</code> — they work, but the argument orders are inconsistent, the return types vary, and good luck guessing what <code>gsub</code> stands for. No convention ties them together, so you memorize each one separately.</p>
-<p>stringr fixes this with a single rule: every function starts with <code>str_</code>, takes the string as the first argument, and takes the pattern second. Once you know the convention, you can guess function names before you look them up.</p>
+<p>Base R has <code>grep()</code>, <code>grepl()</code>, <code>sub()</code>, and <code>gsub()</code>. stringr replaces them with a single rule: every function starts with <code>str_</code>, takes the string as the first argument, and takes the pattern second. Once you know the convention, you can guess function names before you look them up.</p>
 <p>The essentials:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str_length</span>(<span class="st">"penguin"</span>)</span>
@@ -862,7 +878,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>The doubled backslashes (<code>\\d</code> instead of <code>\d</code>) exist because R strings process backslashes first: to get a literal <code>\d</code> to the regex engine, you write <code>"\\d"</code> in R. Regular expressions themselves come from formal language theory, where Stephen Kleene defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and <code>grep</code> in 1973; the <code>*</code> quantifier is still called the <em>Kleene star</em> after him.</p>
+<p>The doubled backslashes (<code>\\d</code> instead of <code>\d</code>) exist because R strings process backslashes first: to get a literal <code>\d</code> to the regex engine, you write <code>"\\d"</code> in R.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where regular expressions come from
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Regular expressions come from formal language theory, where Stephen Kleene defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and <code>grep</code> in 1973; the <code>*</code> quantifier is still called the <em>Kleene star</em>, after Kleene.</p>
+</div>
+</div>
+</div>
 <p><code>str_view()</code> lets you see what a pattern matches, making it the best tool for building and debugging:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fruits <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"apple"</span>, <span class="st">"banana"</span>, <span class="st">"cherry"</span>, <span class="st">"date"</span>, <span class="st">"elderberry"</span>)</span>
@@ -927,10 +959,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "female" "male"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>typeof()</code> returns <code>"integer"</code>. <code>unclass()</code> strips the factor shell and shows the integers underneath.</p>
-<p>In type theory, a factor is a <em>sum type</em>: <code>factor(c("male", "female"))</code> defines a type with exactly two variants, <code>male | female</code>, and a value must be one of them. Logical vectors are the simplest case: <code>Bool = TRUE | FALSE</code>. Factors generalize it: <code>Species = Adelie | Chinstrap | Gentoo</code> is a sum type with three variants. Where a data frame is a product type (combine fields with AND, <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>), a factor is a sum type (choose one variant with OR). The distinction matters because product types grow by adding fields, while sum types grow by adding variants, and the two compose differently. Rust’s <code>enum</code>, Haskell’s algebraic data types, and TypeScript’s union types all make this distinction explicit; R keeps it implicit in the factor machinery, but the structure is the same.</p>
+<p>In type theory, a factor is a <em>sum type</em>: the same structure as a logical value (<a href="ch08-logic-control-flow.html#sec-logical-vectors" class="quarto-xref"><span>Section 8.1</span></a>), generalized from two variants (<code>Bool = TRUE | FALSE</code>) to n (<code>Species = Adelie | Chinstrap | Gentoo</code>). Where a data frame is a product type (combine fields with AND, <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>), a factor is a sum type (choose one variant with OR).</p>
 <p>That implicit structure does real work. When you store 10,000 penguin observations with three species, a character vector holds the full string <code>"Adelie"</code> repeated thousands of times. A factor holds the integer <code>1</code> and a three-entry lookup table. The compression matters for memory, but it matters more for reasoning: the moment you write <code>factor(species, levels = c("Adelie", "Chinstrap", "Gentoo"))</code>, you are declaring a contract. These three values can appear in this column, and nothing else. That contract is what lets <code>lm()</code> generate dummy variables automatically — the full set of categories is declared up front, not discovered by scanning the data. It also means <code>fct_reorder()</code> can reorder levels without inventing ones that do not exist, and data-entry errors (<code>"Adelie"</code> vs <code>"adelie"</code>) surface at the moment of assignment rather than downstream in a model that silently treats them as two distinct categories. A character vector is an open set: anything goes. A factor is a closed set, and closed sets are easier to reason about, for you and for every function that receives them.</p>
-<p>So why does R have this machinery at all? Statistical models need to encode categorical variables, and factors tell R “these are categories, not arbitrary text.” Without factors, R would not know that <code>"male"</code> and <code>"female"</code> represent a finite set of categories rather than two arbitrary strings.</p>
-<p>Historical baggage worth knowing: <code>data.frame()</code> used to convert all strings to factors by default, which caused years of confusion and the ubiquitous <code>stringsAsFactors = FALSE</code> incantation. R 4.0 (released 2020) changed the default to <code>FALSE</code>, ending decades of pain. If you see old code with <code>stringsAsFactors</code>, now you know why it is there.</p>
+<p>The old <code>data.frame()</code> default converted strings to factors (<a href="ch11-data-frames.html#sec-creating-data-frames" class="quarto-xref"><span>Section 11.2</span></a>), which is why so much older code carries the <code>stringsAsFactors = FALSE</code> incantation.</p>
 <p>When do factors actually help?</p>
 <ul>
 <li>Controlling the order of levels in plots (bars, legends, facets)</li>
@@ -1014,7 +1045,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-dates-times" class="level2" data-number="12.6">
 <h2 data-number="12.6" class="anchored" data-anchor-id="sec-dates-times"><span class="header-section-number">12.6</span> Dates and times</h2>
 <p>Strings are irregular text; factors are constrained categories. Dates look like strings but behave like numbers, and that dual nature is the source of most of the trouble.</p>
-<p>Add one month to January 31. What do you get? February 28? February 31 (which does not exist)? An error? The answer depends on your tool, and the fact that reasonable tools disagree tells you something about why date arithmetic is harder than it looks. Time zones, leap years, daylight saving transitions, and varying month lengths conspire to make even simple calculations surprisingly tricky.</p>
+<p>Add one month to January 31. What do you get? February 28? February 31 (which does not exist)? An error? The answer depends on your tool, and the fact that reasonable tools disagree tells you something about why date arithmetic is harder than it looks: time zones, leap years, daylight saving transitions, and varying month lengths.</p>
 <p>R has three date-time classes:</p>
 <ul>
 <li><code>Date</code>: date only, stored as days since 1970-01-01</li>
@@ -1024,13 +1055,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>today <span class="ot">&lt;-</span> <span class="fu">Sys.Date</span>()</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>today</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-04-07"</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-07-03"</span></span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(today)</span>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "double"</span></span>
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">unclass</span>(today)</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 20550</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 20637</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The number from <code>unclass()</code> is days since the Unix epoch. Dates in R count from 1970-01-01 because Unix measured time as seconds from that date; 32-bit signed integers can count seconds from 1970 until January 19, 2038 (the “Year 2038 problem”), and R, Python, JavaScript, and most databases all inherit this same epoch. Date arithmetic works as you would expect:</p>
+<p>The number from <code>unclass()</code> is days since the Unix epoch. Dates in R count from 1970-01-01 because Unix measured time as seconds from that date, and R, Python, JavaScript, and most databases all inherit this same epoch.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Year 2038 problem
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>32-bit signed integers can count seconds from 1970 until January 19, 2038.</p>
+</div>
+</div>
+</div>
+<p>Date arithmetic works as you would expect:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"2026-03-07"</span>) <span class="sc">-</span> <span class="fu">as.Date</span>(<span class="st">"2026-01-01"</span>)</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Time difference of 65 days</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>

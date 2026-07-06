@@ -22,7 +22,9 @@ That code used four ideas R did not invent: first-class functions\index{first-cl
 
 ## Church's lambda calculus becomes a programming language {#sec-lisp}
 
-By 1958, the only real option for writing programs was Fortran, which John Backus and his team at IBM had released the year before. Before Fortran, programming meant writing instructions in the machine's own notation: numbers and abbreviations that corresponded directly to hardware operations. Backus\index{Backus, John} wanted scientists to write something closer to mathematical formulas, and Fortran (short for "Formula Translation") was the result, the first high-level programming language, fast at arithmetic and accessible to people who were not hardware specialists. But a researcher at MIT wanted to write programs for artificial intelligence research, and he needed something Fortran could not do: a language that could manipulate symbols, build up complex structures, and treat its own programs as data.
+By 1958, the only real option for writing programs was Fortran, which John Backus and his team at IBM had released the year before. Before Fortran, programming meant writing instructions in the machine's own notation: numbers and abbreviations that corresponded directly to hardware operations. Backus\index{Backus, John} wanted scientists to write something closer to mathematical formulas, and Fortran (short for "Formula Translation") was the result, the first high-level programming language, fast at arithmetic and accessible to people who were not hardware specialists.
+
+But a researcher at MIT wanted to write programs for artificial intelligence research, and he needed something Fortran could not do: a language that could manipulate symbols, build up complex structures, and treat its own programs as data.
 
 He found his answer in Church's lambda calculus (@sec-church). McCarthy\index{McCarthy, John} took the idea (functions that take arguments and return values, nothing else) and turned it into a programming language called Lisp\index{Lisp}, short for "list processing."
 
@@ -67,12 +69,14 @@ add_ten(3)
 
 `add_ten` remembers that `n` was 10 when it was created, even though `make_adder` has already finished running. The function looks for `n` where it was *defined* (inside `make_adder`), not where it's *called*. That's lexical scoping. @sec-closures-and-scope builds on this to create functions that remember things.
 
-Lisp and Scheme were built by computer scientists for computer scientists. Neither had anything to say about data, about columns of measurements and rows of observations, about the daily work of someone trying to understand an experiment. What neither language had was anything to say about data.
+Lisp and Scheme were built by computer scientists for computer scientists. Neither had anything to say about data: about columns of measurements and rows of observations, about the daily work of someone trying to understand an experiment. That gap was waiting for someone who did statistics for a living.
 
 
 ## S makes it practical {#sec-s-language}
 
-In 1976 at Bell Labs, the computer center had a Honeywell 645 mainframe running an operating system called GCOS. If you wanted to do statistics, you used a Fortran library called SCS (Statistical Computing Subroutines): write a Fortran program, call the library functions, compile it, submit it to the batch queue, wait. Rick Becker, John Chambers\index{Chambers, John}, Doug Dunn, and Allan Wilks held a series of meetings in the spring of that year, and the question they asked was simple: could they build something interactive, where a statistician types a command and gets an answer back immediately?
+In 1976 at Bell Labs, the computer center had a Honeywell 645 mainframe running an operating system called GCOS. If you wanted to do statistics, you used a Fortran library called SCS (Statistical Computing Subroutines): write a Fortran program, call the library functions, compile it, submit it to the batch queue, wait.
+
+Rick Becker, John Chambers\index{Chambers, John}, Doug Dunn, and Allan Wilks held a series of meetings in the spring of that year, and the question they asked was simple: could they build something interactive, where a statistician types a command and gets an answer back immediately?
 
 They could. The first working version of S\index{S language} ran on the Honeywell 645 that same year. The early system was essentially an interactive front end to the Fortran library, but it grew quickly; by 1988 S had been rewritten in C (version 3), and by 1998 it had become a full programming language (version 4, described in Chambers' book *Programming with Data*). In 1998, S won the ACM Software System Award, the same award given to Unix, TeX, and the World Wide Web.
 
@@ -99,7 +103,9 @@ S was eventually commercialized as S-PLUS, sold first by StatSci, then by Insigh
 
 By 1991, S-PLUS was the only way to use the S language, and it was commercial software — expensive for a university department that needed every student to have a copy. In the Department of Statistics at the University of Auckland, students were stuck with clunky programs that made data analysis feel like filing taxes. Two lecturers in that department had a corridor conversation about the problem, and decided to solve it themselves by writing a new implementation of S from scratch.
 
-The language was not a port of S; it was a new implementation with a different memory model and eventually a different package system, though it followed S's design decisions closely (and through S, Scheme's and Church's). They named it R, a play on their first initials and a nod to S. Ross Ihaka\index{Ihaka, Ross} had studied at Berkeley and knew the S language inside out; Robert Gentleman\index{Gentleman, Robert} brought computational statistics. Two years after release, Martin Mächler at ETH Zurich convinced them to license it under the GNU General Public License. That decision made R free and open-source, which mattered more than anyone realized at the time: a core development group formed, CRAN started collecting contributed packages, and by the mid-2000s R had become the standard tool for statistical computing in academia.
+The language was not a port of S; it was a new implementation with a different memory model and eventually a different package system, though it followed S's design decisions closely (and through S, Scheme's and Church's). They named it R, a play on their first initials and a nod to S. Ross Ihaka\index{Ihaka, Ross} had studied at Berkeley and knew the S language inside out; Robert Gentleman\index{Gentleman, Robert} brought computational statistics.
+
+Two years after release, Martin Mächler at ETH Zurich convinced them to license it under the GNU General Public License. That decision made R free and open-source, which mattered more than anyone realized at the time: a core development group formed, CRAN started collecting contributed packages, and by the mid-2000s R had become the standard tool for statistical computing in academia.
 
 R looks almost identical to S on the surface, but under the hood it is semantically closer to Scheme. So which pieces came from where?
 

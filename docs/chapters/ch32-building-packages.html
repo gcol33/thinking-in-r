@@ -665,7 +665,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Dependency management</strong>: you declare what you need.</li>
 <li><strong>Namespace control</strong>: your names do not collide with other packages’ names.</li>
 </ul>
-<p>In <a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>, you saw that functions are values. A package is a named collection of functions with metadata, and that metadata is what separates “a folder of scripts” from “something someone else can install and use.” The metadata has a specific shape, which raises an immediate question: what does it look like?</p>
+<p>In <a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>, you saw that functions are values. A package is a named collection of functions with metadata, and that metadata is what separates “a folder of scripts” from “something someone else can install and use.”</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -683,7 +683,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-package-anatomy" class="level2" data-number="32.2">
 <h2 data-number="32.2" class="anchored" data-anchor-id="sec-package-anatomy"><span class="header-section-number">32.2</span> The anatomy of a package</h2>
-<p>The minimum viable package has three components: <code>DESCRIPTION</code>, <code>NAMESPACE</code>, and an <code>R/</code> directory. A package is a namespace of functions: the <code>R/</code> directory holds function definitions, <code>NAMESPACE</code> controls which ones are visible, and <code>DESCRIPTION</code> records metadata. A standard layout looks like this:</p>
+<p>The minimum viable package has three components: the <code>R/</code> directory holds function definitions, <code>NAMESPACE</code> controls which ones are visible, and <code>DESCRIPTION</code> records metadata. A standard layout looks like this:</p>
 <pre><code>mypackage/
 ├── DESCRIPTION       # metadata: name, version, authors, dependencies
 ├── NAMESPACE         # what you export, what you import (auto-generated)
@@ -707,7 +707,8 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1</code></pre>
-<p><strong>NAMESPACE</strong> controls what is visible to users (exports) and what you borrow from other packages (imports). Never edit it by hand; let roxygen2 generate it. Two hooks let you run code when the package loads: <code>.onLoad()</code> fires when the namespace is loaded (even by <code>::</code> access), while <code>.onAttach()</code> fires only when someone calls <code>library()</code>. Use <code>.onLoad()</code> for setup that must happen before any function runs (registering S3 methods, setting default options, initializing connections) and <code>.onAttach()</code> only for startup messages. Both go in <code>R/zzz.R</code> by convention. For full details, see R Packages (2e), chapter 10.</p>
+<p><strong>NAMESPACE</strong> controls what is visible to users (exports) and what you borrow from other packages (imports). Never edit it by hand; let roxygen2 generate it.</p>
+<p>Two hooks, <code>.onLoad()</code> and <code>.onAttach()</code>, let you run code when the package loads; for the details, see R Packages (2e), chapter 10.</p>
 <p>The namespace is an environment (the concept from <a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a>), and <code>NAMESPACE</code> defines what names are visible in that environment. When you call <code>dplyr::filter()</code>, R looks in dplyr’s namespace environment; when you call just <code>filter()</code>, R searches the environment chain, and which <code>filter</code> it finds depends on what is attached. In lambda calculus terms, a package namespace is a closure at the module level: functions inside can reference each other because they share the namespace environment, but the outside world only sees what is explicitly exported. The <code>NAMESPACE</code> file marks the same boundary that a lambda abstraction marks between bound and free variables.</p>
 </section>
 <section id="sec-creating-package" class="level2" data-number="32.3">
@@ -785,7 +786,7 @@ RoxygenNote: 7.3.1</code></pre>
 <li><code>@inheritParams</code>: borrow parameter documentation from another function.</li>
 </ul>
 <p>Markdown in roxygen is enabled by adding <code>Roxygen: list(markdown = TRUE)</code> to <code>DESCRIPTION</code>, which lets you use <code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>, and <code>[function()]</code> for cross-links.</p>
-<p><code>devtools::document()</code> converts roxygen comments to <code>.Rd</code> files in <code>man/</code> and updates <code>NAMESPACE</code>. You write roxygen; you never touch <code>man/</code> directly. Good documentation earns users, but even the best-documented function needs other packages to work with.</p>
+<p><code>devtools::document()</code> converts roxygen comments to <code>.Rd</code> files in <code>man/</code> and updates <code>NAMESPACE</code>. You write roxygen; you never touch <code>man/</code> directly.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -953,7 +954,7 @@ RoxygenNote: 7.3.1</code></pre>
 <li><strong>WARNING</strong>: something is wrong. Must fix for CRAN; should fix regardless.</li>
 <li><strong>NOTE</strong>: something is unusual. Fix if you can; explain if you can’t.</li>
 </ul>
-<p>The goal: 0 errors, 0 warnings, 0 notes. Each of those roughly 50 tests exists because someone, somewhere, shipped a broken package, and the strictness reflects the cost of breakage on CRAN, where 20,000+ packages depend on each other. Every NOTE exists because someone shipped that exact mistake to CRAN and broke something downstream.</p>
+<p>The goal: 0 errors, 0 warnings, 0 notes. Each of those roughly 50 tests exists because someone, somewhere, shipped a broken package, and the strictness reflects the cost of breakage on CRAN, where 20,000+ packages depend on each other.</p>
 <p>Common issues and how to fix them:</p>
 <ul>
 <li><strong>“Undocumented arguments”</strong>: add <code>@param</code> tags in your roxygen comments.</li>
@@ -961,7 +962,7 @@ RoxygenNote: 7.3.1</code></pre>
 <li><strong>“Non-standard file/directory found”</strong>: add the file to <code>.Rbuildignore</code> with <code>usethis::use_build_ignore("filename")</code>.</li>
 <li><strong>“No visible binding for global variable”</strong>: common with tidyverse code that uses unquoted column names. Fix with <code>utils::globalVariables()</code> or use <code>.data$column</code> from rlang.</li>
 </ul>
-<p>Run <code>check()</code> often during development, not just at the end. Each run should find at most one or two issues; if you wait until the end, you face dozens of notes at once, which is demoralizing and nearly impossible to debug systematically. A clean check means your package is well-formed, but a check that passes on your machine and fails on Linux is still a problem, which is why the next question matters: how do you get your package into other people’s hands, and how do you make sure it works on their machines too?</p>
+<p>Run <code>check()</code> often during development, not just at the end. Each run should find at most one or two issues; if you wait until the end, you face dozens of notes at once, which is demoralizing and nearly impossible to debug systematically. A clean check means your package is well-formed, but a check that passes on your machine and fails on Linux is still a problem.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -972,19 +973,20 @@ RoxygenNote: 7.3.1</code></pre>
 </section>
 <section id="sec-sharing-package" class="level2" data-number="32.9">
 <h2 data-number="32.9" class="anchored" data-anchor-id="sec-sharing-package"><span class="header-section-number">32.9</span> Sharing your package</h2>
-<p><strong>GitHub</strong>: push your package to GitHub. Users install it with one line — either <code>pak::pak("user/mypackage")</code> or <code>devtools::install_github("user/mypackage")</code>. Lowest barrier to sharing.</p>
-<p><strong>pkgdown</strong>: <code>usethis::use_pkgdown_github_pages()</code> builds a website from your documentation, README, and vignettes, with automatic deployment through GitHub Actions. Professional documentation for free.</p>
-<p><strong>CRAN</strong>: the official repository. <code>devtools::submit_cran()</code>. Strict review: 0 errors, 0 warnings, ideally 0 notes, plus human reviewers who check CRAN policies. Worth the effort for packages with a broad audience.</p>
-<p><strong>R-universe</strong> (<code>r-universe.dev</code>): automated package hosting with a lower barrier than CRAN but still discoverable. Point it at your GitHub repo, and it builds binaries for all platforms automatically.</p>
+<p><strong>GitHub</strong>: push your package to GitHub, and users install it with one line, either <code>pak::pak("user/mypackage")</code> or <code>devtools::install_github("user/mypackage")</code>. This is the lowest barrier to sharing.</p>
+<p>Three other options exist:</p>
+<ul>
+<li><strong>pkgdown</strong>: <code>usethis::use_pkgdown_github_pages()</code> builds a website from your documentation, README, and vignettes, with automatic deployment through GitHub Actions.</li>
+<li><strong>CRAN</strong>: the official repository, via <code>devtools::submit_cran()</code>. Strict review: 0 errors, 0 warnings, ideally 0 notes, plus human reviewers who check CRAN policies. Worth the effort for packages with a broad audience.</li>
+<li><strong>R-universe</strong> (<code>r-universe.dev</code>): automated package hosting with a lower barrier than CRAN but still discoverable. Point it at your GitHub repo, and it builds binaries for all platforms automatically.</li>
+</ul>
 <p>Version numbers follow semantic versioning (semver.org): MAJOR.MINOR.PATCH. PATCH for bug fixes, MINOR for new backward-compatible features, MAJOR for breaking changes. The tidyverse follows this strictly: when dplyr goes from 1.0 to 1.1, your code will not break; when it goes to 2.0, check the changelog.</p>
-<p>The progression is natural. You build a package for yourself, put it on GitHub so colleagues can use it, add pkgdown so new users can find their way around, and eventually submit to CRAN if the package solves a general enough problem. Each step adds effort but also reach.</p>
 <p>For GitHub-hosted packages, continuous integration is nearly free:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_github_action</span>(<span class="st">"check-standard"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This adds a GitHub Actions workflow that runs <code>R CMD check</code> on Linux, macOS, and Windows every time you push. If the check fails, GitHub shows a red X next to the commit; if it passes, you get a green checkmark and a badge for your README. The real value is catching platform-specific bugs you would never find on your own machine: path separators (Windows uses <code>\</code>, everything else uses <code>/</code>), case-sensitive file systems (Linux is case-sensitive, macOS and Windows are not), and system library availability.</p>
 <p>A package with CI, documentation, and a one-line install command turns a two-day email chain into a single <code>pak::pak()</code> call.</p>
-<p>A closure captures variables in its enclosing environment and exposes only the returned function (<a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a>). A package does the same thing at a larger scale: internal functions, data, and dependencies live in the namespace; only the functions listed in <code>NAMESPACE</code> are visible outside. <code>devtools</code>, <code>usethis</code>, and roxygen automate the mechanics.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">

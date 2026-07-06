@@ -18,7 +18,7 @@ Hadley Wickham's 2014 paper "Tidy data"\index{tidy data} defines three rules:
 2. Each observation is a row\index{tidy data!one observation per row}.
 3. Each type of observational unit is a table.
 
-They sound obvious. They aren't. Most real-world data breaks at least one of them, and recognizing which rule is broken (let alone fixing it) takes practice. The rules themselves are a simplified version of something database designers have known since the 1970s, when Edgar Codd defined normal forms (1NF through 5NF) to eliminate redundancy; tidy data corresponds roughly to third normal form, with no transitive dependencies and no repeating groups. The structural problem R programmers wrestle with today is the same one Codd solved in relational algebra before R existed.
+They sound obvious. They aren't. Most real-world data breaks at least one of them, and recognizing which rule is broken (let alone fixing it) takes practice.
 
 Consider a table of population data with years spread across the column names:
 
@@ -33,6 +33,8 @@ pop_wide
 ```
 
 What is the variable here? Year. But "year" doesn't appear as a column; it's buried inside the names `pop_2020`, `pop_2021`, `pop_2022`, three columns where there should be one. Not tidy.
+
+These rules are a simplified version of something database designers have known since the 1970s, when Edgar Codd defined a set of normal forms to eliminate redundancy. The structural problem R programmers wrestle with today is the same one Codd solved in relational algebra before R existed.
 
 ![Wide\index{wide format} and long\index{long format} formats contain the same information — the pivot is an isomorphism.](../images/wide_vs_long.png){#fig-wide-vs-long width=100%}
 
@@ -86,7 +88,7 @@ pop_wide |>
 
 Three countries, three years, nine population values: the information content is identical in both forms. `pivot_longer()` and `pivot_wider()` are inverses; applying one and then the other returns you to where you started (up to column ordering). A pair of reversible transformations like this is called an *isomorphism*: two structures that contain the same information in different arrangements. Wide and long formats are isomorphic; neither is "more correct."
 
-The word isomorphism earns its weight here because it tells you something practical: no information is created or destroyed by pivoting. You cannot learn anything from the long format that was not already present in the wide format, and vice versa. What changes is the *alignment* between the data's shape and your next tool's expectations. A report reader wants wide, because scanning countries across years in a single row is easier than scrolling. A `ggplot()` call wants long, because each aesthetic maps to one column and each observation occupies one row. Grouped summaries need the grouping variable to be a column, not a set of column names baked into the header. Choosing a format is choosing which tool you are about to hand the data to, and pivoting is the translation between those expectations. Once that distinction is clear, the reshaping itself is mechanical.
+What changes when you pivot is the *alignment* between the data's shape and your next tool's expectations. A report reader wants wide, because scanning countries across years in a single row is easier than scrolling. A `ggplot()` call wants long, because each aesthetic maps to one column and each observation occupies one row. Grouped summaries need the grouping variable to be a column, not a set of column names baked into the header. Choosing a format is choosing which tool you are about to hand the data to, and pivoting is the translation between those expectations.
 
 The hard part is not the reshaping itself but deciding *what* to reshape. Given an arbitrary table with merged cells, hierarchical headers, and embedded metadata, determining the correct tidy structure requires human judgment about what constitutes a variable, an observation, and a value. Wickham's 2014 paper defines these three terms precisely to make that judgment tractable: once you answer "is year a variable or a value?", the reshaping follows mechanically.
 
@@ -350,8 +352,12 @@ report |> fill(group)
 
 ## Summary {#sec-tidy-data-summary}
 
-Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. `pivot_longer()` turns columns into rows (the common direction), `pivot_wider()` turns rows into columns (the occasional direction), and joins combine tables by matching keys. `left_join()` enriches; `anti_join()` finds gaps; the rest control how unmatched rows are handled.
+Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. `pivot_longer()` turns columns into rows (the common direction), `pivot_wider()` turns rows into columns (the occasional direction), and joins combine tables by matching keys.
+
+::: {.callout-note collapse="true"}
+## The mathematics underneath
 
 These tools compose precisely because they all expect the same shape, and the connection to their mathematical foundations runs deeper than most R programmers realize. Codd's relational algebra and the simply typed lambda calculus are both built on function application and composition over structured types, which is why the same ideas keep surfacing in R, SQL, and formal logic. In category theory, a join is a *pullback*: given two tables that each map to a shared key space, the join constructs the most general table consistent with both. Think of it as a Venn diagram for rows, where the overlap is determined by the key column; `inner_join` keeps only the overlap, while `left_join` keeps everything on the left and fills the gaps with `NA`.
+:::
 
 But shape is only half the story. Once your data is tidy, you still need to *do* something with it, and doing the same thing to many groups, many columns, or many models at once is where iteration enters. That's next.

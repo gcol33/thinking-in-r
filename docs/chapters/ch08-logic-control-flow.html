@@ -663,7 +663,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Every comparison you write, every filter you apply, every conditional check you run produces one of these vectors. The trick from <a href="ch04-vectors.html#sec-coercion" class="quarto-xref"><span>Section 4.3</span></a> is what makes expressions like <code>sum(x &gt; 5)</code> work: <code>x &gt; 5</code> produces a logical vector, <code>sum()</code> coerces <code>TRUE</code> to 1 and <code>FALSE</code> to 0, and suddenly you are counting how many elements pass the test without writing a single loop.</p>
-<p>A logical value is one of exactly two things: <code>TRUE</code> or <code>FALSE</code>. No third option, no grey area, no maybe. In type theory this is a <em>sum type</em> (also called a tagged union or variant): a type defined by listing its variants, so that <code>Bool = TRUE | FALSE</code>. Contrast this with a data frame row, which combines fields with AND (a penguin has a species AND a mass AND a flipper length); a sum type chooses one variant with OR. You will see sum types surface again when factors define a fixed set of levels (<a href="ch12-strings-factors-dates.html#sec-why-factors" class="quarto-xref"><span>Section 12.4</span></a>) and when S3 dispatch selects a method based on class (<a href="ch24-s3-and-s7.html#sec-s3-basics" class="quarto-xref"><span>Section 24.2</span></a>). Where product types say “all of these together,” sum types say “exactly one of these.” What happens, then, when someone overrides one of the two options?</p>
+<p>A logical value is one of exactly two things: <code>TRUE</code> or <code>FALSE</code>. No third option, no grey area, no maybe. What happens, then, when someone overrides one of the two options?</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Sum types
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In type theory this is a <em>sum type</em> (also called a tagged union or variant): a type defined by listing its variants, so that <code>Bool = TRUE | FALSE</code>. Contrast this with a data frame row, which combines fields with AND (a penguin has a species AND a mass AND a flipper length); a sum type chooses one variant with OR. You will see sum types surface again when factors define a fixed set of levels (<a href="ch12-strings-factors-dates.html#sec-why-factors" class="quarto-xref"><span>Section 12.4</span></a>) and when S3 dispatch selects a method based on class (<a href="ch24-s3-and-s7.html#sec-s3-basics" class="quarto-xref"><span>Section 24.2</span></a>). Where product types say “all of these together,” sum types say “exactly one of these.”</p>
+</div>
+</div>
+</div>
 <p>R has <code>T</code> and <code>F</code> as shortcuts for <code>TRUE</code> and <code>FALSE</code>. Do not use them.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="dv">42</span></span>
@@ -806,7 +822,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Write a logical expression that tests whether <code>x</code> is between 10 and 20 (inclusive).</li>
 </ol>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -815,10 +831,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The <code>&amp;</code> you typed a moment ago to combine filter conditions is the same AND operation that electrical engineers wire into silicon, described by the same truth tables George Boole formalized in 1854. In his 1937 master’s thesis, Claude Shannon showed that these truth tables could be implemented with electrical switches, and that insight bridged the gap between abstract algebra and physical circuitry. Every digital circuit is built from these operations.</p>
-<p>The <code>&amp;</code>, <code>|</code>, <code>!</code>, and <code>xor()</code> you use in R correspond to physical circuits called <em>logic gates</em> inside every processor.</p>
+<p>The <code>&amp;</code> you typed a moment ago to combine filter conditions is the same AND operation that electrical engineers wire into silicon. In his 1937 master’s thesis, Claude Shannon showed that these truth tables could be implemented with electrical switches, and that insight bridged the gap between abstract algebra and physical circuitry. Every digital circuit is built from these operations.</p>
 <p>An AND gate has two input wires and one output wire; the output is 1 (high voltage) only when both inputs are 1. An OR gate outputs 1 when at least one input is 1. A NOT gate (also called an inverter) has one input and flips it: 1 becomes 0, 0 becomes 1. An XOR gate outputs 1 when the inputs differ.</p>
 <pre><code>AND gate         OR gate          XOR gate         NOT gate
 A  B  out        A  B  out        A  B  out        A  out
@@ -826,13 +841,13 @@ A  B  out        A  B  out        A  B  out        A  out
 0  1   0         0  1   1         0  1   1         1   0
 1  0   0         1  0   1         1  0   1
 1  1   1         1  1   1         1  1   0</code></pre>
-<p>These are the same truth tables as R’s <code>&amp;</code>, <code>|</code>, <code>xor()</code>, and <code>!</code>. When you write <code>TRUE &amp; FALSE</code> in R, the CPU evaluates it using an AND gate (or a chain of them, for vectors). When you write <code>TRUE &amp; FALSE</code> in R, the CPU evaluates the same Boolean operation using an AND gate.</p>
+<p>These are the same truth tables as R’s <code>&amp;</code>, <code>|</code>, <code>xor()</code>, and <code>!</code>. When you write <code>TRUE &amp; FALSE</code> in R, the CPU evaluates it using an AND gate (or a chain of them, for vectors).</p>
 <p>Everything a computer does, from adding numbers to rendering video, is built from combinations of these four gates. We can design a circuit the way electrical engineers do: start with inputs and outputs, build a truth table, find the minimal Boolean expression, then wire the gates.</p>
 </div>
 </div>
 </div>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -841,7 +856,7 @@ A  B  out        A  B  out        A  B  out        A  out
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>The simplest possible addition: two single bits, A and B. Two outputs: a sum bit and a carry bit (because 1 + 1 = 10 in binary, which is 0 with a carry of 1).</p>
 <p><strong>Step 1: truth table.</strong> List every possible input combination and the desired output.</p>
@@ -868,7 +883,7 @@ Figure&nbsp;8.1: Standard logic gate symbols. Inputs enter from the left, output
 </figcaption>
 </figure>
 </div>
-<div id="fig-half-adder" class="quarto-float quarto-figure quarto-figure-left anchored" alt="Circuit diagram of a half adder showing one XOR gate producing Sum and one AND gate producing Carry, with inputs A and B." data-fig-align="left">
+<div id="fig-half-adder" class="quarto-float quarto-figure quarto-figure-left anchored" data-fig-align="left" alt="Circuit diagram of a half adder showing one XOR gate producing Sum and one AND gate producing Carry, with inputs A and B.">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-half-adder-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="../images/half_adder.png" class="img-fluid quarto-figure quarto-figure-left figure-img" style="width:65.0%" alt="Circuit diagram of a half adder showing one XOR gate producing Sum and one AND gate producing Carry, with inputs A and B.">
@@ -908,7 +923,7 @@ Figure&nbsp;8.2: A half adder: one XOR gate for the sum, one AND gate for the ca
 </div>
 </div>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -917,7 +932,7 @@ Figure&nbsp;8.2: A half adder: one XOR gate for the sum, one AND gate for the ca
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>When you add column by column in decimal, you carry from the previous column. Binary works the same way: each column receives A, B, and a carry-in (Cin) from the column to the right.</p>
 <p><strong>Step 1: truth table.</strong> Three inputs, eight rows.</p>
@@ -948,7 +963,7 @@ Cin    00   01   11   10
 <p>Much simpler than the four-term canonical form. For Sum, the K-map shows no adjacent groups (the 1s form a checkerboard), so there’s no simplification beyond XOR:</p>
 <pre><code>Sum = A XOR B XOR Cin</code></pre>
 <p><strong>Step 4: build the circuit.</strong> The Sum formula chains two XOR gates. The Cout formula uses two AND gates and one OR gate, but engineers noticed that <code>(B AND Cin) OR (A AND Cin)</code> can be rewritten as <code>((A XOR B) AND Cin)</code>, because the XOR captures whether exactly one of A, B is 1. The final circuit uses five gates: two XOR, two AND, one OR.</p>
-<div id="fig-full-adder" class="quarto-float quarto-figure quarto-figure-left anchored" alt="Circuit diagram of a full adder showing two XOR gates, two AND gates, and one OR gate connected with labeled wires for A, B, Cin, Sum, and Cout." data-fig-align="left">
+<div id="fig-full-adder" class="quarto-float quarto-figure quarto-figure-left anchored" data-fig-align="left" alt="Circuit diagram of a full adder showing two XOR gates, two AND gates, and one OR gate connected with labeled wires for A, B, Cin, Sum, and Cout.">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-full-adder-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="../images/full_adder.png" class="img-fluid quarto-figure quarto-figure-left figure-img" style="width:65.0%" alt="Circuit diagram of a full adder showing two XOR gates, two AND gates, and one OR gate connected with labeled wires for A, B, Cin, Sum, and Cout.">
@@ -1054,7 +1069,7 @@ Figure&nbsp;8.3: A full adder built from five logic gates. Two XOR gates compute
 <span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "negative"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>R has no <code>elif</code> keyword; you chain conditions with <code>else if</code>, which is just an <code>else</code> followed by another <code>if</code>. Long chains get hard to read, and when you have more than two or three branches, consider <code>switch()</code> (<a href="#sec-switch" class="quarto-xref"><span>Section 8.7</span></a>) or <code>dplyr::case_when()</code> (<a href="#sec-vectorized-conditionals" class="quarto-xref"><span>Section 8.6</span></a>).</p>
-<p>The connection to lambda calculus runs deeper than it might seem. In <a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>, we saw Church’s encoding of booleans, where <code>TRUE = λx. λy. x</code> (pick the first) and <code>FALSE = λx. λy. y</code> (pick the second). R’s <code>if/else</code> does the same thing: it takes a condition and two branches, and returns whichever branch the condition selects, just as Church’s booleans select an argument. The Curry-Howard correspondence takes this further, mapping logical propositions to types and proofs to programs; under this lens, <code>TRUE</code> and <code>FALSE</code> are proof and refutation, and an <code>if/else</code> expression is a case analysis on evidence. Typed functional languages like Haskell make this connection explicit; R keeps it implicit, but the structure is the same.</p>
+<p>The connection to lambda calculus runs deeper than it might seem. In <a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>, we saw Church’s encoding of booleans, where <code>TRUE = λx. λy. x</code> (pick the first) and <code>FALSE = λx. λy. y</code> (pick the second). R’s <code>if/else</code> does the same thing: it takes a condition and two branches, and returns whichever branch the condition selects, just as Church’s booleans select an argument.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)) <span class="st">"yes"</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `if (c(TRUE, FALSE)) ...`:</span></span>

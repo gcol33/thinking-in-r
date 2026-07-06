@@ -7,7 +7,7 @@ source(here::here("_common.R"))
 
 You have a hundred measurements of penguin body mass, another hundred of bill length, and a character vector of species names. Three vectors, all the same length, all describing the same 100 birds. You could keep them as separate objects, indexing carefully, hoping that nobody reorders one without reordering the others. Or you could store them together in a structure that enforces the constraint for you: every column the same length, every row one observation, accessible with the list operations from Chapter 10.
 
-That structure is the data frame\index{data frame}: a list where every element is a vector of the same length. Lists hold anything; a data frame constrains that freedom to equal-length columns, and once you see this, subsetting, column operations, and the entire tidyverse make sense. The idea predates R by decades: Edgar Codd's\index{Codd, Edgar} 1970 paper at IBM defined relations as sets of tuples, each row a typed record, and R's data frames, SQL tables, pandas DataFrames, and Spark datasets all descend from that same relational algebra\index{relational model}.
+That structure is the data frame\index{data frame}: a list where every element is a vector of the same length. Lists hold anything; a data frame constrains that freedom to equal-length columns, and once you see this, subsetting, column operations, and the entire tidyverse make sense.
 
 So what does this constraint actually buy you?
 
@@ -25,7 +25,7 @@ typeof(penguins)
 is.list(penguins)
 ```
 
-Type `"list"`, because it *is* a list. The difference from an ordinary list is that every element (every column\index{column}) must be a vector of the same length, so each row\index{row} lines up across all columns; one observation, one position in every vector. Build one yourself:
+Type `"list"`, because it *is* a list, with one constraint added: every column\index{column} is a vector of the same length, so each row\index{row} lines up across all columns. Build one yourself:
 
 ```{r}
 df <- data.frame(
@@ -43,9 +43,13 @@ str(df)
 
 Two columns, two rows, and nothing more than a list wearing a label.
 
-Type theory calls this a *product type*\index{product type}. A data frame with columns `name` (character) and `mass` (double) has type `character × double`: each row pairs one character value with one double value. Add a third column and the type grows: `character × double × integer`.
+::: {.callout-note collapse="true"}
+## Product types
 
-The equal-length constraint is doing more work than it appears. A plain list lets you pair a five-element vector with a three-element vector and says nothing about the mismatch. A data frame refuses. Why? Because the constraint *is* the guarantee: row *i* across all columns describes the same observation. Break the rectangle — one column longer than another — and that guarantee disappears, and every function that touches the data must re-verify alignment on its own. Codd's 1970 relational model imposed the same rule: every tuple in a relation has the same attributes. SQL inherited it, pandas and Arrow enforce it today, and R's data frame sits in that same lineage. The trade is flexibility for a promise: if the data is rectangular, row alignment is automatic and every subsetting operation preserves it. Logical indexing, `merge()`, and `rbind()` all depend on that promise holding.
+Type theory calls this a *product type*\index{product type}. A data frame with columns `name` (character) and `mass` (double) has type `character × double`: each row pairs one character value with one double value. Add a third column and the type grows: `character × double × integer`.
+:::
+
+The equal-length constraint is doing more work than it appears. A plain list lets you pair a five-element vector with a three-element vector and says nothing about the mismatch. A data frame refuses. Why? Because the constraint *is* the guarantee: row *i* across all columns describes the same observation. Break the rectangle — one column longer than another — and that guarantee disappears, and every function that touches the data must re-verify alignment on its own. Codd's\index{Codd, Edgar} 1970 relational model\index{relational model} imposed the same rule: every tuple in a relation has the same attributes. SQL inherited it, pandas and Arrow enforce it today, and R's data frame sits in that same lineage. The trade is flexibility for a promise: if the data is rectangular, row alignment is automatic and every subsetting operation preserves it. Logical indexing, `merge()`, and `rbind()` all depend on that promise holding.
 
 So what goes into those columns when you build one from scratch?
 
@@ -74,7 +78,7 @@ Before R 4.0, `data.frame()` converted character vectors to factors by default (
 
 ::: callout-tip
 ## Opinion
-The `stringsAsFactors` default was wrong for 23 years and finally fixed in R 4.0 (2020). If someone's tutorial still warns about it, the tutorial is outdated.
+If someone's tutorial still warns about `stringsAsFactors`, the tutorial is outdated.
 :::
 
 ### Row names {#sec-row-names}
@@ -85,7 +89,7 @@ Some built-in datasets carry a feature you might not expect:
 head(mtcars, 3)
 ```
 
-The car names ("Mazda RX4", etc.) are row names, not a column. They look like data, they smell like data, but they live in a separate metadata slot that can't contain duplicates, gets silently dropped by many functions, and behaves nothing like a real column. You can't filter by row name without extra syntax, and you can't have two rows with the same label.
+The car names ("Mazda RX4", etc.) are row names, not a column. They look like data, they smell like data, but they live in a separate metadata slot that can't contain duplicates, gets silently dropped by many functions, and behaves nothing like a real column. You can't filter by row name without extra syntax.
 
 ::: callout-tip
 ## Opinion
@@ -326,7 +330,7 @@ Use tibbles by default. Use plain data frames when a package demands one (rare) 
 str(penguins)
 ```
 
-344 rows, 8 columns, the type of each column, and a preview of the values. This is the first thing to run when you load a new dataset.
+344 rows, 8 columns, the type of each column, and a preview of the values.
 
 Other useful functions:
 
@@ -361,7 +365,7 @@ summary(penguins)
 
 ## Putting it together {#sec-df-putting-together}
 
-A data frame is a list (@sec-list-of-vectors), each column is a vector (@sec-atomic-vectors), and subsetting uses the same `[`, `[[`, and `$` operators you learned for lists (Chapter 8) and vectors (@sec-indexing). Logical indexing filters rows (@sec-logical-subsetting-df) with the same mechanism from @sec-vectorized-ops, just applied to a two-dimensional structure. Everything connects.
+A data frame is a list (@sec-list-of-vectors), each column is a vector (@sec-atomic-vectors), and subsetting uses the same `[`, `[[`, and `$` operators you learned for lists (Chapter 8) and vectors (@sec-indexing). Logical indexing filters rows (@sec-logical-subsetting-df) with the same mechanism from @sec-vectorized-ops, just applied to a two-dimensional structure.
 
 One consequence of this design matters more than any syntax detail: R stores data frames column by column, each column a single contiguous vector in memory. Column operations like `mean(df$x)` walk sequential memory and run fast, while row operations like `apply(df, 1, sum)` jump between columns on every row and run slow. This is the same trade-off databases make: columnar stores (DuckDB, Parquet) optimize for analytical aggregation; row stores (PostgreSQL, MySQL) optimize for single-record transactions.
 

@@ -9,17 +9,19 @@ What, exactly, is a vector?
 
 You have written thousands of them by now, filtered them, mapped functions over them, watched them copy themselves at surprising moments. But the object itself, the thing sitting in memory when you type `x <- c(1, 2, 3)`, has remained invisible. This chapter opens it up. We are going to look at the C structs that R allocates on the heap, the pointer arithmetic that makes vectorized operations fast, the reference counter that decides when copies happen, and the garbage collector that reclaims everything you abandon. None of this is necessary for writing good R. But it makes the design choices you have seen throughout this book (copy-on-modify, lazy evaluation, lexical scoping) feel less like arbitrary rules and more like consequences of a single engineering blueprint.
 
-R's C implementation descends from S, which John Chambers created at Bell Labs in the 1970s. When Ross Ihaka and Robert Gentleman reimplemented it at the University of Auckland in the early 1990s, they borrowed the evaluation model from Scheme and dressed it in S-compatible syntax. The linked-list environments come from Lisp; the vectorized operations come from S; the garbage collector is a textbook generational mark-and-sweep. What holds all of it together is a single data structure.
+R's C implementation descends from S, which John Chambers created at Bell Labs in the 1970s. When Ross Ihaka and Robert Gentleman reimplemented it at the University of Auckland in the early 1990s, they borrowed the evaluation model from Scheme and dressed it in S-compatible syntax. The linked-list environments come from Lisp; the vectorized operations come from S. What holds all of it together is a single data structure.
 
 
 ## Stack and heap {#sec-stack-and-heap}
 
-A running program has two regions of memory. The *stack* is small, fast, and automatic: when you call a function, its local variables go on the stack, and when the function returns, they vanish. The *heap* is large, slow, and manual: objects allocated on the heap survive until something explicitly frees them (in C) or until a garbage collector determines that nothing points to them anymore (in R, Python, Java). Every R object lives on the heap. When you write `x <- c(1, 2, 3)`, R allocates a block of memory on the heap, fills it with your three numbers, and stores a pointer to that block in the binding for `x`. When `x` goes out of scope and nothing else references it, R's garbage collector reclaims the memory. The stack holds the bookkeeping (which function called which, where to return); the heap holds the data.
+A running program has two regions of memory. The *stack* is small, fast, and automatic: when you call a function, its local variables go on the stack, and when the function returns, they vanish. The *heap* is large, slow, and manual: objects allocated on the heap survive until something explicitly frees them (in C) or until a garbage collector determines that nothing points to them anymore (in R, Python, Java). The stack holds the bookkeeping (which function called which, where to return); the heap holds the data.
+
+Every R object lives on the heap. When you write `x <- c(1, 2, 3)`, R allocates a block of memory on the heap, fills it with your three numbers, and stores a pointer to that block in the binding for `x`. When `x` goes out of scope and nothing else references it, R's garbage collector reclaims the memory.
 
 
 ## Every object is a SEXP {#sec-sexp}
 
-In R's C source code, every R object, without exception, is represented as a `SEXP`\index{SEXP}: a pointer to a `SEXPREC`\index{SEXPREC} struct. The name stands for "S expression," inherited from Lisp. When you write `x <- c(1, 2, 3)`, R allocates a `SEXPREC` on the heap, fills it with the data for a three-element numeric vector, and stores the pointer in the binding for `x`.
+In R's C source code, every R object, without exception, is represented as a `SEXP`\index{SEXP}: a pointer to a `SEXPREC`\index{SEXPREC} struct. The name stands for "S expression," inherited from Lisp. That block R allocates for `x <- c(1, 2, 3)` is a `SEXPREC`, holding the data for a three-element numeric vector, with its pointer stored in the binding for `x`.
 
 The `SEXPREC` struct has two parts. The header is the same for every object, and it contains:
 
@@ -62,7 +64,7 @@ typeof(mean)
 
 Some of these are familiar. `CLOSXP` is the closure from @sec-closures. `ENVSXP` is the environment from @sec-environments. `PROMSXP` is the promise from @sec-lazy-evaluation. The new ones, LANGSXP and SYMSXP, are the building blocks of R's metaprogramming system (@sec-metaprogramming), and we will meet them properly there.
 
-Notice that `sum` and `mean` have different types. `sum` is a `builtin`, implemented directly in C, evaluating all its arguments before being called. `mean` is a `closure`, a regular R function with formals, a body, and an environment. The distinction matters at the C level but rarely at the R level. What matters at both levels is being able to see inside these objects, so how do you look?
+Notice that `sum` and `mean` have different types. `sum` is a `builtin`, implemented directly in C, evaluating all its arguments before being called. `mean` is a `closure`, a regular R function with formals, a body, and an environment. The distinction matters at the C level but rarely at the R level.
 
 
 ## Inspecting objects {#sec-inspect}
@@ -148,7 +150,7 @@ The outer `STRSXP` addresses differ (they are separate character vectors), but t
 
 A list (`VECSXP`) is a vector of SEXP pointers. Each element can point to any R object of any type, which is why lists are heterogeneous: the list itself is just an array of pointers, and the pointed-to objects can be anything. This pointer-based layout has consequences for how R handles tabular data.
 
-**Data frames and cache friendliness.** A data frame is a list of column vectors, and each column is a contiguous array. Operations that scan down a column (summing, filtering, grouping) touch sequential memory and benefit from cache prefetching. Operations that scan across rows jump between columns, touching non-sequential addresses and thrashing the cache. This is why column-wise operations in R are generally faster than row-wise ones, and why `apply(df, 1, f)` (row-wise) is slower than `lapply(df, f)` (column-wise). But memory layout only tells half the story; the other half is what happens when two names share the same layout.
+**Data frames and cache friendliness.** A data frame is a list of column vectors, and each column is a contiguous array. Operations that scan down a column (summing, filtering, grouping) touch sequential memory and benefit from cache prefetching. Operations that scan across rows jump between columns, touching non-sequential addresses and thrashing the cache. This is why column-wise operations in R are generally faster than row-wise ones, and why `apply(df, 1, f)` (row-wise) is slower than `lapply(df, f)` (column-wise).
 
 ### Exercises {.unnumbered}
 
@@ -298,7 +300,7 @@ When the expression is a symbol (`SYMSXP`), the evaluator looks it up in the env
 
 This is why R is slower than compiled languages for tight loops: every iteration goes through this switch statement, every variable access is an environment lookup, and every function call involves promise creation and argument matching. Vectorized code avoids most of this overhead by dropping into C for the inner loop, where none of these costs exist. But the environments that the evaluator searches through are themselves data structures worth understanding.
 
-**Environments as linked frames.** An environment in R is a hash table of bindings (name-to-SEXP mappings) plus a pointer to a parent environment. Variable lookup walks the chain: check the current environment's hash table, then the parent's, then the grandparent's, up to the global environment and then the search path of attached packages. The hash table uses a simple chaining scheme, and small environments (fewer than about 5 bindings) skip the hash table entirely, using linear search through a pairlist instead, because the overhead of hashing is not worth it for tiny frames.
+**Environments as linked frames.** An environment in R is a hash table of bindings (name-to-SEXP mappings) plus a pointer to a parent environment. Variable lookup walks the chain: check the current environment's hash table, then the parent's, then the grandparent's, up to the global environment and then the search path of attached packages.
 
 
 ## Promises at C level {#sec-promise-internals}
@@ -355,7 +357,7 @@ environment(add5)
 
 `formals()`, `body()`, and `environment()` are R-level accessors to the three fields of the CLOSXP. The environment of `add5` is the execution environment created when `adder(5)` was called, and it contains the binding `n = 5`. This is lexical scoping made concrete: the closure carries a pointer to the environment where it was born, and that environment stays alive as long as the closure exists, because the GC traces the pointer and keeps the environment reachable.
 
-Every user-defined function in R is a CLOSXP. Even a bare `function(x) x + 1` carries all three fields. The distinction between "function" and "closure" that some languages make does not exist in R's implementation: all functions are closures. But not all callable things in R are closures, and the mechanisms for reaching compiled code differ in important ways.
+Every user-defined function in R is a CLOSXP. Even a bare `function(x) x + 1` carries all three fields. The distinction between "function" and "closure" that some languages make does not exist in R's implementation. But not all callable things in R are closures, and the mechanisms for reaching compiled code differ in important ways.
 
 ### Exercises {.unnumbered}
 
@@ -432,7 +434,7 @@ typeof(`+`)        # "builtin"  - primitive, evaluates all args
 typeof(mean)       # "closure"  - R function, may use .Internal inside
 ```
 
-The distinction between `builtin` and `special` is about argument evaluation. Builtins evaluate all arguments before calling the C function (like normal function calls). Specials handle argument evaluation themselves, which is how `if` can avoid evaluating the branch not taken and `&&` can short-circuit. With all these pieces in view, the full lifecycle of an R object comes into focus.
+The distinction between `builtin` and `special` is about argument evaluation. Builtins evaluate all arguments before calling the C function (like normal function calls). Specials handle argument evaluation themselves, which is how `if` can avoid evaluating the branch not taken and `&&` can short-circuit.
 
 
 ## Putting it together {#sec-internals-summary}

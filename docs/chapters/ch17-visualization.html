@@ -661,7 +661,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This chapter assumes you have tidy data (<a href="ch16-tidy-data.html" class="quarto-xref"><span>Chapter 16</span></a>), can reshape it with dplyr (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>), and can pipe it through transformations (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>). The data is clean. Now you see it.</p>
 <section id="sec-grammar-of-graphics" class="level2" data-number="17.1">
 <h2 data-number="17.1" class="anchored" data-anchor-id="sec-grammar-of-graphics"><span class="header-section-number">17.1</span> The grammar of graphics</h2>
-<p>In 1999, Leland Wilkinson published <em>The Grammar of Graphics</em>, and the central argument was deceptively simple: a plot is not a type. Not a bar chart, not a scatterplot, not a heatmap. A plot is a mapping from data to visual properties, rendered by geometric objects, in a coordinate system; types are consequences of choices, not starting points. The intellectual roots stretch further back to Jacques Bertin’s <em>Semiologie Graphique</em> (1967), which classified visual variables (position, size, shape, value, color, orientation, texture) and ranked their effectiveness for different data types. Wilkinson built on Bertin’s foundation, and when ggplot2 maps a variable to <code>color</code> vs <code>size</code> vs <code>shape</code>, it is implementing Bertin’s taxonomy: position is most effective for quantitative data, color for categorical.</p>
+<p>In 1999, Leland Wilkinson published <em>The Grammar of Graphics</em>, and the central argument was deceptively simple: a plot is not a type. Not a bar chart, not a scatterplot, not a heatmap. A plot is a mapping from data to visual properties, rendered by geometric objects, in a coordinate system; types are consequences of choices, not starting points.</p>
 <p>Hadley Wickham turned this theory into software in 2005, building ggplot2 as a layered grammar where plots emerge from composing independent components:</p>
 <ol type="1">
 <li><strong>Data</strong>: a tidy data frame (<a href="ch16-tidy-data.html" class="quarto-xref"><span>Chapter 16</span></a>).</li>
@@ -675,12 +675,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Most plots need only three: data + aesthetics + geom. The rest are refinements you reach for when the defaults aren’t enough.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: package 'palmerpenguins' was built under R version 4.6.1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The simplest ggplot2 call needs three things: data, an aesthetic mapping, and a geom:</p>
 <div class="cell">
@@ -712,7 +713,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Writing <code>color = species</code> maps each species to a different color; ggplot2 picks the palette automatically and adds a legend. Common aesthetics include <code>x</code>, <code>y</code>, <code>color</code> (or <code>colour</code>), <code>fill</code>, <code>shape</code>, <code>size</code>, <code>alpha</code>, <code>linetype</code>, and <code>group</code>.</p>
+<p>Writing <code>color = species</code> maps each species to a different color; ggplot2 picks the palette automatically and adds a legend. The mappings you will use most are <code>x</code>, <code>y</code>, and <code>color</code> (or <code>fill</code>); <code>shape</code>, <code>size</code>, <code>alpha</code>, <code>linetype</code>, and <code>group</code> are there when you need them.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Bertin’s visual variables
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The intellectual roots stretch back to Jacques Bertin’s <em>Semiologie Graphique</em> (1967), which classified visual variables (position, size, shape, value, color, orientation, texture) and ranked their effectiveness for different data types. Wilkinson built on Bertin’s foundation, and when ggplot2 maps a variable to <code>color</code> vs <code>size</code> vs <code>shape</code>, it is implementing Bertin’s taxonomy: position is most effective for quantitative data, color for categorical.</p>
+</div>
+</div>
+</div>
 <p>There is one distinction that trips up everyone, usually within the first hour. Inside <code>aes()</code> means <em>mapped to a variable</em>. Outside <code>aes()</code> means <em>fixed for all observations</em>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Color varies by species</span></span>
@@ -753,7 +770,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>If someone’s plot has a legend they didn’t ask for, they probably put a variable outside <code>aes()</code>. If all their points turned the same color when they shouldn’t have, they put a constant inside <code>aes()</code>. Getting this one distinction right fixes roughly half of all ggplot2 questions on Stack Overflow.</p>
 </div>
 </div>
-<p>Aesthetics placed in <code>ggplot()</code> are inherited by every layer; aesthetics placed in a specific <code>geom_*()</code> apply only to that layer. When multiple geoms share the same mapping, put it in <code>ggplot()</code>. When a mapping belongs to one layer only, put it in the geom. This inheritance rule keeps your code DRY, but it also means that a misplaced aesthetic can quietly propagate to layers you didn’t intend. So what shapes can those layers draw?</p>
+<p>Aesthetics placed in <code>ggplot()</code> are inherited by every layer; aesthetics placed in a specific <code>geom_*()</code> apply only to that layer. This inheritance keeps your code DRY, but it also means a misplaced aesthetic can quietly propagate to layers you didn’t intend. So what shapes can those layers draw?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -1049,7 +1066,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Themes are cosmetic. Spend your time on clear mappings and good labels before worrying about fonts.</p>
-<p>That said, pick one default early (<code>theme_minimal()</code> or <code>theme_bw()</code> are the usual choices) and use it everywhere. Three plots in the same report with the same theme are preferable.</p>
+<p>That said, pick one default early (<code>theme_minimal()</code> or <code>theme_bw()</code> are the usual choices) and use it everywhere. Three plots in the same report should share a theme.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1104,8 +1121,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="17.8" class="anchored" data-anchor-id="sec-ggplot-lambda"><span class="header-section-number">17.8</span> ggplot2 as lambda calculus</h2>
 <p>A ggplot specification is a program. Not metaphorically: it is a tree of expressions that gets evaluated to produce output, just like any other R expression, and the connection to the ideas from <a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a> runs deep.</p>
 <p><code>aes()</code> is a function that returns unevaluated expressions. When you write <code>aes(x = bill_length_mm, y = body_mass_g)</code>, R does not look up <code>bill_length_mm</code> in your environment; it captures the expression and stores it for later evaluation inside the data frame. This is the same quoting mechanism you will encounter in <a href="ch26-metaprogramming.html" class="quarto-xref"><span>Chapter 26</span></a>: <code>aes()</code> is non-standard evaluation applied to visualization. The mapping is a <em>description</em> of a computation, not the computation itself, exactly like a lambda expression describes a function without executing it.</p>
-<p>The <code>+</code> operator on ggplot layers is monoidal composition. Each layer is an independent unit, combining two with <code>+</code> produces a new plot object, and the empty plot <code>ggplot()</code> acts as an identity element (adding it changes nothing). An associative binary operation with an identity element is a monoid, one of the simplest structures in algebra. String concatenation with <code>""</code> as identity is a monoid; list concatenation with <code>list()</code> is a monoid; function composition with the identity function is a monoid. ggplot layers are another instance of the same pattern. We will see in <a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a> that <code>Reduce()</code> works precisely because it folds over a monoid, and in <a href="ch30-r-as-mathematics.html#sec-category-connections" class="quarto-xref"><span>Section 30.8</span></a> how the pattern generalizes further.</p>
-<p>The rendering pipeline itself is function composition. When ggplot2 draws a plot, it runs a sequence of transformations: data, then stat (statistical transformation), then scale (map values to aesthetic space), then coord (project into pixel coordinates), then render (draw shapes). Each step takes a data structure and returns a data structure, making the pipeline <code>render ∘ coord ∘ scale ∘ stat</code>, pure composition. A graphics engine, at its core, is a chain of morphisms between categories: data space to statistical space to aesthetic space to physical space (pixels). Each <code>geom_*()</code> specifies what the final rendering step should draw; everything before it is a data transformation pipeline.</p>
+<p>The <code>+</code> operator on ggplot layers is monoidal composition. Each layer is an independent unit, combining two with <code>+</code> produces a new plot object, and the empty plot <code>ggplot()</code> acts as an identity element (adding it changes nothing). An associative binary operation with an identity element is a monoid, one of the simplest structures in algebra. String concatenation with <code>""</code> as its identity is a monoid, and so are list concatenation and function composition. ggplot layers are another instance of the same pattern. We will see in <a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a> that <code>Reduce()</code> works precisely because it folds over a monoid, and in <a href="ch30-r-as-mathematics.html#sec-category-connections" class="quarto-xref"><span>Section 30.8</span></a> how the pattern generalizes further.</p>
+<p>When ggplot2 draws a plot, it runs a sequence of transformations: data, then stat (statistical transformation), then scale (map values to aesthetic space), then coord (project into pixel coordinates), then render (draw shapes). Each <code>geom_*()</code> specifies what the final rendering step should draw; everything before it is a data transformation pipeline.</p>
+<p>This pipeline is itself function composition. Each step takes a data structure and returns a data structure, making it <code>render ∘ coord ∘ scale ∘ stat</code>, pure composition.</p>
 <p>This is why the grammar works so well: a small set of composable functions rather than a grab bag of plot types. You have already seen this principle at work: small functions that compose are more powerful than large functions that don’t (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>). ggplot2 applies that principle to visualization.</p>
 <p>Compare this to what came before. Base R’s <code>plot()</code>, <code>barplot()</code>, and <code>hist()</code> are self-contained functions, each with its own parameter names and its own assumptions about data shape. Adding a fitted line to a scatterplot means calling <code>abline()</code> after <code>plot()</code>, a second function that depends on the first having already drawn to the graphics device. There is no plot object to inspect or modify; the drawing has already happened. If you want a variant (a scatterplot with a smoothed trend, faceted by species, with a custom color scale), you are writing procedural drawing code. The grammar inverts that relationship. Each layer is an independent object, and combining two with <code>+</code> produces a new plot object you can store, modify, and pass around before anything touches the screen. The layers compose because they are values, not side effects, following the same principle that makes pipe chains and <code>map()</code> calls work. Graphics is where composition becomes visible, because you can see the result on the screen and trace each layer back to the line of code that produced it.</p>
 <p>What happens when you apply this principle to your own domain?</p>

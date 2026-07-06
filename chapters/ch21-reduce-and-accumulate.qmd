@@ -20,9 +20,7 @@ You have a list of data frames from an API and you need to merge them all into o
 Reduce(`+`, 1:5)
 ```
 
-That computes `((((1 + 2) + 3) + 4) + 5)`. The first call is `f(1, 2)`, which gives 3; then `f(3, 3)`, giving 6; then `f(6, 4)`, giving 10; then `f(10, 5)`, giving 15. Each intermediate result becomes the left argument of the next call, which is why this is called a *left fold*\index{fold}\index{left fold}: the parentheses nest to the left.
-
-The name comes from Haskell's `foldl`. APL had the same operation in 1962, spelled `+/1 2 3 4 5`.
+That computes `((((1 + 2) + 3) + 4) + 5)`. The first call is `f(1, 2)`, which gives 3; then `f(3, 3)`, giving 6; then `f(6, 4)`, giving 10; then `f(10, 5)`, giving 15. Each intermediate result becomes the left argument of the next call, which is why this is called a *left fold*\index{fold}\index{left fold} (Haskell's `foldl`): the parentheses nest to the left.
 
 With a named function the folding structure becomes visible:
 
@@ -69,7 +67,7 @@ Reduce(`-`, 1:4)
 Reduce(`-`, 1:4, right = TRUE)
 ```
 
-The left fold computes `(((1 - 2) - 3) - 4) = -8`. The right fold computes `(1 - (2 - (3 - 4))) = -2`. For associative operations (addition, multiplication, `paste0`, `c()`, `intersect`, `union`) the direction does not matter; you get the same answer either way, and left fold is the natural default. The difference only surfaces for non-associative operations: subtraction, division, exponentiation. These give different results depending on which way you nest.
+The left fold computes `(((1 - 2) - 3) - 4) = -8`. The right fold computes `(1 - (2 - (3 - 4))) = -2`. For associative operations (addition, multiplication, `paste0`, `c()`, `intersect`, `union`) the direction does not matter; you get the same answer either way, and left fold is the natural default. The difference only surfaces for non-associative operations: subtraction, division, exponentiation.
 
 In Haskell, `foldl` and `foldr` are separate functions, and choosing between them is a design decision with performance implications (lazy evaluation makes right folds cheaper in some cases). In R, `right = TRUE` is rarely needed. If you find yourself reaching for a right fold, ask first whether your binary function simply has its arguments in the wrong order.
 
@@ -89,7 +87,7 @@ Sometimes the final result is not enough. You want every intermediate step: the 
 Reduce(`+`, 1:5, accumulate = TRUE)
 ```
 
-Running totals: `1, 3, 6, 10, 15`. This is the *scan*\index{scan} operation (Haskell's `scanl`, APL's `\`). Where fold collapses a list to a single value, scan collapses it to a list of all the values the fold passed through on its way to the answer. Running maxima, cumulative sums, progressive string construction: they all fall out of the same pattern.
+Running totals: `1, 3, 6, 10, 15`. This is the *scan*\index{scan} operation (Haskell's `scanl`, APL's `\`). Where fold collapses a list to a single value, scan collapses it to a list of all the values the fold passed through on its way to the answer.
 
 ```{r}
 Reduce(max, c(3, 1, 4, 1, 5, 9, 2, 6), accumulate = TRUE)
@@ -214,9 +212,7 @@ Each row's `a`, `b`, and `c` values are collected into a vector, summed, and sto
 
 ## When to fold and when not to {#sec-when-to-fold}
 
-`Reduce()` is the right tool when you have a binary operation and a list of things to combine: merging data frames, chaining set operations, collapsing nested structures. It is the wrong tool when a vectorized function already exists. `sum(x)` is faster and clearer than `Reduce(`+`, x)`. `paste(x, collapse = " ")` beats `Reduce(paste, x)`. The base R cumulative functions (`cumsum`\index{cumsum()}, `cumprod`\index{cumprod()}, `cummax`, `cummin`) are compiled C and will always outperform `accumulate(`+`, x)`.
-
-The rule is simple: if a specialized function exists, use it. Reach for `Reduce()` when your binary operation has no built-in vectorized cousin.
+`Reduce()` is the right tool when you have a binary operation and a list of things to combine: merging data frames, chaining set operations, collapsing nested structures. It is the wrong tool when a vectorized function already exists. `sum(x)` is faster and clearer than `Reduce(`+`, x)`. `paste(x, collapse = " ")` beats `Reduce(paste, x)`. The base R cumulative functions (`cumsum`\index{cumsum()}, `cumprod`\index{cumprod()}, `cummax`, `cummin`) are compiled C and will always outperform `accumulate(`+`, x)`. Reach for `Reduce()` when your binary operation has no built-in vectorized cousin.
 
 `Reduce()` also becomes awkward when the accumulator needs complex state. If your fold carries a list with multiple fields and each step updates several of them conditionally, you are no longer folding; you are writing a state machine with the fold syntax as a straitjacket. That is better expressed as an explicit loop or a recursive function (@sec-recursion), where the state updates are visible and the control flow is honest.
 

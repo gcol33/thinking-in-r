@@ -676,7 +676,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Random seeds not set.</li>
 <li>Outputs separated from the code that produced them.</li>
 </ul>
-<p>The fix is structural, not behavioral. Do not rely on discipline (“I will remember to run script 3 first”); build a system that makes the wrong thing hard. Each tool in this chapter eliminates one failure mode: <code>here</code> eliminates path problems, <code>renv</code> eliminates version problems, Quarto eliminates the code/output sync problem, <code>targets</code> eliminates the run-order problem, and Git eliminates the “which version was it?” problem. The first one costs nothing to adopt.</p>
+<p>The fix is structural, not behavioral. Do not rely on discipline (“I will remember to run script 3 first”); build a system that makes the wrong thing hard. Each tool in this chapter eliminates one failure mode, and the first one costs nothing to adopt.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -711,7 +711,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 └── renv.lock           # dependency lockfile</code></pre>
 <p>Raw data is sacred: never modify it. Read it, transform it in code, write outputs elsewhere. If someone asks “where did this number come from?”, you can trace it from the output file back through the code to the raw data, and that traceability breaks the moment code and data live in different places.</p>
 <p>A common mistake is placing data-cleaning code in a different project from the analysis, so that reproducing the analysis requires finding and running a separate project first. Keep everything in one project, or use <code>targets</code> (<a href="#sec-targets" class="quarto-xref"><span>Section 33.5</span></a>) to formalize the dependency.</p>
-<p>Another common mistake: using <code>rm(list = ls())</code> at the top of a script to “clean up.” This clears your workspace but does not restart R, so hidden state (loaded packages, modified options, changed working directories) persists. Instead, restart R (Ctrl+Shift+F10 in RStudio) for a true clean slate. Clean paths solve the “where is my file?” problem; but what about the “which version of dplyr was I using?” problem?</p>
+<p>Another common mistake: using <code>rm(list = ls())</code> at the top of a script to “clean up.” This clears your workspace but does not restart R, so hidden state (loaded packages, modified options, changed working directories) persists. Instead, restart R (Ctrl+Shift+F10 in RStudio) for a true clean slate.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -743,9 +743,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>renv<span class="sc">::</span><span class="fu">snapshot</span>()   <span class="co"># record exact versions in renv.lock</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>renv<span class="sc">::</span><span class="fu">restore</span>()    <span class="co"># install exactly the versions in the lockfile</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>renv::init()</code> creates a private library for this project, isolating your package versions from every other project on your machine. <code>renv::snapshot()</code> writes <code>renv.lock</code>, a JSON file listing every package and its exact version: your dependency manifest, which you should commit to Git. <code>renv::restore()</code> reads that lockfile and installs exactly those versions, so a collaborator who clones your repo and runs <code>renv::restore()</code> gets the same packages you used.</p>
+<p><code>renv::init()</code> creates a private library for this project, isolating your package versions from every other project on your machine. <code>renv::snapshot()</code> writes <code>renv.lock</code>, a JSON file listing every package and its exact version: your dependency manifest. <code>renv::restore()</code> reads that lockfile and installs exactly those versions, so a collaborator who clones your repo and runs <code>renv::restore()</code> gets the same packages you used.</p>
 <p>The workflow: <code>init()</code> once, <code>snapshot()</code> after installing or updating packages, commit <code>renv.lock</code> to Git. That is all.</p>
-<p>renv does not version R itself. If the R version matters, document it; Docker solves this completely (see <a href="#sec-reproducibility-stack" class="quarto-xref"><span>Section 33.8</span></a>), but is beyond this book. Should you commit <code>renv.lock</code> to Git? Always. It is small (a few KB of JSON), and it is the entire point of renv. Without the lockfile in version control, a collaborator cannot restore your environment. The <code>renv/</code> directory itself, which contains the actual installed packages, is typically git-ignored.</p>
+<p>renv does not version R itself. If the R version matters, document it; Docker solves this completely (see <a href="#sec-reproducibility-stack" class="quarto-xref"><span>Section 33.8</span></a>), but is beyond this book. The <code>renv/</code> directory itself, which contains the actual installed packages, is typically git-ignored.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -759,7 +759,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>renv.lock</code> is boring. That is the point. Boring is reproducible.</p>
 </div>
 </div>
-<p>One practical detail worth knowing: when you switch between projects that use renv, you do not need to do anything special, because each project has its own library and renv activates automatically when you open the project. Packages installed in one project are invisible to another, which prevents the classic problem of updating a package for one analysis and breaking a different one. Code and dependencies are now pinned; but what about the prose, the figures, the narrative that wraps around your analysis?</p>
+<p>One practical detail worth knowing: when you switch between projects that use renv, you do not need to do anything special, because each project has its own library and renv activates automatically when you open the project. Packages installed in one project are invisible to another, which prevents the classic problem of updating a package for one analysis and breaking a different one.</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -794,7 +794,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>quarto render analysis.qmd <span class="sc">--</span>to docx</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>format</code> field in the YAML header sets the default (html, pdf, docx, revealjs for slides), and the <code>--to</code> flag overrides it. HTML needs no extra software. PDF requires a LaTeX installation; <code>quarto install tinytex</code> handles that. Word output produces a <code>.docx</code> that collaborators who do not use R can read and comment on. In RStudio, the “Render” button (Ctrl+Shift+K) does the same thing without the terminal.</p>
-<p>Quarto is the successor to R Markdown, and the core idea (literate programming) dates back to Donald Knuth in 1984: write programs as documents where the prose explains the code, not the other way around. The lineage runs from WEB (Pascal/TeX) through Sweave (2002), knitr (2012), R Markdown, and finally Quarto (2022), each generation bringing better tooling and broader language support. If you know R Markdown, you already know Quarto. The main differences: Quarto uses <code>#|</code> for chunk options instead of the chunk header, supports Python, Julia, and Observable in addition to R, and has better defaults for academic output (cross-references, citations, callouts).</p>
+<p>Quarto is the successor to R Markdown, and the core idea (literate programming) dates back to Donald Knuth in 1984: write programs as documents where the prose explains the code, not the other way around. The lineage runs from WEB (Pascal/TeX) through Sweave (2002), knitr (2012), R Markdown, and finally Quarto (2022), each generation bringing better tooling and broader language support.</p>
+<p>If you know R Markdown, you already know Quarto. The main differences: Quarto uses <code>#|</code> for chunk options instead of the chunk header, supports Python, Julia, and Observable in addition to R, and has better defaults for academic output (cross-references, citations, callouts).</p>
 <p>Output formats include HTML, PDF, Word, presentations, websites, and books (this book is written in Quarto). The format is flexible, but the real control comes from chunk options, which you place at the top of each chunk with the <code>#|</code> prefix:</p>
 <p><code>echo: false</code> hides the code and shows only the output. <code>eval: false</code> shows the code but does not run it. <code>fig-cap</code> adds a caption. <code>cache: true</code> caches results so unchanged chunks do not re-run. These options give you fine control over what the reader sees versus what runs behind the scenes.</p>
 <p>For academic writing, Quarto supports citations natively. Place a <code>.bib</code> file in your project and reference entries with <code>@key</code>:</p>
@@ -833,10 +834,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>tar_make()</code> runs the pipeline. <code>tar_visnetwork()</code> visualizes the dependency graph. <code>tar_read(model)</code> retrieves a cached result.</p>
-<p>Each target is a function call. Functions are the unit of computation (<a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>); targets are the unit of caching. If <code>raw_data</code> has not changed, <code>clean_data</code> does not re-run. If you change <code>plot_results()</code>, only <code>fig</code> re-runs.</p>
+<p>Each target is a function call. Functions are the unit of computation (<a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>); targets are the unit of caching. If <code>raw_data</code> has not changed, <code>clean_data</code> does not re-run. If you change <code>plot_results()</code>, only <code>fig</code> re-runs. This matters most when a step is expensive: if a model takes an hour to fit, <code>targets</code> caches the result and re-fits only when the model code or its inputs change, so tweaking a color on a plot re-runs the plot in seconds off the cached model.</p>
 <p>The caching works precisely because the functions are pure: given the same inputs, <code>clean_penguins()</code> returns the same output, so <code>targets</code> can skip it when the inputs have not changed. A function with side effects (one that reads from a database, modifies a global variable, or depends on the current time) would break the caching, because the same inputs would no longer guarantee the same output. <code>targets</code> makes the functional discipline from <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a> pay off at the project level: pure functions compose into pipelines that <code>targets</code> can reason about, cache, and selectively re-execute.</p>
 <p>Not every project needs <code>targets</code>. A single Quarto document handles simple analyses perfectly well. Reach for <code>targets</code> when you have long-running steps, many interdependent outputs, or pipelines that change frequently.</p>
-<p>The real power shows when your pipeline is expensive: if a model takes an hour to fit, you do not want to re-fit it every time you tweak a color on a plot. <code>targets</code> caches the model result and only re-fits when the model code or its inputs change, so the plot target re-runs in seconds because it reads the cached model. <code>tar_visnetwork()</code> produces a dependency graph showing which targets are up to date (green), outdated (blue), or errored (red), which makes debugging complex pipelines far easier than staring at a collection of numbered scripts.</p>
+<p><code>tar_visnetwork()</code> produces a dependency graph showing which targets are up to date (green), outdated (blue), or errored (red), which makes debugging complex pipelines far easier than staring at a collection of numbered scripts.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -979,7 +980,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>targets</strong>: for multi-step pipelines with long-running computations.</li>
 <li><strong>Docker</strong>: for complete environment reproducibility (R version, system libraries). Beyond this book, but worth knowing it exists.</li>
 </ol>
-<p>You do not need all of these for every project. Start with projects + here + Git, add renv when versions matter, add Quarto when you write reports, add targets when your pipeline grows.</p>
 <p>A decision guide:</p>
 <table class="caption-top table">
 <thead>
@@ -1016,7 +1016,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>Each layer solves one failure mode. Together, they make “works on my machine” a non-issue.</p>
-<p>The common thread across all of them is automation: <code>here</code> automates path construction, <code>renv</code> automates dependency tracking, Quarto automates the link between code and output, <code>targets</code> automates pipeline execution, and Git automates change tracking. Each requires a one-time setup cost and then runs automatically.</p>
 </section>
 <section id="sec-nix-docker" class="level2" data-number="33.9">
 <h2 data-number="33.9" class="anchored" data-anchor-id="sec-nix-docker"><span class="header-section-number">33.9</span> Beyond renv: full-stack reproducibility</h2>

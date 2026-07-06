@@ -21,7 +21,7 @@ Even if you never publish to CRAN, a package gives you:
 - **Dependency management**: you declare what you need.
 - **Namespace control**: your names do not collide with other packages' names.
 
-In @sec-functions-are-values-chapter, you saw that functions are values. A package is a named collection of functions with metadata, and that metadata is what separates "a folder of scripts" from "something someone else can install and use." The metadata has a specific shape, which raises an immediate question: what does it look like?
+In @sec-functions-are-values-chapter, you saw that functions are values. A package is a named collection of functions with metadata, and that metadata is what separates "a folder of scripts" from "something someone else can install and use."
 
 ::: callout-tip
 ## Opinion
@@ -33,7 +33,7 @@ The complete reference for everything in this chapter is *R Packages* (2nd editi
 
 ## The anatomy of a package {#sec-package-anatomy}
 
-The minimum viable package has three components: `DESCRIPTION`, `NAMESPACE`, and an `R/` directory. A package is a namespace of functions: the `R/` directory holds function definitions, `NAMESPACE` controls which ones are visible, and `DESCRIPTION` records metadata. A standard layout looks like this:
+The minimum viable package has three components: the `R/` directory holds function definitions, `NAMESPACE` controls which ones are visible, and `DESCRIPTION` records metadata. A standard layout looks like this:
 
 ```
 mypackage/
@@ -65,7 +65,9 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 ```
 
-**NAMESPACE**\index{NAMESPACE} controls what is visible to users (exports) and what you borrow from other packages (imports). Never edit it by hand; let roxygen2\index{roxygen2 (package)} generate it. Two hooks let you run code when the package loads: `.onLoad()` fires when the namespace is loaded (even by `::` access), while `.onAttach()` fires only when someone calls `library()`. Use `.onLoad()` for setup that must happen before any function runs (registering S3 methods, setting default options, initializing connections) and `.onAttach()` only for startup messages. Both go in `R/zzz.R` by convention. For full details, see R Packages (2e), chapter 10.
+**NAMESPACE**\index{NAMESPACE} controls what is visible to users (exports) and what you borrow from other packages (imports). Never edit it by hand; let roxygen2\index{roxygen2 (package)} generate it.
+
+Two hooks, `.onLoad()` and `.onAttach()`, let you run code when the package loads; for the details, see R Packages (2e), chapter 10.
 
 The namespace is an environment (the concept from @sec-functions-returning-functions), and `NAMESPACE` defines what names are visible in that environment. When you call `dplyr::filter()`, R looks in dplyr's namespace environment; when you call just `filter()`, R searches the environment chain, and which `filter` it finds depends on what is attached. In lambda calculus terms, a package namespace is a closure at the module level: functions inside can reference each other because they share the namespace environment, but the outside world only sees what is explicitly exported. The `NAMESPACE` file marks the same boundary that a lambda abstraction marks between bound and free variables.
 
@@ -152,7 +154,7 @@ Key tags:
 
 Markdown in roxygen is enabled by adding `Roxygen: list(markdown = TRUE)` to `DESCRIPTION`, which lets you use `**bold**`, `*italic*`, `` `code` ``, and `[function()]` for cross-links.
 
-`devtools::document()` converts roxygen comments to `.Rd` files in `man/` and updates `NAMESPACE`. You write roxygen; you never touch `man/` directly. Good documentation earns users, but even the best-documented function needs other packages to work with.
+`devtools::document()` converts roxygen comments to `.Rd` files in `man/` and updates `NAMESPACE`. You write roxygen; you never touch `man/` directly.
 
 ::: callout-tip
 ## Opinion
@@ -341,7 +343,7 @@ Three levels of feedback:
 - **WARNING**: something is wrong. Must fix for CRAN; should fix regardless.
 - **NOTE**: something is unusual. Fix if you can; explain if you can't.
 
-The goal: 0 errors, 0 warnings, 0 notes. Each of those roughly 50 tests exists because someone, somewhere, shipped a broken package, and the strictness reflects the cost of breakage on CRAN, where 20,000+ packages depend on each other. Every NOTE exists because someone shipped that exact mistake to CRAN and broke something downstream.
+The goal: 0 errors, 0 warnings, 0 notes. Each of those roughly 50 tests exists because someone, somewhere, shipped a broken package, and the strictness reflects the cost of breakage on CRAN, where 20,000+ packages depend on each other.
 
 Common issues and how to fix them:
 
@@ -350,7 +352,7 @@ Common issues and how to fix them:
 - **"Non-standard file/directory found"**: add the file to `.Rbuildignore` with `usethis::use_build_ignore("filename")`.
 - **"No visible binding for global variable"**: common with tidyverse code that uses unquoted column names. Fix with `utils::globalVariables()` or use `.data$column` from rlang.
 
-Run `check()` often during development, not just at the end. Each run should find at most one or two issues; if you wait until the end, you face dozens of notes at once, which is demoralizing and nearly impossible to debug systematically. A clean check means your package is well-formed, but a check that passes on your machine and fails on Linux is still a problem, which is why the next question matters: how do you get your package into other people's hands, and how do you make sure it works on their machines too?
+Run `check()` often during development, not just at the end. Each run should find at most one or two issues; if you wait until the end, you face dozens of notes at once, which is demoralizing and nearly impossible to debug systematically. A clean check means your package is well-formed, but a check that passes on your machine and fails on Linux is still a problem.
 
 ### Exercises {.unnumbered}
 
@@ -360,17 +362,15 @@ Run `check()` often during development, not just at the end. Each run should fin
 
 ## Sharing your package {#sec-sharing-package}
 
-**GitHub**: push your package to GitHub. Users install it with one line — either `pak::pak("user/mypackage")` or `devtools::install_github("user/mypackage")`. Lowest barrier to sharing.
+**GitHub**: push your package to GitHub, and users install it with one line, either `pak::pak("user/mypackage")` or `devtools::install_github("user/mypackage")`. This is the lowest barrier to sharing.
 
-**pkgdown**\index{pkgdown (package)}: `usethis::use_pkgdown_github_pages()` builds a website from your documentation, README, and vignettes, with automatic deployment through GitHub Actions. Professional documentation for free.
+Three other options exist:
 
-**CRAN**\index{CRAN}: the official repository. `devtools::submit_cran()`. Strict review: 0 errors, 0 warnings, ideally 0 notes, plus human reviewers who check CRAN policies. Worth the effort for packages with a broad audience.
-
-**R-universe** (`r-universe.dev`): automated package hosting with a lower barrier than CRAN but still discoverable. Point it at your GitHub repo, and it builds binaries for all platforms automatically.
+- **pkgdown**\index{pkgdown (package)}: `usethis::use_pkgdown_github_pages()` builds a website from your documentation, README, and vignettes, with automatic deployment through GitHub Actions.
+- **CRAN**\index{CRAN}: the official repository, via `devtools::submit_cran()`. Strict review: 0 errors, 0 warnings, ideally 0 notes, plus human reviewers who check CRAN policies. Worth the effort for packages with a broad audience.
+- **R-universe** (`r-universe.dev`): automated package hosting with a lower barrier than CRAN but still discoverable. Point it at your GitHub repo, and it builds binaries for all platforms automatically.
 
 Version numbers follow semantic versioning (semver.org): MAJOR.MINOR.PATCH. PATCH for bug fixes, MINOR for new backward-compatible features, MAJOR for breaking changes. The tidyverse follows this strictly: when dplyr goes from 1.0 to 1.1, your code will not break; when it goes to 2.0, check the changelog.
-
-The progression is natural. You build a package for yourself, put it on GitHub so colleagues can use it, add pkgdown so new users can find their way around, and eventually submit to CRAN if the package solves a general enough problem. Each step adds effort but also reach.
 
 For GitHub-hosted packages, continuous integration is nearly free:
 
@@ -382,8 +382,6 @@ usethis::use_github_action("check-standard")
 This adds a GitHub Actions\index{GitHub Actions}\index{CI/CD} workflow that runs `R CMD check` on Linux, macOS, and Windows every time you push. If the check fails, GitHub shows a red X next to the commit; if it passes, you get a green checkmark and a badge for your README. The real value is catching platform-specific bugs you would never find on your own machine: path separators (Windows uses `\`, everything else uses `/`), case-sensitive file systems (Linux is case-sensitive, macOS and Windows are not), and system library availability.
 
 A package with CI, documentation, and a one-line install command turns a two-day email chain into a single `pak::pak()` call.
-
-A closure captures variables in its enclosing environment and exposes only the returned function (@sec-closures-and-scope). A package does the same thing at a larger scale: internal functions, data, and dependencies live in the namespace; only the functions listed in `NAMESPACE` are visible outside. `devtools`, `usethis`, and roxygen automate the mechanics.
 
 ### Exercises {.unnumbered}
 

@@ -12,7 +12,7 @@ This chapter assumes you have tidy data (@sec-tidy-data), can reshape it with dp
 
 ## The grammar of graphics {#sec-grammar-of-graphics}
 
-In 1999, Leland Wilkinson published *The Grammar of Graphics*\index{grammar of graphics}, and the central argument was deceptively simple: a plot is not a type. Not a bar chart, not a scatterplot, not a heatmap. A plot is a mapping from data to visual properties, rendered by geometric objects, in a coordinate system; types are consequences of choices, not starting points. The intellectual roots stretch further back to Jacques Bertin's *Semiologie Graphique* (1967), which classified visual variables (position, size, shape, value, color, orientation, texture) and ranked their effectiveness for different data types. Wilkinson built on Bertin's foundation, and when ggplot2 maps a variable to `color` vs `size` vs `shape`, it is implementing Bertin's taxonomy: position is most effective for quantitative data, color for categorical.
+In 1999, Leland Wilkinson published *The Grammar of Graphics*\index{grammar of graphics}, and the central argument was deceptively simple: a plot is not a type. Not a bar chart, not a scatterplot, not a heatmap. A plot is a mapping from data to visual properties, rendered by geometric objects, in a coordinate system; types are consequences of choices, not starting points.
 
 Hadley Wickham turned this theory into software in 2005, building ggplot2 as a layered grammar where plots emerge from composing independent components:
 
@@ -54,7 +54,13 @@ ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g, fill = species, shape 
   scale_shape_manual(values = c(21, 22, 24))
 ```
 
-Writing `color = species` maps each species to a different color; ggplot2 picks the palette automatically and adds a legend. Common aesthetics include `x`, `y`, `color` (or `colour`), `fill`, `shape`, `size`, `alpha`, `linetype`, and `group`.
+Writing `color = species` maps each species to a different color; ggplot2 picks the palette automatically and adds a legend. The mappings you will use most are `x`, `y`, and `color` (or `fill`); `shape`, `size`, `alpha`, `linetype`, and `group` are there when you need them.
+
+::: {.callout-note collapse="true"}
+## Bertin's visual variables
+
+The intellectual roots stretch back to Jacques Bertin's *Semiologie Graphique* (1967), which classified visual variables (position, size, shape, value, color, orientation, texture) and ranked their effectiveness for different data types. Wilkinson built on Bertin's foundation, and when ggplot2 maps a variable to `color` vs `size` vs `shape`, it is implementing Bertin's taxonomy: position is most effective for quantitative data, color for categorical.
+:::
 
 There is one distinction that trips up everyone, usually within the first hour. Inside `aes()` means *mapped to a variable*. Outside `aes()` means *fixed for all observations*.
 
@@ -79,7 +85,7 @@ ggplot(penguins, aes(x = bill_length_mm, y = body_mass_g)) +
 If someone's plot has a legend they didn't ask for, they probably put a variable outside `aes()`. If all their points turned the same color when they shouldn't have, they put a constant inside `aes()`. Getting this one distinction right fixes roughly half of all ggplot2 questions on Stack Overflow.
 :::
 
-Aesthetics placed in `ggplot()` are inherited by every layer; aesthetics placed in a specific `geom_*()` apply only to that layer. When multiple geoms share the same mapping, put it in `ggplot()`. When a mapping belongs to one layer only, put it in the geom. This inheritance rule keeps your code DRY, but it also means that a misplaced aesthetic can quietly propagate to layers you didn't intend. So what shapes can those layers draw?
+Aesthetics placed in `ggplot()` are inherited by every layer; aesthetics placed in a specific `geom_*()` apply only to that layer. This inheritance keeps your code DRY, but it also means a misplaced aesthetic can quietly propagate to layers you didn't intend. So what shapes can those layers draw?
 
 
 ### Exercises {.unnumbered}
@@ -293,7 +299,7 @@ theme_set(theme_minimal())
 
 Themes are cosmetic. Spend your time on clear mappings and good labels before worrying about fonts.
 
-That said, pick one default early (`theme_minimal()` or `theme_bw()` are the usual choices) and use it everywhere. Three plots in the same report with the same theme are preferable.
+That said, pick one default early (`theme_minimal()` or `theme_bw()` are the usual choices) and use it everywhere. Three plots in the same report should share a theme.
 
 
 ### Exercises {.unnumbered}
@@ -349,9 +355,11 @@ A ggplot specification is a program. Not metaphorically: it is a tree of express
 
 `aes()` is a function that returns unevaluated expressions. When you write `aes(x = bill_length_mm, y = body_mass_g)`, R does not look up `bill_length_mm` in your environment; it captures the expression and stores it for later evaluation inside the data frame. This is the same quoting mechanism you will encounter in @sec-metaprogramming: `aes()` is non-standard evaluation applied to visualization. The mapping is a *description* of a computation, not the computation itself, exactly like a lambda expression describes a function without executing it.
 
-The `+` operator on ggplot layers is monoidal composition. Each layer is an independent unit, combining two with `+` produces a new plot object, and the empty plot `ggplot()` acts as an identity element (adding it changes nothing). An associative binary operation with an identity element is a monoid, one of the simplest structures in algebra. String concatenation with `""` as identity is a monoid; list concatenation with `list()` is a monoid; function composition with the identity function is a monoid. ggplot layers are another instance of the same pattern. We will see in @sec-reduce-and-accumulate that `Reduce()` works precisely because it folds over a monoid, and in @sec-category-connections how the pattern generalizes further.
+The `+` operator on ggplot layers is monoidal composition. Each layer is an independent unit, combining two with `+` produces a new plot object, and the empty plot `ggplot()` acts as an identity element (adding it changes nothing). An associative binary operation with an identity element is a monoid, one of the simplest structures in algebra. String concatenation with `""` as its identity is a monoid, and so are list concatenation and function composition. ggplot layers are another instance of the same pattern. We will see in @sec-reduce-and-accumulate that `Reduce()` works precisely because it folds over a monoid, and in @sec-category-connections how the pattern generalizes further.
 
-The rendering pipeline itself is function composition. When ggplot2 draws a plot, it runs a sequence of transformations: data, then stat (statistical transformation), then scale (map values to aesthetic space), then coord (project into pixel coordinates), then render (draw shapes). Each step takes a data structure and returns a data structure, making the pipeline `render ∘ coord ∘ scale ∘ stat`, pure composition. A graphics engine, at its core, is a chain of morphisms between categories: data space to statistical space to aesthetic space to physical space (pixels). Each `geom_*()` specifies what the final rendering step should draw; everything before it is a data transformation pipeline.
+When ggplot2 draws a plot, it runs a sequence of transformations: data, then stat (statistical transformation), then scale (map values to aesthetic space), then coord (project into pixel coordinates), then render (draw shapes). Each `geom_*()` specifies what the final rendering step should draw; everything before it is a data transformation pipeline.
+
+This pipeline is itself function composition. Each step takes a data structure and returns a data structure, making it `render ∘ coord ∘ scale ∘ stat`, pure composition.
 
 This is why the grammar works so well: a small set of composable functions rather than a grab bag of plot types. You have already seen this principle at work: small functions that compose are more powerful than large functions that don't (@sec-pipes-and-composition). ggplot2 applies that principle to visualization.
 

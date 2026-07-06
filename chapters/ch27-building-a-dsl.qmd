@@ -5,13 +5,17 @@
 source(here::here("_common.R"))
 ```
 
-Suppose you write `y ~ x1 + x2` and R does not add anything. The plus sign, which in every other context means addition, now means "include this predictor in the model." The tilde computes nothing; it freezes two expressions into an object for later interpretation. You have been using this notation since your first linear regression, probably without asking the obvious question: how does R let ordinary operators mean something completely different depending on context? The answer runs through everything you have learned so far: non-standard evaluation, operator overloading, and S3 dispatch combine to let you rewrite what R's syntax means.
+Suppose you write `y ~ x1 + x2` and R does not add anything. The plus sign, which in every other context means addition, now means "include this predictor in the model." The tilde computes nothing; it freezes two expressions into an object for later interpretation.
+
+You have been using this notation since your first linear regression, probably without asking the obvious question: how does R let ordinary operators mean something completely different depending on context? The answer runs through everything you have learned so far: non-standard evaluation, operator overloading, and S3 dispatch combine to let you rewrite what R's syntax means.
 
 You already have the pieces. `quote()` captures code as data (@sec-code-is-data), `substitute()` captures the caller's code (@sec-capture-evaluate), S3 dispatch selects behavior by type (@sec-dispatch), and operators are just functions (@sec-operators-are-functions). This chapter puts them together: you will dissect DSLs you already use, then build one from scratch.
 
-A domain-specific language\index{domain-specific language (DSL)}, or DSL, is a small language designed for one task. SQL queries data. Regular expressions match text. HTML structures documents. These are *external* DSLs with their own parsers, their own syntax, their own tooling. R excels at something different: *internal* DSLs, mini-languages embedded inside R itself, using R's own syntax but giving it new meaning. The formula interface, ggplot2's grammar of graphics, dplyr's verb chains, data.table's `[i, j, by]` notation: each lives inside R and plays by R's rules (mostly). What makes R unusually good at this is non-standard evaluation and operator overloading: the ability to capture user expressions without evaluating them, reinterpret what operators mean, and dispatch behavior through S3.
+A domain-specific language\index{domain-specific language (DSL)}, or DSL, is a small language designed for one task. SQL queries data, regular expressions match text, and HTML structures documents. These are *external* DSLs with their own parsers, their own syntax, their own tooling.
 
-By the mid-1960s, programmers were drowning in general-purpose syntax that forced every domain into the same mold. Peter Landin argued in 1966 that they should be able to build "a language appropriate to the problem." Three decades later, Guy Steele's keynote "Growing a Language" made the same case from the other side: a good language is one that users can extend until it fits the domain. R's formula interface, which dates to S in the 1980s, predates both papers, but the instinct is the same: capture code, give it new meaning.
+R excels at something different: *internal* DSLs, mini-languages embedded inside R itself, using R's own syntax but giving it new meaning. The formula interface, ggplot2's grammar of graphics, dplyr's verb chains, data.table's `[i, j, by]` notation: each lives inside R and plays by R's rules (mostly).
+
+By the mid-1960s, programmers were drowning in general-purpose syntax that forced every domain into the same mold. Peter Landin argued in 1966 that they should be able to build "a language appropriate to the problem." R's formula interface, which dates to S in the 1980s, shares the same instinct: capture code, give it new meaning.
 
 
 ## R's existing DSLs {#sec-existing-dsls}
@@ -29,13 +33,13 @@ ggplot(mtcars, aes(x = wt, y = mpg)) +
   geom_smooth(method = "lm")
 ```
 
-`aes()` captures column names as expressions without evaluating them, while `+.gg` (the S3 method for `+` on ggplot objects) takes the existing plot and attaches the new layer. This is the `+` operator overloading\index{+ operator overloading} pattern in ggplot2\index{ggplot2 (as DSL example)}. The plot builds incrementally, one `+` at a time, accumulating a list of layers, scales, and coordinates. This is an expression builder\index{expression builder} pattern: each `+` returns a new (or modified) plot object, and the final object is rendered only when printed. Incremental building solves the formula problem, but it introduces a new one: every `+` is a standalone layer, with no awareness of what the other layers are doing. What if the verbs themselves need to know about the data?
+`aes()` captures column names as expressions without evaluating them, while `+.gg` (the S3 method for `+` on ggplot objects) takes the existing plot and attaches the new layer. This is the `+` operator overloading\index{+ operator overloading} pattern in ggplot2\index{ggplot2 (as DSL example)}. The plot builds incrementally, one `+` at a time, accumulating a list of layers, scales, and coordinates. Incremental building solves the formula problem, but it introduces a new one: every `+` is a standalone layer, with no awareness of what the other layers are doing.
 
-**dplyr.** `filter(penguins, species == "Adelie")` captures `species == "Adelie"` as an expression and evaluates it against the data frame using data masking (@sec-capture-evaluate). The pipe operator chains verbs together, each doing one thing: filter rows, select columns, create new columns, summarize groups. Because the verbs are S3 generics, they dispatch on the data source. `filter.data.frame` works on data frames; `filter.tbl_lazy` generates SQL. Same syntax, different backend. That generality comes at a cost, though: each verb is a separate function call, and the pipe threading them together is syntactic, not semantic. Could you collapse the whole pipeline into a single expression?
+**dplyr.** Here the verbs know about the data. `filter(penguins, species == "Adelie")` captures `species == "Adelie"` as an expression and evaluates it against the data frame using data masking (@sec-capture-evaluate). The pipe operator chains verbs together, each doing one thing: filter rows, select columns, create new columns, summarize groups. Because the verbs are S3 generics, they dispatch on the data source. `filter.data.frame` works on data frames; `filter.tbl_lazy` generates SQL. Same syntax, different backend. That generality comes at a cost, though: each verb is a separate function call, and the pipe threading them together is syntactic, not semantic. Could you collapse the whole pipeline into a single expression?
 
 **data.table.** `DT[i, j, by]` overloads the `[` operator so that all three arguments are captured by `substitute()` and evaluated in the data.table's scope. No pipe, no chain of function calls. Everything happens inside `[`, which is both concise and dense.
 
-Each DSL makes a different trade-off: formulas redefine arithmetic operators inside a special object, ggplot2 overloads `+` on a class, dplyr uses data masking and generic dispatch, data.table overloads `[`. The technique varies, but the principle does not. Capture code, give it new meaning. What happens when you try this yourself?
+The technique varies, but the principle does not. Capture code, give it new meaning. What happens when you try this yourself?
 
 
 ### Exercises {.unnumbered}
@@ -64,7 +68,7 @@ rlang::get_expr(mapping$x)
 
 When ggplot2 eventually builds the plot, it evaluates these quosures against the data frame, so `wt` is looked up in `mtcars`, not in the global environment. This separation of capture and evaluation is the mechanism that makes the entire system work: you write code that looks like it refers to columns directly, and the library quietly intercepts those references and redirects them to the data.
 
-The `+.gg` method, meanwhile, simply takes the existing plot object, attaches the new component (a layer, a scale, a theme), and returns the modified plot. The plot is a list that grows with each `+`. Rendering happens only when you print it.
+The `+.gg` method, meanwhile, simply takes the existing plot object, attaches the new component (a layer, a scale, a theme), and returns the modified plot. This is an expression builder\index{expression builder} pattern: the plot is a list that grows with each `+`, and rendering happens only when you print it.
 
 This two-phase design (build a description, then execute it) appears in SQL query builders, in compiler intermediate representations, and in ggplot2. The user describes *what* they want; the system decides *how* to produce it. But you do not need ggplot2's sophistication to exploit the same pattern.
 
@@ -143,7 +147,7 @@ meters(10) - meters(3)
 -meters(5)
 ```
 
-You now have a language for unit-safe arithmetic. `meters(5) + meters(3)` reads like a sentence and does the right thing; `meters(5) + seconds(3)` fails clearly and immediately. This is what a DSL buys you: correct code that is easy to write and incorrect code that is hard to ignore. But arithmetic on its own only gets you so far.
+You now have a language for unit-safe arithmetic. `meters(5) + meters(3)` reads like a sentence and does the right thing; `meters(5) + seconds(3)` fails. This is what a DSL buys you: correct code that is easy to write and incorrect code that is hard to ignore. But arithmetic on its own only gets you so far.
 
 
 ### Unit conversion {#sec-unit-conversion}
@@ -338,7 +342,9 @@ The chapter's DSL used five ingredients:
 
 A more ambitious DSL would add NSE to capture column names or expressions, use S3 generics to dispatch across backends, and build expression objects that defer evaluation. ggplot2 uses all of these. The progression from "simple class with overloaded operators" to "full expression-builder DSL with lazy evaluation and multiple backends" is a continuum, and you do not need the full machinery for every problem. Start with the simplest technique that makes your interface read naturally; add complexity only when the domain demands it.
 
-The formula interface from the opening of this chapter, where `+` stopped meaning addition and started meaning "include this predictor" — you now know exactly how that trick works: an S3 class, a method for `+`, and a function that interprets the captured expression in a new context. R gave the formula system no special privileges. The same tools are available to you. When you find yourself writing repetitive, mechanical code, consider whether a small DSL, even just a class with a few overloaded operators, would let you express the same ideas more directly.
+The formula interface from the opening of this chapter, where `+` stopped meaning addition and started meaning "include this predictor" — you now know exactly how that trick works: an S3 class, a method for `+`, and a function that interprets the captured expression in a new context.
+
+R gave the formula system no special privileges. The same tools are available to you. When you find yourself writing repetitive, mechanical code, consider whether a small DSL, even just a class with a few overloaded operators, would let you express the same ideas more directly.
 
 
 ### Exercises {.unnumbered}

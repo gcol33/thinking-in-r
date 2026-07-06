@@ -657,7 +657,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>So reading is solved, or at least manageable. What about the return trip?</p>
 <p>Try loading a CSV you downloaded six months ago from a government portal. The accented characters in city names have turned into question marks, the column that should be numeric is full of strings because row 4,012 contains the word “pending,” and the file path you hard-coded starts with <code>C:/Users/someone_else/</code>. Three lines of <code>read.csv()</code> and three different failures, none of which have anything to do with your analysis. Every data project begins here, in the gap between the file on disk and the clean data frame in memory, and that gap is wider than most tutorials admit.</p>
 <p>This chapter is about crossing it. CSV, Excel, databases, binary formats: each has its own traps, and two problems cut across all of them (file paths and character encodings) with a persistence that borders on malice.</p>
 <section id="sec-file-paths" class="level2" data-number="13.1">
@@ -703,8 +702,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-reading-csv" class="level2" data-number="13.2">
 <h2 data-number="13.2" class="anchored" data-anchor-id="sec-reading-csv"><span class="header-section-number">13.2</span> Reading CSV files</h2>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Reading a file is not a pure function
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <p>Reading a file is a function: hand it a path, get back a data frame. You could write the type signature as <code>read_csv :: FilePath -&gt; DataFrame</code>. In a purely functional world the same path would always produce the same data frame, but I/O demolishes that guarantee because someone could edit the file between calls, or the disk could fail, or the network share could vanish. R doesn’t track this in its type system; the function looks pure but isn’t. Haskell solves the problem by wrapping I/O in a monad (<code>readFile :: FilePath -&gt; IO String</code>), making the side effect visible in the type. R trusts you to know the difference.</p>
 <p>That trust has consequences. Every call to <code>read_csv()</code> implicitly assumes: this file has not changed since I last looked, the encoding is what I think it is, and the column that was numeric in row 1 is still numeric in row 4012. When any of those assumptions break, the failure is hard to diagnose because the function <em>looks</em> deterministic — same path, same call — but the world behind the path has shifted. This is why <code>readr</code> lets you specify <code>col_types</code> explicitly: you are declaring the contract the file must satisfy, and <code>readr</code> validates it on your behalf. Without that declaration, the function infers types from the first thousand rows and hopes the rest agree. Specifying types is the functional programmer’s workaround for a function that cannot be pure.</p>
+</div>
+</div>
+</div>
 <p>Comma-separated values date to the 1970s on IBM mainframes, and there is still no real standard. RFC 4180 (2005) tried, but Excel, R, Python, and most other tools disagree on quoting rules, newlines inside fields, and encoding. “My CSV won’t load” is perhaps the only truly universal data experience.</p>
 <p>Base R reads CSVs with <code>read.csv()</code>:</p>
 <div class="cell">
@@ -716,7 +730,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>read_csv()</code> never converts strings to factors, it is faster on large files, it prints the column types it guessed so you can catch mistakes immediately, and it returns a tibble (<a href="ch11-data-frames.html#sec-tibbles" class="quarto-xref"><span>Section 11.6</span></a>) instead of a plain data frame. For most work, <code>read_csv()</code> is simply the better default.</p>
+<p><code>read_csv()</code> prints the column types it guessed, so you catch mistakes immediately. It also never converts strings to factors, reads large files faster, and returns a tibble (<a href="ch11-data-frames.html#sec-tibbles" class="quarto-xref"><span>Section 11.6</span></a>) instead of a plain data frame. For most work, <code>read_csv()</code> is simply the better default.</p>
 <p>Key arguments worth knowing:</p>
 <ul>
 <li><code>col_types</code>: specify column types explicitly instead of letting readr guess.</li>
@@ -849,7 +863,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">dbGetQuery</span>(con, <span class="st">"SELECT * FROM measurements LIMIT 10"</span>)</span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>dbConnect()</code> takes a driver (here, SQLite) and connection parameters; <code>dbGetQuery()</code> sends SQL and returns a data frame; <code>dbDisconnect()</code> closes the connection when you are done. This three-step shape works with every database R supports: PostgreSQL, MySQL, SQL Server, DuckDB, and others. Only the driver and connection string change.</p>
+<p>This three-step shape works with every database R supports: PostgreSQL, MySQL, SQL Server, DuckDB, and others. Only the driver and connection string change.</p>
 <p>SQLite is self-contained (one file, no server, no configuration) and therefore ideal for learning:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(RSQLite<span class="sc">::</span><span class="fu">SQLite</span>(), <span class="st">":memory:"</span>)</span>
@@ -882,13 +896,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-binary-columnar" class="level2" data-number="13.6">
 <h2 data-number="13.6" class="anchored" data-anchor-id="sec-binary-columnar"><span class="header-section-number">13.6</span> Binary and columnar formats</h2>
-<p>CSV is human-readable, which is wonderful for debugging and terrible for performance. The bottleneck is structural: CSV is row-oriented, storing each record as a unit, so reading a single column means scanning every row and throwing away everything you don’t need. Columnar formats (Parquet, Feather, DuckDB’s native format) flip this arrangement by storing each column contiguously, which makes analytical queries that touch few columns but many rows dramatically faster while also compressing far better because similar values sit next to each other. This row-versus-column distinction shapes every file format decision in data engineering.</p>
 <p><code>saveRDS()</code> and <code>readRDS()</code> serialize any R object to disk:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(df, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"cache"</span>, <span class="st">"processed.rds"</span>))</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"cache"</span>, <span class="st">"processed.rds"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>RDS is fast, compact, and preserves R types exactly: factors, dates, attributes, nested lists, everything. The catch is that it is R-only. Python can’t read it, Excel can’t read it, and the moment a collaborator opens Jupyter instead of RStudio, you need a different format.</p>
+<p>CSV is human-readable, which is wonderful for debugging and terrible for performance. The bottleneck is structural: CSV is row-oriented, storing each record as a unit, so reading a single column means scanning every row and throwing away everything you don’t need. Columnar formats (Parquet, Feather, DuckDB’s native format) flip this arrangement by storing each column contiguously, which makes analytical queries that touch few columns but many rows dramatically faster while also compressing far better because similar values sit next to each other. This row-versus-column distinction shapes every file format decision in data engineering.</p>
 <p>Parquet is that format:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow)</span>
@@ -964,7 +978,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-encodings" class="level2" data-number="13.7">
 <h2 data-number="13.7" class="anchored" data-anchor-id="sec-encodings"><span class="header-section-number">13.7</span> Encodings</h2>
 <p>You have read the file, parsed the columns, and everything looks right until you notice that half the city names contain <code>\xe9</code> instead of an accented e, or that German umlauts have become pairs of nonsense characters. The data isn’t corrupted. The bytes are fine. Your reader is just interpreting them with the wrong mapping.</p>
-<p>An encoding is that mapping: a table that says “byte 0xE9 means e-with-accent” (in Latin-1) or “byte sequence 0xC3 0xA9 means e-with-accent” (in UTF-8). UTF-8 is the modern standard, capable of representing every character in every living script; Latin-1 (ISO-8859-1) is the old European standard; Windows-1252 is Microsoft’s variant of Latin-1. All three agree on basic ASCII (English letters, digits, punctuation) and disagree on everything else, which is precisely why files that contain only English text never trigger encoding problems and files with accented characters break constantly.</p>
+<p>An encoding is that mapping: a table that says “byte 0xE9 means e-with-accent” (in Latin-1) or “byte sequence 0xC3 0xA9 means e-with-accent” (in UTF-8).</p>
+<p>UTF-8 is the modern standard, capable of representing every character in every living script; Latin-1 (ISO-8859-1) is the old European standard; Windows-1252 is Microsoft’s variant of Latin-1. All three agree on basic ASCII (English letters, digits, punctuation) and disagree on everything else, which is precisely why files that contain only English text never trigger encoding problems and files with accented characters break constantly.</p>
 <p><code>readr::read_csv()</code> assumes UTF-8. Base R’s <code>read.csv()</code> assumes your system’s default encoding, which on Windows is often not UTF-8. This is why the same CSV can load perfectly on a Mac and produce garbled text on a Windows machine in the next room.</p>
 <p>When you encounter garbled text, specify the encoding explicitly:</p>
 <div class="cell">

@@ -16,7 +16,7 @@ In @sec-functions-are-values, you saw that a function is a value\index{first-cla
 sapply(1:5, sqrt)
 ```
 
-Notice that `sqrt` has no parentheses. You are not calling `sqrt` here; you are handing the function itself to `sapply`, which calls it five times, once per element. This is the same distinction from @sec-programs-and-proofs: `fact` is the definition (a rule), while `fact(n)` is the rule applied to an argument. When you write `sapply(1:5, sqrt)`, you pass the definition, and `sapply` decides when to apply it.
+Notice that `sqrt` has no parentheses. You are not calling `sqrt` here; you are handing the function itself to `sapply`, which calls it five times, once per element. This is the same distinction from @sec-programs-and-proofs: `fact` is the definition (a rule), while `fact(n)` is the rule applied to an argument.
 
 Here is the pattern behind most of R's power: instead of writing a loop that processes each element, you hand a function to something that knows how to apply it. The loop is still running inside `sapply`, but you never had to write it. You described *what* to compute, not *how* to iterate.
 
@@ -32,7 +32,7 @@ Any function that takes a single argument works here: `abs` computes absolute va
 
 `sapply` takes each element of the input, applies your function, and tries to simplify the results into a vector. When all the results have the same length (as they do here, since `sqrt` returns one number per input), you get a numeric vector back. When results differ in length or type, `sapply` returns a list instead. `lapply()`\index{lapply()} is the stricter sibling that always returns a list. (@sec-iteration-without-loops covers the distinction in detail; for now, the simple cases are enough.)
 
-A function that takes another function as an argument\index{function!as argument} is called a *higher-order function*\index{higher-order function}. `sapply` is one; most of R's power comes from others. The pattern is the same one from @sec-vectorized-ops: apply a function to each element of a container, get back a container of the same shape. In @sec-vectorized-ops, R did this implicitly with vectorization (`sqrt(c(1,4,9))`). Here, `sapply` does it explicitly: you pick the function, `sapply` handles the iteration.
+A function that takes another function as an argument\index{function!as argument} is called a *higher-order function*\index{higher-order function}. `sapply` is one; most of R's power comes from others.
 
 ::: {.callout-note collapse="true"}
 ## The lambda calculus connection
@@ -84,7 +84,7 @@ sapply(c(10, 20, 30), \(x) x / sum(c(10, 20, 30)))
 sapply(c("alice", "bob"), \(name) paste("Hello,", name))
 ```
 
-When the function gets longer than one line, or when you need it in more than one place, give it a name. A function called `normalize` is easier to read than an anonymous function that divides by the sum. A function called `greet` is easier to maintain than a lambda pasted into three different `sapply` calls.
+When the function gets longer than one line, or when you need it in more than one place, give it a name.
 
 ::: callout-tip
 ## Opinion
@@ -119,9 +119,7 @@ summarizers$logical(c(TRUE, FALSE, TRUE, TRUE))
 
 `summarizers` is a list of three functions, accessed with `$` like any named list element. A list of functions keyed by name is a *dispatch table*: given a key, it returns the function you need, no conditionals required. Adding a new type means adding one entry to the list. No `if`/`else` to restructure, no risk of breaking the branches above or below. Package internals, Shiny applications, and testing frameworks all use this pattern to select behavior at runtime.
 
-Notice what moved. In the `if`/`else` version, control flow is in charge: it interrogates the type, then calls the right function as a subordinate. In the dispatch table, the functions exist independently as values in a list, and the control flow shrinks to a single lookup. The operations no longer live inside the conditional; the conditional lives inside the data structure.
-
-An `if`/`else` chain is closed: extending it means opening the chain and editing its guts, hoping you do not break the branches above and below. A dispatch table you extend by dropping a new entry into a list; the entries that already work never see the change.
+Notice what moved. In the `if`/`else` version, control flow is in charge: it interrogates the type, then calls the right function as a subordinate. In the dispatch table, the functions exist independently as values in a list, and the control flow shrinks to a single lookup. The operations no longer live inside the conditional; the conditional lives inside the data structure. A dispatch table you extend by dropping a new entry into a list; the entries that already work never see the change.
 
 ::: {.callout-note collapse="true"}
 ## Why dispatch tables feel natural in R
@@ -161,7 +159,7 @@ make_adder <- function(n) {
 }
 ```
 
-`make_adder` takes a number `n` and returns a *new function*\index{function!as return value} that adds `n` to its argument:
+`make_adder` is a *function factory*: it takes a number `n` and returns a *new function*\index{function!as return value} that adds `n` to its argument:
 
 ```{r}
 add5 <- make_adder(5)
@@ -239,7 +237,7 @@ x <- c(10, 20, 30)
 `[`(x, 2)
 ```
 
-Accessing a list element with `$` is a function call. Even the curly brace `{` is a function call (it evaluates each expression inside and returns the last one). Assignment with `<-` is a function call.
+Accessing a list element with `$` is a function call, and so is assignment with `<-`. Even the curly brace `{` is a function call (it evaluates each expression inside and returns the last one).
 
 John Chambers, the creator of S (@sec-s-language), summarized R's design with two principles:
 
@@ -259,7 +257,7 @@ rm(`+`)
 2 + 3
 ```
 
-After redefining `+` to mean multiplication, `2 + 3` returns 6. `rm()` removes the custom definition and restores the original. The fact that you *can* redefine `+` shows that it really is just a name bound to a function, like any other name. R's entire syntax is built on function calls, and those functions are values you can inspect, replace, and pass around.
+After redefining `+` to mean multiplication, `2 + 3` returns 6. `rm()` removes the custom definition and restores the original. The fact that you *can* redefine `+` shows that it really is just a name bound to a function, like any other name, a value you can inspect, replace, and pass around.
 
 ::: callout-tip
 ## Opinion

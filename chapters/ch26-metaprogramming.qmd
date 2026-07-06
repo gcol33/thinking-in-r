@@ -7,7 +7,7 @@ source(here::here("_common.R"))
 
 You have been writing `lm(y ~ x)` since @sec-visualization, and `filter(penguins, species == "Adelie")` since @sec-data-transformation. Both do something that might seem impossible: `y ~ x` is not evaluated before `lm()` sees it, and `species` is found inside a data frame, not in your environment. Normally, `1 + 1` evaluates to `2` and the expression disappears. R can keep it. Code in R is a data structure you can hold, examine, rearrange, and run whenever you choose.
 
-That difference has a name: metaprogramming\index{metaprogramming}. Code that operates on code. You have been using it from your first formula, your first call to `aes()`, your first dplyr pipeline, all of it built on the machinery this chapter describes. This chapter shows you the mechanism.
+That difference has a name: metaprogramming\index{metaprogramming}. Code that operates on code. You have been using it from your first formula, your first call to `aes()`, your first dplyr pipeline, all of it built on the machinery this chapter describes.
 
 
 ## Code is data {#sec-code-is-data}
@@ -41,11 +41,11 @@ eval(e)
 
 `eval()` takes the frozen expression and evaluates it in the current environment, where `x` is 10, so the result is 11. The cycle is always the same: capture code, possibly modify it, then evaluate it somewhere. But why would you want to?
 
-In @sec-church, Church's lambda calculus treated functions as data that could be passed around and applied. R extends that principle to *all code*, not only functions. An expression is a value, exactly like a number or a string; you can assign it, put it in a list, pass it to a function, transform it, then run the transformed version. In @sec-operators-are-functions, you saw that `+` is a function and `2 + 3` is a function call. That function call is also a data structure you can capture and manipulate before it ever executes.
+In @sec-church, Church's lambda calculus treated functions as data that could be passed around and applied. R extends that principle to *all code*, not only functions. An expression is a value, exactly like a number or a string. In @sec-operators-are-functions, you saw that `+` is a function and `2 + 3` is a function call. That function call is also a data structure you can capture and manipulate before it ever executes.
 
-R inherited this idea from Lisp, where `(quote (+ 1 2))` returns the list `(+ 1 2)` instead of computing 3. A language whose code has the same structure as its data is called *homoiconic*: Lisp code is lists, Lisp data is lists; R code is call objects (trees), and R data includes call objects. Python, Java, and C++ are not homoiconic — their code is text, and metaprogramming means parsing strings, which is fragile. R's homoiconicity means it gets this for free.
+R inherited this idea from Lisp, where `(quote (+ 1 2))` returns the list `(+ 1 2)` instead of computing 3. A language whose code has the same structure as its data is called *homoiconic*: Lisp code is lists, Lisp data is lists; R code is call objects (trees), and R data includes call objects.
 
-Python's `inspect.getsource()` returns a string you then have to parse; Java's reflection is a separate API with its own rules and sharp edges. R skips both steps. `quote(x + 1)` gives you the syntax tree directly — a call object you can subset with `[[`, modify with replacement, and evaluate in any environment you choose. That tree is an ordinary R object. It lives in memory, responds to R's standard operations, and you can pass it to functions like any vector or list. Tidy evaluation, formula interfaces, and ggplot2's `aes()` all rest on that foundation.
+R's homoiconicity means it gets this for free. Python, Java, and C++ are not homoiconic: their code is text, so metaprogramming means parsing strings, which is fragile. Python's `inspect.getsource()` returns a string you then have to parse; R's `quote(x + 1)` gives you the syntax tree directly — a call object you can subset with `[[`, modify with replacement, and evaluate in any environment you choose. That tree is an ordinary R object. It lives in memory, responds to R's standard operations, and you can pass it to functions like any vector or list. Tidy evaluation, formula interfaces, and ggplot2's `aes()` all rest on that foundation.
 
 ## Abstract syntax trees {#sec-asts}
 
@@ -121,7 +121,7 @@ f(a + b)
 
 You called `f(a + b)`, and `substitute(x)` reached back across the function boundary to the call site, grabbing `a + b`, the expression the caller actually wrote. The same mechanism powers `dplyr::filter()`: it sees `species == "Adelie"` as an expression rather than immediately evaluating it and getting an error about a missing variable.
 
-The rlang equivalents are `enexpr()` (captures an expression) and `enquo()`\index{enquo()} (captures an expression plus its environment, forming a *quosure*). The decision rule is simple: use `substitute()` in base R code, use `enexpr()`/`enquo()` in tidyverse/rlang code. If your function will be called by dplyr or other tidy-evaluation-aware code, reach for the rlang tools because they integrate with `!!`, `{{ }}`, and `eval_tidy()`. If you are writing standalone base R, `substitute()` and `eval()` are sufficient and carry zero dependencies.
+The rlang equivalents are `enexpr()` (captures an expression) and `enquo()`\index{enquo()} (captures an expression plus its environment, forming a *quosure*). The decision rule is simple. If your function will be called by dplyr or other tidy-evaluation-aware code, use `enexpr()`/`enquo()`, because they integrate with `!!`, `{{ }}`, and `eval_tidy()`. For standalone base R, `substitute()` and `eval()` are sufficient and carry zero dependencies.
 
 ```{r}
 g <- function(x) rlang::enexpr(x)
@@ -246,7 +246,13 @@ A formula stores its terms as call objects. `f[[2]]` is the left-hand side (`y`)
 environment(f)
 ```
 
-Formulas work across function boundaries because the formula remembers where its variables should be looked up. Quosures in tidy evaluation solve the same problem: an expression bundled with its environment. Wickham borrowed the concept directly from formulas, and their 30-year track record in R's modeling ecosystem is what made the design credible.
+Formulas work across function boundaries because the formula remembers where its variables should be looked up. Quosures in tidy evaluation solve the same problem: an expression bundled with its environment.
+
+::: {.callout-note collapse="true"}
+## Where quosures came from
+
+Wickham borrowed the concept directly from formulas, and their 30-year track record in R's modeling ecosystem is what made the design credible.
+:::
 
 The formula language (`+`, `*`, `:`, `-`, `I()`) is a domain-specific language for specifying models. `y ~ x1 * x2` does not mean "multiply x1 by x2." It means "include x1, x2, and their interaction." `model.matrix()` interprets these operators to build the design matrix:
 

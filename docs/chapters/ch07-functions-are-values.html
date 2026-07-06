@@ -657,7 +657,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, sqrt)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1.000000 1.414214 1.732051 2.000000 2.236068</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Notice that <code>sqrt</code> has no parentheses. You are not calling <code>sqrt</code> here; you are handing the function itself to <code>sapply</code>, which calls it five times, once per element. This is the same distinction from <a href="ch05-first-function.html#sec-programs-and-proofs" class="quarto-xref"><span>Section 5.8</span></a>: <code>fact</code> is the definition (a rule), while <code>fact(n)</code> is the rule applied to an argument. When you write <code>sapply(1:5, sqrt)</code>, you pass the definition, and <code>sapply</code> decides when to apply it.</p>
+<p>Notice that <code>sqrt</code> has no parentheses. You are not calling <code>sqrt</code> here; you are handing the function itself to <code>sapply</code>, which calls it five times, once per element. This is the same distinction from <a href="ch05-first-function.html#sec-programs-and-proofs" class="quarto-xref"><span>Section 5.8</span></a>: <code>fact</code> is the definition (a rule), while <code>fact(n)</code> is the rule applied to an argument.</p>
 <p>Here is the pattern behind most of R’s power: instead of writing a loop that processes each element, you hand a function to something that knows how to apply it. The loop is still running inside <code>sapply</code>, but you never had to write it. You described <em>what</em> to compute, not <em>how</em> to iterate.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sapply</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">4</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">7</span>), abs)</span>
@@ -670,7 +670,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Any function that takes a single argument works here: <code>abs</code> computes absolute values, <code>nchar</code> counts characters, and you can pass either to <code>sapply</code> with the same syntax.</p>
 <p><code>sapply</code> takes each element of the input, applies your function, and tries to simplify the results into a vector. When all the results have the same length (as they do here, since <code>sqrt</code> returns one number per input), you get a numeric vector back. When results differ in length or type, <code>sapply</code> returns a list instead. <code>lapply()</code> is the stricter sibling that always returns a list. (<a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a> covers the distinction in detail; for now, the simple cases are enough.)</p>
-<p>A function that takes another function as an argument is called a <em>higher-order function</em>. <code>sapply</code> is one; most of R’s power comes from others. The pattern is the same one from <a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>: apply a function to each element of a container, get back a container of the same shape. In <a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>, R did this implicitly with vectorization (<code>sqrt(c(1,4,9))</code>). Here, <code>sapply</code> does it explicitly: you pick the function, <code>sapply</code> handles the iteration.</p>
+<p>A function that takes another function as an argument is called a <em>higher-order function</em>. <code>sapply</code> is one; most of R’s power comes from others.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -724,7 +724,7 @@ sapply([1,2,3,4,5])(sqrt) = [sqrt(1), sqrt(2), sqrt(3), sqrt(4), sqrt(5)]</code>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          alice            bob </span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "Hello, alice"   "Hello, bob"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>When the function gets longer than one line, or when you need it in more than one place, give it a name. A function called <code>normalize</code> is easier to read than an anonymous function that divides by the sum. A function called <code>greet</code> is easier to maintain than a lambda pasted into three different <code>sapply</code> calls.</p>
+<p>When the function gets longer than one line, or when you need it in more than one place, give it a name.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -766,8 +766,7 @@ sapply([1,2,3,4,5])(sqrt) = [sqrt(1), sqrt(2), sqrt(3), sqrt(4), sqrt(5)]</code>
 <span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>summarizers</code> is a list of three functions, accessed with <code>$</code> like any named list element. A list of functions keyed by name is a <em>dispatch table</em>: given a key, it returns the function you need, no conditionals required. Adding a new type means adding one entry to the list. No <code>if</code>/<code>else</code> to restructure, no risk of breaking the branches above or below. Package internals, Shiny applications, and testing frameworks all use this pattern to select behavior at runtime.</p>
-<p>Notice what moved. In the <code>if</code>/<code>else</code> version, control flow is in charge: it interrogates the type, then calls the right function as a subordinate. In the dispatch table, the functions exist independently as values in a list, and the control flow shrinks to a single lookup. The operations no longer live inside the conditional; the conditional lives inside the data structure.</p>
-<p>An <code>if</code>/<code>else</code> chain is closed: extending it means opening the chain and editing its guts, hoping you do not break the branches above and below. A dispatch table you extend by dropping a new entry into a list; the entries that already work never see the change.</p>
+<p>Notice what moved. In the <code>if</code>/<code>else</code> version, control flow is in charge: it interrogates the type, then calls the right function as a subordinate. In the dispatch table, the functions exist independently as values in a list, and the control flow shrinks to a single lookup. The operations no longer live inside the conditional; the conditional lives inside the data structure. A dispatch table you extend by dropping a new entry into a list; the entries that already work never see the change.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -816,7 +815,7 @@ sapply([1,2,3,4,5])(sqrt) = [sqrt(1), sqrt(2), sqrt(3), sqrt(4), sqrt(5)]</code>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) x <span class="sc">+</span> n</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>make_adder</code> takes a number <code>n</code> and returns a <em>new function</em> that adds <code>n</code> to its argument:</p>
+<p><code>make_adder</code> is a <em>function factory</em>: it takes a number <code>n</code> and returns a <em>new function</em> that adds <code>n</code> to its argument:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>add5 <span class="ot">&lt;-</span> <span class="fu">make_adder</span>(<span class="dv">5</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">add5</span>(<span class="dv">3</span>)</span>
@@ -897,7 +896,7 @@ make_adder(5) = (λn. λx. x + n)(5) = λx. x + 5</code></pre>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="st">`</span><span class="at">[</span><span class="st">`</span>(x, <span class="dv">2</span>)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 20</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Accessing a list element with <code>$</code> is a function call. Even the curly brace <code>{</code> is a function call (it evaluates each expression inside and returns the last one). Assignment with <code>&lt;-</code> is a function call.</p>
+<p>Accessing a list element with <code>$</code> is a function call, and so is assignment with <code>&lt;-</code>. Even the curly brace <code>{</code> is a function call (it evaluates each expression inside and returns the last one).</p>
 <p>John Chambers, the creator of S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>), summarized R’s design with two principles:</p>
 <blockquote class="blockquote">
 <p>“Everything that exists is an object. Everything that happens is a function call.”</p>
@@ -914,7 +913,7 @@ make_adder(5) = (λn. λx. x + n)(5) = λx. x + 5</code></pre>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="dv">2</span> <span class="sc">+</span> <span class="dv">3</span></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>After redefining <code>+</code> to mean multiplication, <code>2 + 3</code> returns 6. <code>rm()</code> removes the custom definition and restores the original. The fact that you <em>can</em> redefine <code>+</code> shows that it really is just a name bound to a function, like any other name. R’s entire syntax is built on function calls, and those functions are values you can inspect, replace, and pass around.</p>
+<p>After redefining <code>+</code> to mean multiplication, <code>2 + 3</code> returns 6. <code>rm()</code> removes the custom definition and restores the original. The fact that you <em>can</em> redefine <code>+</code> shows that it really is just a name bound to a function, like any other name, a value you can inspect, replace, and pass around.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">

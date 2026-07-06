@@ -56,7 +56,9 @@ c(morning, afternoon)
 = [58, 62, 55, 75, 80, 71]
 ```
 
-Each step replaces a name or function call with its value. `morning` becomes `c(58, 62, 55)`, the nested `c()` calls flatten into one, and the last step is where term replacement ends and the computer takes over: R allocates a contiguous block of memory, stores six numbers side by side, and the expression has been reduced to a value that lives in memory. This is term replacement, the logic at the heart of Church's lambda calculus (@sec-church): you have an expression, you replace each piece with its value until nothing is left to replace. In Chapter 1, `add(3, add(5, 10))` reduced step by step until only `18` remained. Here, `c(morning, afternoon)` reduces to a six-element vector. Even building a data structure is a function call that reduces to a value. (Term replacement is one of the oldest ideas in logic and a cornerstone of computer science. Mathematicians were studying it decades before electronic computers existed; it turns out that "replace an expression with its value" is enough to define all of computation.)
+Each step replaces a name or function call with its value. `morning` becomes `c(58, 62, 55)`, the nested `c()` calls flatten into one, and the last step is where term replacement ends and the computer takes over: R allocates a contiguous block of memory, stores six numbers side by side, and the expression has been reduced to a value that lives in memory.
+
+This is term replacement, the logic at the heart of Church's lambda calculus (@sec-church). In Chapter 1, `add(3, add(5, 10))` reduced step by step until only `18` remained. Here, `c(morning, afternoon)` reduces to a six-element vector. Even building a data structure is a function call that reduces to a value.
 
 ::: callout-note
 ## For the curious
@@ -90,7 +92,7 @@ typeof(TRUE)
 
 `double`\index{double} is a decimal number (even `42` is stored as a double by default), while `integer`\index{integer} needs an `L` suffix: `42L`. `character` is text, `logical` is `TRUE` or `FALSE`. The other two types, `complex` and `raw`, exist for specialized work; you can ignore them.
 
-Every element in a vector must be the same type. `typeof()` and `length()` answer the two most basic questions about any vector: what type are the elements, and how many are there? But what happens when you try to break that same-type rule?
+Every element in a vector must be the same type. But what happens when you try to break that same-type rule?
 
 
 ### Exercises {.unnumbered}
@@ -202,7 +204,7 @@ R distributes the function over the vector automatically; you write one applicat
 This pattern has a name: a *functor*. A functor maps a function over a structure while preserving the structure's shape. `sqrt` applied to a five-element vector returns a five-element vector; the function changes the contents, but the container stays intact. Vectors are functors, lists are functors (via `lapply`), and data frame columns are functors (via `mutate`). The word comes from category theory, but the idea is concrete: apply inside, preserve outside. You will see it everywhere in this book, and by the end it will feel as natural as vectorization itself.
 :::
 
-Consider what `temperatures * 9/5 + 32` actually did. A function was applied to a structure and produced a structure of the same shape — a functor operation, driven by the same term-replacement mechanism that @sec-church introduced as lambda calculus. And when you wrote `c(morning, afternoon)`, the names were substituted for their values and the expression reduced to a single vector. That is *beta reduction*: replacing a name with its value and simplifying (@sec-church covers the formal version). The theoretical machinery from Chapter 1 has been running under every line of code in this chapter, not as background context but as the engine. By the time you typed `42` into the console and got `42` back, you were already doing functional programming — you just did not have a name for it yet.
+When you wrote `c(morning, afternoon)`, the names were substituted for their values and the expression reduced to a single vector. That is *beta reduction*: replacing a name with its value and simplifying (@sec-church covers the formal version). The theoretical machinery from Chapter 1 has been running under every line of code in this chapter, not as background context but as the engine. By the time you typed `42` into the console and got `42` back, you were already doing functional programming — you just did not have a name for it yet.
 
 
 ### Recycling {#sec-recycling}
@@ -340,13 +342,13 @@ This returns `NA`, not `TRUE`. Think about it: if you don't know what `x` is and
 
 This contagious behavior is not arbitrary; R is implementing a discipline where a value is either present or absent, and any operation on an absent value produces absence. The principle is older than R.
 
-Haskell, a language that emerged in 1990 when a group of functional programming researchers decided to consolidate their dozens of incompatible dialects, takes the strictest possible position: no variable can ever change its value, and no function can have a side effect. The compiler enforces these rules, which means the type system carries more information than in most languages. (The language is named after Haskell Curry, a logician who worked on combinatory logic in the 1930s and 1940s; he will reappear in @sec-programs-and-proofs.)
+Haskell takes the strictest possible position: no variable can ever change its value, and no function can have a side effect. The compiler enforces these rules, which means the type system carries more information than in most languages. (The language is named after Haskell Curry, a logician who worked on combinatory logic in the 1930s and 1940s; he will reappear in @sec-programs-and-proofs.)
 
 One consequence: in Haskell, the possibility of absence is built into the type system as `Maybe`. A value is either `Just 42` or `Nothing`, and any operation on `Nothing` propagates `Nothing` forward. `1 + NA` returning `NA` in R is the same logic as Haskell's `Nothing >>= f` returning `Nothing`.
 
-Rust adopted the same idea for different reasons. Graydon Hoare started Rust at Mozilla in 2006 because C and C++ gave you direct control over memory but no protection against the bugs that come with it: buffer overflows, use-after-free, data races. He borrowed heavily from Haskell's type system, and Rust's equivalent of `Maybe` is called `Option`: a value is `Some(42)` or `None`, and `None.map(f)` returns `None`. The compiler rejects any code that forgets to check whether a value is present.
+Rust adopted the same idea. Its equivalent of `Maybe` is called `Option`: a value is `Some(42)` or `None`, and `None.map(f)` returns `None`. The compiler rejects any code that forgets to check whether a value is present.
 
-R's approach is looser: nothing stops you from ignoring `NA`, and you will not find out until your results look wrong. But the underlying rule is the same. If any input is unknown, the output is unknown. R threads this uncertainty through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point. The question is what this contagion looks like when you have 344 measurements and a handful of gaps.
+R's approach is looser: nothing stops you from ignoring `NA`, and you will not find out until your results look wrong, but the underlying rule is the same. R threads this uncertainty through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point. The question is what this contagion looks like when you have 344 measurements and a handful of gaps.
 
 
 ### Exercises {.unnumbered}

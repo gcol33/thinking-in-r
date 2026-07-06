@@ -1,6 +1,3 @@
-
-So here is where you stand: you can find bottlenecks, eliminate unnecessary copies, hand tight loops to compiled code, and split independent work across cores. But the optimization that actually matters most is still the one at the top of the list. Measure first. Your profiler will catch things your intuition misses every time.
-
 # Performance {#sec-performance}
 
 ```{r}
@@ -39,7 +36,7 @@ bench::mark(
 )
 ```
 
-`bench::mark()` runs each expression multiple times, reports median time and memory allocation, and checks that all expressions return the same result. Use it for head-to-head comparisons. `microbenchmark::microbenchmark()`\index{microbenchmark()} is the older alternative: sub-millisecond accurate, runs expressions 100 times by default, reports summary statistics. Both work well; `bench::mark` is newer and checks for equal results automatically.
+`bench::mark()` runs each expression multiple times, reports median time and memory allocation, and checks that all expressions return the same result. Use it for head-to-head comparisons. `microbenchmark::microbenchmark()`\index{microbenchmark()} is the older alternative: sub-millisecond accurate, runs expressions 100 times by default, reports summary statistics. Both work well; `bench::mark` is newer.
 
 **Profiling** with `profvis::profvis()`\index{Rprof()}:
 
@@ -116,7 +113,9 @@ system.time({
 })
 ```
 
-The difference grows with input size, and part of the speedup has nothing to do with R at all. Vectorized operations work on contiguous memory with sequential access patterns that the CPU prefetcher predicts correctly; `sum(x)` on a contiguous vector can be 100x faster than summing the same values scattered in a list, because L1 cache is roughly 27x faster than main memory. Martin Thompson, a high-performance computing advocate who borrowed the term from racing driver Jackie Stewart, calls this *mechanical sympathy*: writing software that works with the hardware rather than against it.
+The difference grows with input size, and part of the speedup has nothing to do with R at all. Vectorized operations work on contiguous memory with sequential access patterns that the CPU prefetcher predicts correctly; `sum(x)` on a contiguous vector can be 100x faster than summing the same values scattered in a list.
+
+Martin Thompson, a high-performance computing advocate who borrowed the term from racing driver Jackie Stewart, calls this *mechanical sympathy*: writing software that works with the hardware rather than against it.
 
 Common vectorization patterns:
 
@@ -251,7 +250,7 @@ dt <- fread("large_file.csv")  # much faster than read.csv()
 dt[age > 30, .(mean_income = mean(income)), by = region]
 ```
 
-The `dt[i, j, by]` syntax puts row filtering (`i`), column operations (`j`), and grouping (`by`) in a single expression, which lets data.table optimize the entire operation as a single pass. It modifies columns in place (no copy-on-modify overhead), automatically parallelizes grouped operations, uses less memory than equivalent dplyr pipelines, and its `fread()` reads CSV files much faster than `read.csv()` and often faster than `readr::read_csv()`.
+The `dt[i, j, by]` syntax puts row filtering (`i`), column operations (`j`), and grouping (`by`) in a single expression, which lets data.table optimize the entire operation as a single pass. It modifies columns in place, avoiding the copy-on-modify overhead. It also parallelizes grouped operations automatically, uses less memory than equivalent dplyr pipelines, and its `fread()` reads CSV files much faster than `read.csv()` and often faster than `readr::read_csv()`.
 
 The trade-off is a steeper learning curve; the `dt[i, j, by]` idiom reads differently from dplyr pipes. If you do not want to learn the syntax, `dtplyr` bridges the gap: write dplyr verbs, get data.table speed. It translates your pipeline behind the scenes.
 
@@ -294,7 +293,7 @@ bench::mark(
 # The gap widens with more groups and more rows.
 ```
 
-Reach for data.table when your data has millions of rows, when you are grouping over many categories, or when the same pipeline runs repeatedly in a loop or a Shiny app. If your data fits comfortably in memory and dplyr finishes in seconds, switching buys you nothing but a syntax change. Both dplyr and data.table operate entirely in memory. data.table still loads the entire dataset into RAM before it touches a single row.
+Reach for data.table when your data has millions of rows, when you are grouping over many categories, or when the same pipeline runs repeatedly in a loop or a Shiny app. If your data fits comfortably in memory and dplyr finishes in seconds, switching buys you nothing but a syntax change. Both dplyr and data.table operate entirely in memory, loading the whole dataset into RAM before touching a single row.
 
 ### Exercises {.unnumbered}
 
@@ -335,9 +334,9 @@ dbDisconnect(con)
 
 **duckplyr** removes the SQL entirely: it is a drop-in replacement for dplyr that routes computation through DuckDB's engine. Same syntax, faster execution, near-zero transition cost. In June 2025, duckplyr formally joined the tidyverse. Existing dplyr code runs unchanged; duckplyr intercepts the verbs, routes what it can through DuckDB, and falls back to dplyr for anything DuckDB does not support.
 
-The stack looks like this: Parquet files on disk, Arrow or DuckDB as the engine, dplyr verbs as the interface, results collected into R. You write the same code you already know; the machinery underneath is faster. Much of that speed comes from *query fusion*, combining multiple operations into a single pass over the data and eliminating intermediate allocations. In functional programming, this technique is called *deforestation* (Wadler, 1988): `map f . map g` creates an intermediate list, but fusion rewrites it as `map (f . g)`, traversing the data once. data.table and Arrow apply the same principle at scale.
+The stack looks like this: Parquet files on disk, Arrow or DuckDB as the engine, dplyr verbs as the interface, results collected into R. Much of that speed comes from *query fusion*, combining multiple operations into a single pass over the data and eliminating intermediate allocations. In functional programming, this technique is called *deforestation* (Wadler, 1988): `map f . map g` creates an intermediate list, but fusion rewrites it as `map (f . g)`, traversing the data once. data.table and Arrow apply the same principle at scale.
 
-The dplyr verbs from @sec-data-transformation were designed as a functional interface: data frame in, data frame out, no mutation of the input. data.table, Arrow, DuckDB, and Polars are all different engines, written in different languages (C, C++, Rust), with different memory layouts and different optimization strategies. The dplyr verbs sit on top of all of them unchanged. `filter()`, `mutate()`, `summarise()` work on a local data frame, on a Parquet file through Arrow, on a DuckDB table through duckplyr. Four engines have appeared since dplyr was designed, and the interface has not changed once.
+The dplyr verbs from @sec-data-transformation were designed as a functional interface: data frame in, data frame out, no mutation of the input. data.table, Arrow, DuckDB, and Polars are all different engines, written in different languages (C, C++, Rust), with different memory layouts and different optimization strategies. `filter()`, `mutate()`, `summarise()` work on a local data frame, on a Parquet file through Arrow, on a DuckDB table through duckplyr. Four engines have appeared since dplyr was designed, and the interface has not changed once.
 
 ::: callout-tip
 ## Opinion
@@ -371,7 +370,7 @@ SEXP sum_c(SEXP x) {
 }
 ```
 
-Low-level, no dependencies, maximum control. Used extensively in base R and older packages.
+The C path is low-level and dependency-free, giving you maximum control; it is used extensively in base R and older packages.
 
 **C++ via Rcpp**\index{Rcpp (package)}: the most popular choice, and for good reason. It handles type conversion and memory management automatically, so you write code that looks almost like normal C++:
 
@@ -439,7 +438,7 @@ When code is too slow, work through this list in order:
 
 Profiling comes first because Amdahl's law (1967) puts a hard ceiling on what any optimization can gain. If 5% of your code takes 95% of the time, making the other 95% infinitely fast yields only a 5% speedup. The same limit applies to parallelization: if 10% of the work is sequential, you can never exceed a 10x speedup no matter how many cores you throw at it. You need to know which 5% to fix before choosing how to fix it.
 
-R offers several frameworks for parallel execution.\index{byte compilation} `parallel::mclapply()` works on Unix but not Windows. `future.apply::future_lapply()` works everywhere and swaps in for `lapply()` with minimal changes. `furrr::future_map()` is the parallel version of `purrr::map()`. All split work across cores, and all carry the same caveat: parallelization only helps when the work is CPU-bound and divisible. If the bottleneck is reading from disk, more cores will not help. If iterations depend on each other, you cannot split them. And the overhead of spawning workers and collecting results means parallelization only pays off when each unit of work is substantial (milliseconds, not microseconds).
+R has several frameworks for parallel execution;\index{byte compilation} `future.apply` is the one to reach for. `future.apply::future_lapply()` works everywhere and swaps in for `lapply()` with minimal changes. It carries the usual caveat: parallelization only helps when the work is CPU-bound and divisible. If the bottleneck is reading from disk, more cores will not help. If iterations depend on each other, you cannot split them. And the overhead of spawning workers and collecting results means parallelization only pays off when each unit of work is substantial (milliseconds, not microseconds).
 
 ```{r}
 #| eval: false
@@ -453,3 +452,5 @@ results <- future_sapply(1:100, function(i) {
   i^2
 })
 ```
+
+So here is where you stand: you can find bottlenecks, eliminate unnecessary copies, hand tight loops to compiled code, and split independent work across cores. But the optimization that matters most is still the one at the top of the list. Measure first, because the profiler catches what intuition misses.

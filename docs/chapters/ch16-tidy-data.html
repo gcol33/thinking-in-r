@@ -665,7 +665,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Each observation is a row.</li>
 <li>Each type of observational unit is a table.</li>
 </ol>
-<p>They sound obvious. They aren’t. Most real-world data breaks at least one of them, and recognizing which rule is broken (let alone fixing it) takes practice. The rules themselves are a simplified version of something database designers have known since the 1970s, when Edgar Codd defined normal forms (1NF through 5NF) to eliminate redundancy; tidy data corresponds roughly to third normal form, with no transitive dependencies and no repeating groups. The structural problem R programmers wrestle with today is the same one Codd solved in relational algebra before R existed.</p>
+<p>They sound obvious. They aren’t. Most real-world data breaks at least one of them, and recognizing which rule is broken (let alone fixing it) takes practice.</p>
 <p>Consider a table of population data with years spread across the column names:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pop_wide <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
@@ -681,6 +681,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 Denmark     5831     5840     5857</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>What is the variable here? Year. But “year” doesn’t appear as a column; it’s buried inside the names <code>pop_2020</code>, <code>pop_2021</code>, <code>pop_2022</code>, three columns where there should be one. Not tidy.</p>
+<p>These rules are a simplified version of something database designers have known since the 1970s, when Edgar Codd defined a set of normal forms to eliminate redundancy. The structural problem R programmers wrestle with today is the same one Codd solved in relational algebra before R existed.</p>
 <div id="fig-wide-vs-long" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-wide-vs-long-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -764,7 +765,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 9 Denmark pop_2022       5857</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Three countries, three years, nine population values: the information content is identical in both forms. <code>pivot_longer()</code> and <code>pivot_wider()</code> are inverses; applying one and then the other returns you to where you started (up to column ordering). A pair of reversible transformations like this is called an <em>isomorphism</em>: two structures that contain the same information in different arrangements. Wide and long formats are isomorphic; neither is “more correct.”</p>
-<p>The word isomorphism earns its weight here because it tells you something practical: no information is created or destroyed by pivoting. You cannot learn anything from the long format that was not already present in the wide format, and vice versa. What changes is the <em>alignment</em> between the data’s shape and your next tool’s expectations. A report reader wants wide, because scanning countries across years in a single row is easier than scrolling. A <code>ggplot()</code> call wants long, because each aesthetic maps to one column and each observation occupies one row. Grouped summaries need the grouping variable to be a column, not a set of column names baked into the header. Choosing a format is choosing which tool you are about to hand the data to, and pivoting is the translation between those expectations. Once that distinction is clear, the reshaping itself is mechanical.</p>
+<p>What changes when you pivot is the <em>alignment</em> between the data’s shape and your next tool’s expectations. A report reader wants wide, because scanning countries across years in a single row is easier than scrolling. A <code>ggplot()</code> call wants long, because each aesthetic maps to one column and each observation occupies one row. Grouped summaries need the grouping variable to be a column, not a set of column names baked into the header. Choosing a format is choosing which tool you are about to hand the data to, and pivoting is the translation between those expectations.</p>
 <p>The hard part is not the reshaping itself but deciding <em>what</em> to reshape. Given an arbitrary table with merged cells, hierarchical headers, and embedded metadata, determining the correct tidy structure requires human judgment about what constitutes a variable, an observation, and a value. Wickham’s 2014 paper defines these three terms precisely to make that judgment tractable: once you answer “is year a variable or a value?”, the reshaping follows mechanically.</p>
 <p>Three arguments control the transformation:</p>
 <ul>
@@ -1069,8 +1070,23 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 </section>
 <section id="sec-tidy-data-summary" class="level2" data-number="16.7">
 <h2 data-number="16.7" class="anchored" data-anchor-id="sec-tidy-data-summary"><span class="header-section-number">16.7</span> Summary</h2>
-<p>Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. <code>pivot_longer()</code> turns columns into rows (the common direction), <code>pivot_wider()</code> turns rows into columns (the occasional direction), and joins combine tables by matching keys. <code>left_join()</code> enriches; <code>anti_join()</code> finds gaps; the rest control how unmatched rows are handled.</p>
+<p>Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. <code>pivot_longer()</code> turns columns into rows (the common direction), <code>pivot_wider()</code> turns rows into columns (the occasional direction), and joins combine tables by matching keys.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The mathematics underneath
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <p>These tools compose precisely because they all expect the same shape, and the connection to their mathematical foundations runs deeper than most R programmers realize. Codd’s relational algebra and the simply typed lambda calculus are both built on function application and composition over structured types, which is why the same ideas keep surfacing in R, SQL, and formal logic. In category theory, a join is a <em>pullback</em>: given two tables that each map to a shared key space, the join constructs the most general table consistent with both. Think of it as a Venn diagram for rows, where the overlap is determined by the key column; <code>inner_join</code> keeps only the overlap, while <code>left_join</code> keeps everything on the left and fills the gaps with <code>NA</code>.</p>
+</div>
+</div>
+</div>
 <p>But shape is only half the story. Once your data is tidy, you still need to <em>do</em> something with it, and doing the same thing to many groups, many columns, or many models at once is where iteration enters. That’s next.</p>
 
 

@@ -7,7 +7,7 @@ source(here::here("_common.R"))
 
 You write `filter(penguins, species == "Adelie")` and it works. But `species` isn't a variable in your environment; it's a column buried inside a data frame, invisible to ordinary evaluation rules. So how does R find it?
 
-The answer begins with something R does not do. When you pass an argument to a function, R does not evaluate it. Not yet. Instead, R wraps the argument in an invisible object called a *promise*\index{promise}, a small bundle containing the expression you wrote and the environment where that expression should eventually be evaluated, and then it waits, holding the unevaluated expression in suspension until the function actually needs the result. This single design choice, the decision to procrastinate, ripples outward into default arguments that reference other arguments, functions that inspect your code before running it, and the entire tidyverse convention of writing column names as if they were variables.
+The answer begins with something R does not do. When you pass an argument to a function, R does not evaluate it. Not yet. Instead, R wraps the argument in an invisible object called a *promise*\index{promise} and waits, holding the unevaluated expression in suspension until the function actually needs the result. This single design choice, the decision to procrastinate, ripples outward into default arguments that reference other arguments, functions that inspect your code before running it, and the entire tidyverse convention of writing column names as if they were variables.
 
 The idea has a lineage. Early programming languages split over a simple question: when should arguments be evaluated? Fortran and C chose eagerness, computing each argument before handing it to the function (call-by-value)\index{call-by-value}. Algol 60 tried the opposite, passing the raw expression and re-evaluating it every time the function touched it (call-by-name)\index{call-by-name}. If the expression had side effects, they fired on every access; if the expression was expensive, the cost multiplied by the number of times the function touched the argument. The compromise came in 1976: pass the expression unevaluated, but cache the result after the first evaluation. Evaluate at most once. The technique was called *lazy evaluation*\index{lazy evaluation}. Haskell\index{Haskell (language)} made laziness the default for everything when it launched in 1990; R took a narrower path, inheriting through Scheme and S a design where function arguments are lazy but everything else is eager. That middle ground gives you expression capture without pervasive laziness, but it also means that every function argument in R carries a hidden payload most programmers never notice.
 
@@ -28,9 +28,9 @@ A promise has three components:
 
 Promises are invisible by design: R has no user-facing "promise" type. You cannot create one manually, inspect one with `str()`, or test for one with `is.promise()`. The invisibility is deliberate, because the act of inspecting a promise would force its evaluation, changing program behavior. The abstraction only works because you cannot look behind it.
 
-In the terminology of lambda calculus, this is *call-by-need*\index{call-by-need} evaluation: the argument is passed unevaluated (like call-by-name) but the result is cached after the first evaluation (unlike call-by-name, which would re-evaluate each time). Lambda calculus distinguishes three evaluation strategies: call-by-value (strict, as in C and Python), call-by-name (non-strict, as in Algol 60), and call-by-need (lazy, as in Haskell). R uses call-by-need for function arguments through promises, though most arguments are forced immediately in practice. The Church-Rosser theorem guarantees that if a reduction terminates, all strategies reach the same normal form, but they may differ in whether they terminate at all.
+In the terminology of lambda calculus, this is *call-by-need*\index{call-by-need} evaluation: the argument is passed unevaluated (like call-by-name) but the result is cached after the first evaluation (unlike call-by-name, which would re-evaluate each time). R uses call-by-need for function arguments through promises, though most arguments are forced immediately in practice. The Church-Rosser theorem guarantees that if a reduction terminates, all strategies reach the same normal form, but they may differ in whether they terminate at all.
 
-That difference matters more than it sounds. In an eager language, every argument is fully evaluated before the function sees it — the computation tree grows left to right, arguments resolved before calls. In R, arguments arrive as suspended expressions, unevaluated until the function actually needs them. The tree hangs in place, branches dormant until touched. This is what makes non-standard evaluation possible at all: `aes(x = bill_length_mm)` works because `bill_length_mm` stays unevaluated in your environment, captured as a promise, carried into the plotting function, and evaluated later inside the data frame. Data masking, quasiquotation, and formula interfaces all depend on the fact that arguments are not evaluated the moment you pass them. Without lazy evaluation, none of these techniques would work, because the expression would have already been reduced to a value before the function had a chance to inspect it.
+That difference matters more than it sounds. In an eager language, every argument is fully evaluated before the function sees it — the computation tree grows left to right, arguments resolved before calls. In R, arguments arrive as suspended expressions, unevaluated until the function actually needs them. The tree hangs in place, branches dormant until touched. This is what makes non-standard evaluation possible at all: `aes(x = bill_length_mm)` works because `bill_length_mm` stays unevaluated in your environment, captured as a promise, carried into the plotting function, and evaluated later inside the data frame. Data masking, quasiquotation, and formula interfaces all depend on the fact that arguments are not evaluated the moment you pass them.
 
 What does laziness buy you in practice? Default arguments that would be impossible under eager evaluation:
 
@@ -85,8 +85,6 @@ The default `n = length(x)` is an expression, not a precomputed value; R evaluat
 
 ## Consequences of laziness {#sec-consequences-laziness}
 
-R chose a specific point in the design space: function arguments are lazy, everything else is eager. Haskell sits at the other extreme, where *everything* is lazy (`let xs = [1..]` creates an infinite list without computing all elements), enabling infinite streams and on-demand computation at the cost of making performance harder to reason about. R's middle ground gives you NSE and flexible defaults without the mental overhead of tracking which values exist yet and which are still suspended.
-
 **Side effects in arguments may never happen.** If a function ignores an argument, the promise wrapping it is never forced, which means any side effects buried in the expression (printing, writing files, raising errors) simply vanish:
 
 ```{r}
@@ -108,7 +106,7 @@ report(42)
 
 This only works in the window before evaluation. Once an argument is used, `missing()` loses its ability to answer the question.
 
-**Default expressions, not default values.** A function like `function(x, n = length(x))` does not store a default *value* for `n`. It stores a default *expression*, evaluated lazily inside the function at the moment `n` is first accessed. Defaults can therefore depend on other arguments, on computations that happen earlier in the function body, or on variables in the function's enclosing environment. The entire default-argument system is built on promises.
+**Default expressions, not default values.** The default `n = length(x)` you saw earlier is a stored expression, not a precomputed value, so defaults can depend on other arguments, on computations earlier in the function body, or on variables in the enclosing environment. The entire default-argument system is built on promises.
 
 **The lazy evaluation trap in function factories.** If you read @sec-function-factories, you saw that promises can cause trouble when a factory captures a loop variable:
 
@@ -121,7 +119,7 @@ funs[[1]]()
 funs[[2]]()
 ```
 
-All three functions return 3. Why? Because `i` was captured as a promise pointing to the loop variable, and by the time any function is called, the loop has finished and `i` is 3. The fix requires two tools working together: `force()`, which evaluates a promise immediately, and `local()`, which creates a fresh environment for each iteration so that each function captures its own copy of `i` rather than sharing the loop variable:
+All three functions return 3. Why? Because `i` was captured as a promise pointing to the loop variable, and by the time any function is called, the loop has finished and `i` is 3. The fix requires two tools working together, `force()` and `local()`:
 
 ```{r}
 funs <- list()
@@ -135,7 +133,7 @@ funs[[1]]()
 funs[[2]]()
 ```
 
-`local()` evaluates its body in a new, temporary environment, giving each iteration its own `i` binding. `force(i)` inside that environment evaluates the promise immediately, locking in the current loop value before the next iteration overwrites it. Without `local()`, all three functions share the same binding. Without `force()`, the promise might linger unevaluated until after the loop finishes. You need both: `local()` for isolation, `force()` for immediacy.
+`local()` evaluates its body in a new, temporary environment, giving each iteration its own `i` binding. `force(i)` inside that environment evaluates the promise immediately, locking in the current loop value before the next iteration overwrites it. Without `local()`, all three functions share the same binding. Without `force()`, the promise might linger unevaluated until after the loop finishes.
 
 What is `force(x)` actually doing? Nothing clever. Its definition is just `x`, which accesses the argument and thereby triggers evaluation and caching. The name exists purely to communicate intent: "evaluate this now, don't wait." Which raises a broader question: if laziness can cause subtle bugs in loops and closures, why does R use it at all?
 
@@ -231,9 +229,9 @@ df <- data.frame(x = 1:5, y = c(10, 20, 30, 40, 50))
 my_filter(df, x > 3)
 ```
 
-`substitute(expr)` captures the caller's expression (`x > 3`) without evaluating it, exactly as a promise holds an unevaluated expression (@sec-promises). `list2env(.data, parent = parent.frame())` creates a new environment whose bindings are the columns of the data frame, with the caller's environment as the parent so that variables not in the data frame are still found. `eval(e, envir = env)` forces the expression in that constructed environment, where `x` resolves to the column rather than to anything in the global environment. This works when you write `my_filter(df, x > 3)` directly. Try wrapping it in another function, and the expression gets trapped in the wrong scope. This is what `dplyr::filter()` does, with more machinery for tidy evaluation, error handling, and grouped data frames layered on top.
+`substitute(expr)` captures the caller's expression (`x > 3`) without evaluating it, exactly as a promise holds an unevaluated expression (@sec-promises). `list2env(.data, parent = parent.frame())` creates a new environment whose bindings are the columns of the data frame, with the caller's environment as the parent so that variables not in the data frame are still found. `eval(e, envir = env)` forces the expression in that constructed environment, where `x` resolves to the column rather than to anything in the global environment. This works when you write `my_filter(df, x > 3)` directly. This is what `dplyr::filter()` does, with more machinery for tidy evaluation, error handling, and grouped data frames layered on top.
 
-Data masking is optimized for the common case (interactive analysis) at the expense of the less common case (writing reusable functions). The moment you wrap a data-masked function inside another function, the column name is trapped in your wrapper's scope, and the caller has no way to pass it through. That's the problem tidy evaluation exists to solve.
+Data masking is optimized for the common case (interactive analysis) at the expense of the less common case (writing reusable functions). That's the problem tidy evaluation exists to solve.
 
 
 ### Exercises {.unnumbered}

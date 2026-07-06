@@ -21,7 +21,7 @@ penguin <- list(
 penguin
 ```
 
-`species` is a character scalar, `mass` is a numeric scalar, `measurements` is a numeric vector of length 3. No coercion, no flattening. A vector could not hold these together without reducing them all to a single type; a list simply keeps each element as it was.
+`species` is a character scalar, `mass` is a numeric scalar, `measurements` is a numeric vector of length 3.
 
 Technically, a list is a *recursive vector*\index{recursive data structure}, where "recursive" means its elements can themselves be lists, allowing arbitrary nesting. R's documentation calls lists "generic vectors" to distinguish them from atomic vectors (@sec-atomic-vectors), and `typeof()` confirms:
 
@@ -30,8 +30,6 @@ typeof(penguin)
 ```
 
 You already used a list in @sec-functions-in-lists when you stored functions as named elements. Lists are the same structure whether they hold numbers, strings, or functions, but accessing the right element requires care.
-
-The lambda calculus already had this: `λa.λb.λf. f a b` is a pair encoded as a closure, with selectors `λx.λy. x` and `λx.λy. y` to get each element back. `cons`/`car`/`cdr` in Lisp; `list()`/`[[`/`$` in R.
 
 
 ### Exercises {.unnumbered}
@@ -162,7 +160,7 @@ study$species[[1]]$name
 study[["species"]][[2]][["count"]]
 ```
 
-Each `[[` or `$` steps one level deeper: `study$species` is a list of three lists, `study$species[[1]]` is the first of those, and `study$species[[1]]$name` is the string `"Adelie"`. JSON from a web API, the output of `lm()`, and configuration files are all nested lists or objects built on them, and the access pattern is always the same: `$` or `[[` to step down one level, repeated as many times as needed.
+Each `[[` or `$` steps one level deeper: `study$species` is a list of three lists, `study$species[[1]]` is the first of those, and `study$species[[1]]$name` is the string `"Adelie"`. JSON from a web API, the output of `lm()`, and configuration files are all nested lists or objects built on them.
 
 
 
@@ -244,7 +242,7 @@ x$a <- 100
 x$a
 ```
 
-R uses copy-on-modify for lists, the same semantics as for vectors. When you modify a list, R copies only the parts that change, not the entire structure; for practical purposes you can treat assignment as modifying in place, since the copying is an implementation detail that rarely affects your code.
+R uses copy-on-modify for lists, the same semantics as for vectors (@sec-space-complexity): it copies only the parts that change, not the entire structure, so for practical purposes you can treat assignment as modifying in place.
 
 
 ### Exercises {.unnumbered}
@@ -256,7 +254,7 @@ R uses copy-on-modify for lists, the same semantics as for vectors. When you mod
 
 ## Linked lists {#sec-linked-lists}
 
-R's built-in lists are arrays of pointers, so indexing is O(1) and prepending is O(n) (every pointer in the array gets copied). A linked list is a chain of nodes, each holding a value and a pointer to the next. Prepending is O(1); reaching element *k* means following *k* pointers. You build one in R with nested lists:
+A linked list is a chain of nodes, each holding a value and a pointer to the next. Prepending is O(1); reaching element *k* means following *k* pointers. You build one in R with nested lists:
 
 ```{r}
 cons <- function(head, tail) list(head = head, tail = tail)
@@ -290,7 +288,7 @@ So why doesn't R use linked lists for everyday work? Because R needs contiguous 
 
 The `cons`/`car`/`cdr` structure is a direct translation of Church encoding. In lambda calculus, a pair is `λh.λt.λf. f h t`: a function that captures two values and waits for a selector. `car` passes a selector that returns the first value; `cdr` passes one that returns the second. A linked list is a chain of such pairs, terminated by a special "nil" value. Lisp was built on exactly this encoding, and `cons`/`car`/`cdr` remain the standard names for these operations across functional languages.
 
-Both R and Lisp descend from the same lambda calculus, but the engineering decisions diverged early. Lisp committed to recursive decomposition: peel from the head, recur on the tail, build up an answer one `cons` at a time. R went the other way — contiguous arrays, vectorized operations, the C runtime walking a flat block of memory at speed. That fork propagated through every design decision that followed. R has `sapply` where Lisp has `mapcar`. R's `[` extracts by position; Lisp peels from the front. The entire language favors breadth over depth, and the linked list code above shows what depth-first design looks like from the inside.
+Both R and Lisp descend from the same lambda calculus, but the engineering decisions diverged early. Lisp committed to recursive decomposition, building up an answer one `cons` at a time. R went the other way — contiguous arrays, vectorized operations, the C runtime walking a flat block of memory at speed. That fork propagated through every design decision that followed. R has `sapply` where Lisp has `mapcar`. R's `[` extracts by position; Lisp peels from the front. The entire language favors breadth over depth, and the linked list code above shows what depth-first design looks like from the inside.
 :::
 
 

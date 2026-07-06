@@ -1,6 +1,3 @@
-So now you can keep rows and pick columns. What you cannot yet do is create something that was not there before.
-`mutate()` adds new columns while the originals stay untouched — the same functor pattern from @sec-vectorized-ops: apply a function inside a container, get back the same container with different contents. There, the container was a vector; here it is a data frame with 344 rows.
-You can now keep rows, pick columns, and compute new values from old ones. One operation remains: collapsing many rows into few.
 # Data transformation {#sec-data-transformation}
 
 ```{r}
@@ -13,7 +10,7 @@ Are Gentoo penguins heavier than Adelie penguins? The `penguins` data has the an
 
 ## The idea: verbs for data {#sec-verbs-for-data}
 
-A dplyr\index{dplyr (package)} verb takes a data frame and returns a data frame. The data frame goes in first, the result comes out the same shape, and nothing else changes. Five verbs cover most of what you need:
+A dplyr\index{dplyr (package)} verb takes a data frame and returns a data frame: it goes in first, comes out the same shape, and nothing else changes. Five verbs cover most of what you need:
 
 - `filter()`\index{filter()} keeps rows that match a condition.
 - `select()`\index{select()} picks columns by name.
@@ -21,9 +18,9 @@ A dplyr\index{dplyr (package)} verb takes a data frame and returns a data frame.
 - `summarise()`\index{summarise()} collapses rows into a summary.
 - `arrange()`\index{arrange()} reorders rows.
 
-You compose them for complex transformations (via pipes, @sec-pipes-and-composition), but each one does exactly one thing. A dplyr pipeline is function composition: each verb transforms a data frame and passes it to the next, the same composition from lambda calculus, (g ∘ f)(x) = g(f(x)), applied to tables instead of numbers.
+You compose them for complex transformations (via pipes, @sec-pipes-and-composition), but each one does exactly one thing.
 
-These verbs did not come from nowhere. Edgar Codd's 1970 paper defined a *relational algebra*\index{relational algebra}: a small set of operations on tables where every operation takes a table in and returns a table out. Restriction (keep rows), projection (keep columns), extension (add computed columns), aggregation (collapse groups). IBM resisted — they had a competing database product (IMS) — but the composability was too useful, and by the 1980s relational databases had won.
+These verbs did not come from nowhere. Edgar Codd's 1970 paper defined a *relational algebra*\index{relational algebra}: a small set of operations on tables where every operation takes a table in and returns a table out, among them restriction (keep rows) and projection (keep columns). IBM resisted at first, because it had a competing database product called IMS. The composability was too useful, and by the 1980s relational databases had won.
 
 dplyr is Codd's algebra with friendlier names. The same ideas appear in SQL, pandas, and data.table because the operations are the same; only the syntax differs. `arrange()` is the one exception — ordering has no relational equivalent, but you need it for display.
 
@@ -56,7 +53,7 @@ Multiple conditions, separated by commas, are combined with AND:
 filter(penguins, species == "Adelie", body_mass_g > 4000)
 ```
 
-This keeps only Adelie penguins heavier than 4000 grams. Comma means "and." You can also write `&` explicitly, but the comma is cleaner.
+This keeps only Adelie penguins heavier than 4000 grams. You can also write `&` explicitly, but the comma is cleaner.
 
 For OR, use `|`:
 
@@ -232,7 +229,15 @@ summarise(penguins_grouped, mean_mass = mean(body_mass_g, na.rm = TRUE))
 
 `summarise()` applied `mean()` within each group and returned one row per species.
 
-Compare the two calls. Without `group_by()`, `summarise()` collapsed everything into a single row — one mean, one answer. With `group_by(species)`, the same verb produced three rows, one per species, without any change to the `summarise()` call itself. The column you group by acts as a partitioning function: it splits the data into subsets, and `summarise()` runs independently inside each one. SQL spells this `GROUP BY`; Spark uses explicit partitioning; in functional programming the same idea appears as `foldByKey`, where a reduce operation runs per partition rather than globally. The underlying pattern — an aggregation function paired with a partitioning structure — is the same across all of them. What makes dplyr's version distinctive is that the partition is invisible metadata attached to the data frame — `group_by()` changes nothing you can see in a printout, but it changes everything `summarise()` does. That silent metadata is powerful, and it is also the source of the most common grouping bugs.
+Compare the two calls. Without `group_by()`, `summarise()` collapsed everything into a single row — one mean, one answer. With `group_by(species)`, the same verb produced three rows, one per species, without any change to the `summarise()` call itself. The column you group by acts as a partitioning function: it splits the data into subsets, and `summarise()` runs independently inside each one\index{split-apply-combine}.
+
+::: {.callout-note collapse="true"}
+## Grouping in other languages
+
+SQL spells this `GROUP BY`; Spark uses explicit partitioning; in functional programming the same idea appears as `foldByKey`, where a reduce operation runs per partition rather than globally. The underlying pattern — an aggregation function paired with a partitioning structure — is the same across all of them.
+:::
+
+What makes dplyr's version distinctive is that the partition is invisible metadata attached to the data frame — `group_by()` changes nothing you can see in a printout, but it changes everything `summarise()` does. That silent metadata is powerful, and it is also the source of the most common grouping bugs.
 
 You can group by multiple variables:
 
@@ -438,7 +443,11 @@ dplyr and SQL\index{SQL} are the same language wearing different syntax. Both im
 
 Call `show_query()` on a database-backed tibble to see the translation directly.
 
-The reason dplyr pipelines compose so cleanly is that every verb has the same type signature: data frame in, data frame out, column structure preserved. This is the same monoid pattern from @sec-no-scalars: an associative operation (verb composition) with an identity element (a verb that returns the data frame unchanged). Compose any sequence of dplyr verbs and the result is still a data frame.
+::: {.callout-note collapse="true"}
+## Verb composition is a monoid
+
+A dplyr pipeline is function composition: each verb transforms a data frame and passes it to the next, the same composition from lambda calculus, (g ∘ f)(x) = g(f(x)), applied to tables instead of numbers. This is the same monoid pattern from @sec-no-scalars: an associative operation (verb composition) with an identity element (a verb that returns the data frame unchanged). Compose any sequence of dplyr verbs and the result is still a data frame.
+:::
 
 ::: callout-tip
 ## Opinion

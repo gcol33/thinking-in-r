@@ -68,7 +68,7 @@ The classic:
 0.1 + 0.2 == 0.3
 ```
 
-Neither 0.1 nor 0.2 nor 0.3 can be represented exactly in binary floating point, so the sum of the stored representations of 0.1 and 0.2 differs from the stored representation of 0.3 by a tiny amount (about 5.6e-17). Because `==` checks for exact equality, it returns `FALSE`. This is a specific instance of a deeper fact: floating-point operations do not obey real arithmetic\index{rounding error}. Addition is not even associative; `(a + b) + c` may differ from `a + (b + c)` because each intermediate result gets rounded independently. David Goldberg's 1991 paper "What Every Computer Scientist Should Know About Floating-Point Arithmetic" remains the definitive reference.
+Neither 0.1 nor 0.2 nor 0.3 can be represented exactly in binary floating point, so the sum of the stored representations of 0.1 and 0.2 differs from the stored representation of 0.3 by a tiny amount (about 5.6e-17). Because `==` checks for exact equality, it returns `FALSE`. This is a specific instance of a deeper fact: floating-point operations do not obey real arithmetic\index{rounding error}. Addition is not even associative; `(a + b) + c` may differ from `a + (b + c)` because each intermediate result gets rounded independently. For the full map of these traps, David Goldberg's 1991 paper "What Every Computer Scientist Should Know About Floating-Point Arithmetic" remains the definitive reference.
 
 The fix is `all.equal()`\index{all.equal()}, which compares with a tolerance:
 
@@ -93,7 +93,7 @@ Accumulation is subtler. Adding a small number to a large number can lose the sm
 1e16 + 1 - 1e16
 ```
 
-The result should be 1. It is 0, because `1e16 + 1` cannot be distinguished from `1e16` in 64-bit floating point; the 1 simply vanishes. When you call `sum()` on a million numbers, these rounding errors accumulate with each addition. R's `sum()` uses pairwise summation (splitting the vector in half and summing each half recursively) to reduce this drift, though for extreme precision requirements compensated summation algorithms like Kahan's (1965) track the accumulated error in a separate variable and correct for it at each step.
+The result should be 1. It is 0, because `1e16 + 1` cannot be distinguished from `1e16` in 64-bit floating point; the 1 simply vanishes. When you call `sum()` on a million numbers, these rounding errors accumulate with each addition. R's `sum()` uses pairwise summation (splitting the vector in half and summing each half recursively) to reduce this drift. For extreme precision, compensated summation algorithms like Kahan's (1965) track the accumulated error in a separate variable and correct for it at each step.
 
 Sequences suffer the same problem:
 
@@ -262,9 +262,9 @@ max(abs(x_solved - x_true))  # should be 0, will not be
 
 The error can be many orders of magnitude larger than machine epsilon. The matrix is not singular, the code is correct, and yet the problem itself amplifies rounding errors. What, then, can an algorithm guarantee?
 
-### Forward and backward stability
+### Backward stability
 
-A *forward-stable* algorithm produces answers close to the true answer. A *backward-stable* algorithm does something subtler: it produces the exact answer to a slightly perturbed problem. The computed solution $\hat{x}$ satisfies $(A + \delta A)\hat{x} = b + \delta b$ where $\delta A$ and $\delta b$ are small.
+A *backward-stable* algorithm produces the exact answer to a slightly perturbed problem. The computed solution $\hat{x}$ satisfies $(A + \delta A)\hat{x} = b + \delta b$ where $\delta A$ and $\delta b$ are small.
 
 Most LAPACK routines (which R calls internally for `solve()`, `qr()`, `svd()`, `chol()`) are backward-stable. For well-conditioned problems, backward stability guarantees accurate results. For ill-conditioned problems, no algorithm can save you, but you can sometimes reformulate the problem so that it becomes well-conditioned.
 
@@ -317,7 +317,7 @@ A <- matrix(1:6, nrow = 2, ncol = 3)
 A
 ```
 
-Every matrix operation in R eventually calls LAPACK or BLAS — Fortran libraries that have been tested, tuned, and argued over for decades. When you write `solve(A, b)`, you are asking those routines to find the vector *x* that satisfies *Ax = b* exactly, using numbers that are not exact. LAPACK promises *backward stability*: the *x* it hands back is the exact solution to a slightly perturbed version of your problem, *A + δA*. For well-conditioned matrices, *δA* is negligible — a few ulps, invisible in any application. The Hilbert matrix from the previous section is a different story; there, *δA* is large enough to drown the answer in noise, because the matrix itself amplifies every perturbation and no amount of algorithmic care can undo that. The condition number you computed is the magnification factor, and it is the single number that determines whether `solve()` gives you a trustworthy answer or an expensive random number.
+Every matrix operation in R eventually calls LAPACK or BLAS — Fortran libraries that have been tested, tuned, and argued over for decades. When you write `solve(A, b)`, you are asking those routines to find the vector *x* that satisfies *Ax = b* exactly, using numbers that are not exact. LAPACK is backward-stable, in the sense of @sec-numerical-stability: the *x* it hands back solves a slightly perturbed version of your problem, *A + δA*. For well-conditioned matrices, *δA* is negligible — a few ulps, invisible in any application. The Hilbert matrix from the previous section is a different story; there, *δA* is large enough to drown the answer in noise, because the matrix itself amplifies every perturbation and no amount of algorithmic care can undo that. The condition number you computed is the magnification factor, and it is the single number that determines whether `solve()` gives you a trustworthy answer or an expensive random number.
 
 The key operations:
 
@@ -357,7 +357,7 @@ A %*% x  # verify: should equal b
 Use `solve(A, b)` to solve systems, not `solve(A) %*% b`. Computing the inverse is slower and less numerically stable. The only reason to compute `solve(A)` explicitly is if you need the inverse itself, which is rare.
 :::
 
-**Decompositions**: R provides `eigen()` for eigenvalues, `svd()` for singular value decomposition, `qr()` for QR decomposition, and `chol()` for the Cholesky decomposition of symmetric positive-definite matrices, all backed by LAPACK and BLAS (battle-tested Fortran libraries). R's matrix operations are fast for moderate sizes, up to thousands of rows and columns.
+**Decompositions**: R provides `eigen()` for eigenvalues, `svd()` for singular value decomposition, `qr()` for QR decomposition, and `chol()` for the Cholesky decomposition of symmetric positive-definite matrices, all backed by LAPACK and BLAS. R's matrix operations are fast for moderate sizes, up to thousands of rows and columns.
 
 ```{r}
 eigen(A)$values
