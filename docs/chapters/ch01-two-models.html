@@ -845,7 +845,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     localStorage.setItem(key, Date.now().toString());
 
-    fetch("https://thinking-in-r.netlify.app/api/hit?p=" + encodeURIComponent(location.pathname));
+    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
 
   }, 5000);
 
@@ -859,7 +859,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (secs < 5 || secs > 3600) return;
 
-    navigator.sendBeacon("https://thinking-in-r.netlify.app/api/duration?p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
+    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
 
   }
 
