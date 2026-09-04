@@ -1,10 +1,10 @@
 # Current work: readability pass
 
-Last updated 2026-09-04 (ch19-21 session).
+Last updated 2026-09-04 (ch22-24 session).
 
 ## Status
 
-Chapters 1 to 21 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe). Chapters 22 onward have not. Next session: ch22, ch23, ch24.
+Chapters 1 to 24 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe, ch22-24 in f78a742). Chapters 25 onward have not. Next session: ch25, ch26, ch27.
 
 ## The problem
 
@@ -110,8 +110,21 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Cut: ch19 "three reasons" enumeration for purrr (the pipe reason was false, `lapply()` pipes just as well), "debugging for five seconds vs an hour", "not `map()`, not `walk()`"; ch20 "Three concepts from three chapters", "The real power emerges"; ch21 "Most programmers who discover `map()` never learn `Reduce()`", "fold syntax as a straitjacket".
 - Word counts: ch19 2773 to 2581, ch20 2064 to 1980, ch21 2095 to 2031.
 
+## Notes from ch22-24
+
+- Four factual fixes from running the code. ch22 said the Y combinator diverges in R because "R is strict" (it runs: `Y(fact_step)(6)` is 720, because `f(x(x))` hands `f` a promise and nothing forces `x(x)` until `n * f(n - 1)`; a strict transliteration `(function(x) { y <- x(x); f(y) })` does diverge). The section now shows `Y` working, explains it through the promise, and presents `Z` as the fix for eager languages; the chapter's closing line and the ch23 call-by-need callout both point at it. ch23's "fix" for the loop trap, `local({ force(i); funs[[i]] <<- function() i })`, returns 3, 3, 3 (the rendered page already showed `[1] 3`; `force(i)` on a global creates no binding), and the loop version involves no promise at all; replaced with a `make(k)` factory called in a loop, which is a promise, and `force(i)` inside the factory, with a back-ref to @sec-lazy-eval-trap. ch23 said `missing()` stops working "once an argument is used" (it stops after the argument is *assigned to*; `?missing`). ch23 said you cannot create a promise manually (`delayedAssign()` does).
+- ch24 S7 opening claimed "In May 2024, R-Core merged four patches into base R (version 4.4) ... `UseMethod()` and the method lookup tables". R's NEWS database has no such entry. What it has: R 4.3.0 added `nameOfClass()` (for `inherits()`) and `chooseOpsMethod()`, R 4.4.0 renamed S4SXP to OBJSXP, each "to support experimenting with alternative object systems" and credited to the R Consortium OOP Working Group. The paragraph now says that. Verify base-R history claims with `news(grepl(..., Text))` before keeping them.
+- ch24 S3 history said Chambers needed classes "in the early 1980s"; the class/method system came in 1992 with the third version of S (the white book). Now situation first (a library of models each needing its own `print()`/`summary()`/`plot()`), name and date after, and the S7 spoiler paragraph in that section is gone (S7 has its own section two pages later).
+- Re-teaching removed: ch22 historical notes retold ch01's Gödel story beat for beat ("twenty-five-year-old logician in Vienna", the self-referential sentence). Now back-references @sec-two-models and adds only the recursion angle: proof-checking as arithmetic built by the `factorial_r` pattern (primitive recursive functions), then one sentence for lambda calculus/Turing equivalence, LISP (@sec-lisp) and Scheme (@sec-scheme) as back-refs. "Church proved in 1936 that recursion can be derived from lambda calculus" is gone (the λ-definability result is Kleene's and Church's; the callout now says only that the fixed-point combinator is how recursion is derived). "Godel" was also spelled without the umlaut; ch01 has "Gödel".
+- Show-before-name: ch22 recursive/base case/recursive case named after `factorial_r(6)`; thunk and trampoline named after the `while` loop runs (`factorial_thunk` now precedes `trampoline`); fixed point and fixed-point combinator named after `Y(fact_step)(6)` and `Z(fact_step)(6)`; ch23 the chapter now opens the Promises section with `f({ cat(...); 5 })` printing "inside f" before "evaluating the argument", and names the promise after; NSE named after the `subset` internals; data masking named after the `filter(penguins, ...)` lookup order is described; ch24 `structure(list(name = 42, mass = -100), class = "penguin")` and `greet(bad)` shown before the constructor/validator/helper trio, which is named after the three functions and the failing `penguin(42, 3750)`.
+- Callouts added: ch22 "The lambda calculus connection" (λ notation for Y, the three constructs, @sec-r-as-mathematics); ch23 "Where laziness comes from" (call-by-value/name/need, 1976, Haskell 1990, S; Church-Rosser; the old intro paragraph said R inherited lazy arguments "through Scheme and S", but Scheme is strict, so now "from S"); ch24 type-theory callout made collapsible and absorbed the main-text paragraph about compile-time exhaustiveness.
+- Bullet-to-prose: ch23 promise components (three-item list was a restatement of the two paragraphs above it; cut), the four bold consequences of laziness, the four bold NSE trade-offs; ch24 constructor/validator/helper bold lead-ins over code, "S7 over S3"/"S7 over S4".
+- ch23 exercise 1 in Promises asked for the output-order experiment that is now in the main text; it now asks how many times the argument prints when used twice (once; caching).
+- Cut: ch22 "turtles all the way down", "wearing a loop's clothing", "the computational equivalent of a sentence that never finds its period", "spectacularly inefficient", "pays its rent", "once you see it, you see it everywhere", "fewer people know about it", "This is not a party trick", "hiding in plain sight", "R is not Scheme"; ch23 "The answer begins with something R does not do", "the most dangerous kind of failure", "This isn't a tidyverse invention"; ch24 "S3 attached a string to an object and hoped", "Notice what you get for free", "Validation is built in, not bolted on".
+- Word counts: ch22 3854 to 3741, ch23 3202 to 2810, ch24 2411 to 2336.
+
 ## Files for the next session
 
-- `chapters/ch22-recursion-and-fixed-points.qmd`
-- `chapters/ch23-lazy-evaluation.qmd`
-- `chapters/ch24-s3-and-s7.qmd`
+- `chapters/ch25-contracts-and-defensive-code.qmd`
+- `chapters/ch26-metaprogramming.qmd`
+- `chapters/ch27-building-a-dsl.qmd`
