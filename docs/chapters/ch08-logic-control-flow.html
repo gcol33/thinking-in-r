@@ -615,16 +615,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#exercises-2" id="toc-exercises-2" class="nav-link" data-scroll-target="#exercises-2">Exercises</a></li>
   </ul></li>
-  <li><a href="#sec-numbers-stored" id="toc-sec-numbers-stored" class="nav-link" data-scroll-target="#sec-numbers-stored"><span class="header-section-number">8.4</span> How numbers are stored</a></li>
-  <li><a href="#sec-if-else-expression" id="toc-sec-if-else-expression" class="nav-link" data-scroll-target="#sec-if-else-expression"><span class="header-section-number">8.5</span> <code>if/else</code> as an expression</a>
+  <li><a href="#sec-if-else-expression" id="toc-sec-if-else-expression" class="nav-link" data-scroll-target="#sec-if-else-expression"><span class="header-section-number">8.4</span> <code>if/else</code> as an expression</a>
   <ul class="collapse">
   <li><a href="#exercises-3" id="toc-exercises-3" class="nav-link" data-scroll-target="#exercises-3">Exercises</a></li>
   </ul></li>
-  <li><a href="#sec-vectorized-conditionals" id="toc-sec-vectorized-conditionals" class="nav-link" data-scroll-target="#sec-vectorized-conditionals"><span class="header-section-number">8.6</span> Vectorized conditionals</a>
+  <li><a href="#sec-vectorized-conditionals" id="toc-sec-vectorized-conditionals" class="nav-link" data-scroll-target="#sec-vectorized-conditionals"><span class="header-section-number">8.5</span> Vectorized conditionals</a>
   <ul class="collapse">
   <li><a href="#exercises-4" id="toc-exercises-4" class="nav-link" data-scroll-target="#exercises-4">Exercises</a></li>
   </ul></li>
-  <li><a href="#sec-switch" id="toc-sec-switch" class="nav-link" data-scroll-target="#sec-switch"><span class="header-section-number">8.7</span> <code>switch()</code></a></li>
+  <li><a href="#sec-switch" id="toc-sec-switch" class="nav-link" data-scroll-target="#sec-switch"><span class="header-section-number">8.6</span> <code>switch()</code></a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/gcol33/thinking-in-r/edit/main/chapters/ch08-logic-control-flow.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gcol33/thinking-in-r/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -651,7 +650,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>In <a href="ch04-vectors.html#sec-coercion" class="quarto-xref"><span>Section 4.3</span></a>, you saw that <code>TRUE</code> becomes 1 and <code>FALSE</code> becomes 0 when R needs a number. That was a hint. Logical values are not second-class citizens in R; they are a full type with their own operators, and they drive every decision your code makes. This chapter covers logical vectors, comparisons, boolean operators, and <code>if/else</code>. In R, <code>if/else</code> is an expression that returns a value, not a statement that directs traffic.</p>
+<p>In <a href="ch04-vectors.html#sec-coercion" class="quarto-xref"><span>Section 4.3</span></a>, you saw that <code>TRUE</code> becomes 1 and <code>FALSE</code> becomes 0 when R needs a number. This chapter is about what logical values do before they get coerced: the comparisons that produce them, the operators that combine them, and the <code>if/else</code> that chooses between values based on them.</p>
 <section id="sec-logical-vectors" class="level2" data-number="8.1">
 <h2 data-number="8.1" class="anchored" data-anchor-id="sec-logical-vectors"><span class="header-section-number">8.1</span> Logical vectors</h2>
 <p><code>TRUE</code> and <code>FALSE</code> are R’s logical values. You already met them in <a href="ch04-vectors.html#sec-atomic-vectors" class="quarto-xref"><span>Section 4.2</span></a> as one of the four main types (double, integer, character, logical).</p>
@@ -663,7 +662,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Every comparison you write, every filter you apply, every conditional check you run produces one of these vectors. The trick from <a href="ch04-vectors.html#sec-coercion" class="quarto-xref"><span>Section 4.3</span></a> is what makes expressions like <code>sum(x &gt; 5)</code> work: <code>x &gt; 5</code> produces a logical vector, <code>sum()</code> coerces <code>TRUE</code> to 1 and <code>FALSE</code> to 0, and suddenly you are counting how many elements pass the test without writing a single loop.</p>
-<p>A logical value is one of exactly two things: <code>TRUE</code> or <code>FALSE</code>. No third option, no grey area, no maybe. What happens, then, when someone overrides one of the two options?</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -676,11 +674,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>In type theory this is a <em>sum type</em> (also called a tagged union or variant): a type defined by listing its variants, so that <code>Bool = TRUE | FALSE</code>. Contrast this with a data frame row, which combines fields with AND (a penguin has a species AND a mass AND a flipper length); a sum type chooses one variant with OR. You will see sum types surface again when factors define a fixed set of levels (<a href="ch12-strings-factors-dates.html#sec-why-factors" class="quarto-xref"><span>Section 12.4</span></a>) and when S3 dispatch selects a method based on class (<a href="ch24-s3-and-s7.html#sec-s3-basics" class="quarto-xref"><span>Section 24.2</span></a>). Where product types say “all of these together,” sum types say “exactly one of these.”</p>
+<p>In type theory a type defined by listing its variants, <code>Bool = TRUE | FALSE</code>, is a <em>sum type</em> (also called a tagged union or variant). R’s logical type adds <code>NA</code> as a third variant for a missing value. Contrast this with a data frame row, which combines fields with AND (a penguin has a species AND a mass AND a flipper length); a sum type chooses one variant with OR. Sum types surface again when factors define a fixed set of levels (<a href="ch12-strings-factors-dates.html#sec-why-factors" class="quarto-xref"><span>Section 12.4</span></a>) and when S3 dispatch selects a method based on class.</p>
 </div>
 </div>
 </div>
-<p>R has <code>T</code> and <code>F</code> as shortcuts for <code>TRUE</code> and <code>FALSE</code>. Do not use them.</p>
+<p>R also accepts <code>T</code> and <code>F</code> as shortcuts. Try assigning to one:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="dv">42</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>T</span>
@@ -689,7 +687,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(T)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>T</code> is a regular variable name, so you can overwrite it with anything, and R will not complain. <code>TRUE</code> is a reserved word, locked and immutable. Code that relies on <code>T</code> meaning <code>TRUE</code> will break silently the moment someone (or some package) assigns to <code>T</code>, and the same applies to <code>F</code>.</p>
+<p><code>T</code> is a regular variable name, so you can overwrite it with anything, and R will not complain. <code>TRUE</code> is a reserved word; <code>TRUE &lt;- 42</code> is an error. Code that relies on <code>T</code> meaning <code>TRUE</code> keeps running after someone (or some package) assigns to <code>T</code>, and the same applies to <code>F</code>.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -742,18 +740,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>x <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"cat"</span>, <span class="st">"bird"</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  TRUE FALSE  TRUE  TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Compare <code>x == "cat" | x == "bird"</code> to <code>x %in% c("cat", "bird")</code>: both produce the same result, but <code>%in%</code> scales gracefully to larger sets without forcing you to chain <code>==</code> and <code>|</code> over and over.</p>
-<p>One trap deserves early mention. Try this:</p>
+<p>Written out with <code>==</code>, that test is <code>x == "cat" | x == "bird"</code>, one clause per member; <code>%in%</code> stays a single call however large the set grows.</p>
+<p>One comparison to keep treating with suspicion:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">==</span> <span class="fl">0.3</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>FALSE</code>. Computers store numbers in binary, and most decimal fractions have no exact binary representation (the same way 1/3 has no exact decimal representation). The stored values of <code>0.1 + 0.2</code> and <code>0.3</code> differ by about <code>5.6e-17</code>, an invisible speck of rounding error that <code>==</code> faithfully detects. Use <code>all.equal()</code> for approximate comparison:</p>
+<p><code>FALSE</code>, for the reason you saw in <a href="ch06-numerical-computing.html#sec-floating-point-traps" class="quarto-xref"><span>Section 6.2</span></a>: neither side is stored exactly, and <code>==</code> detects the difference. <code>all.equal()</code> compares with a tolerance:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.2</span>, <span class="fl">0.3</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><a href="ch06-numerical-computing.html" class="quarto-xref"><span>Chapter 6</span></a> covers floating-point arithmetic in depth, including catastrophic cancellation, condition numbers, and log-space arithmetic. For now, the rule is simple: never use <code>==</code> to compare computed decimal numbers. But if you cannot trust <code>==</code> for decimals, how do you combine multiple conditions safely?</p>
+<p>Each comparison so far has produced one logical vector. A filter usually needs two tests at once, “heavier than 4 kg <em>and</em> on Biscoe island”, which means combining two logical vectors into one.</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -781,18 +779,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE  TRUE  TRUE FALSE FALSE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each element is tested independently: is it greater than 2 <em>and</em> less than 6?</p>
-<p>R also has <code>&amp;&amp;</code> and <code>||</code>, which look similar but behave very differently. They examine only the first element of each operand and use <em>short-circuit evaluation</em>: if the left side of <code>&amp;&amp;</code> is <code>FALSE</code>, the right side is never touched, because the result must be <code>FALSE</code> regardless of what the right side contains. The same logic applies to <code>||</code> when the left side is <code>TRUE</code>.</p>
+<p>R also has a doubled form, <code>&amp;&amp;</code> and <code>||</code>. Put something explosive on the right-hand side and see which one sets it off:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="cn">FALSE</span> <span class="sc">&amp;&amp;</span> <span class="fu">stop</span>(<span class="st">"this is never reached"</span>)</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>No error. <code>stop()</code> was never called because <code>&amp;&amp;</code> saw <code>FALSE</code> on the left and skipped everything to the right. Compare that to the single-ampersand version:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cn">FALSE</span> <span class="sc">&amp;</span> <span class="fu">stop</span>(<span class="st">"this IS reached"</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! this IS reached</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>&amp;</code> evaluated both sides, so <code>stop()</code> fired.</p>
+<p><code>&amp;&amp;</code> saw <code>FALSE</code> on the left and skipped everything to the right, because the result had to be <code>FALSE</code> whatever the right side contained. <code>&amp;</code> evaluated both sides, so <code>stop()</code> fired. This is <em>short-circuit evaluation</em>, and <code>||</code> does the same when its left side is <code>TRUE</code>. The doubled forms also insist on a single value on each side:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>) <span class="sc">&amp;&amp;</span> <span class="cn">TRUE</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `c(TRUE, FALSE) &amp;&amp; TRUE`:</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! 'length = 2' in coercion to 'logical(1)'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -808,32 +810,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p><code>xor()</code> (exclusive or) returns <code>TRUE</code> when exactly one of its arguments is <code>TRUE</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">xor</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">xor</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">xor</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">xor</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>You won’t need <code>xor()</code> often, but it exists. These four operations, <code>&amp;</code>, <code>|</code>, <code>!</code>, and <code>xor()</code>, are not just software conventions; they correspond directly to the logic gates wired into every processor, described by the same truth tables George Boole formalized in 1854.</p>
-<section id="exercises-2" class="level3 unnumbered">
-<h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
-<ol type="1">
-<li>What does <code>c(TRUE, FALSE, TRUE) &amp; c(TRUE, TRUE, FALSE)</code> return?</li>
-<li>What does <code>TRUE | stop("error")</code> do? What about <code>TRUE || stop("error")</code>? Explain the difference.</li>
-<li>Write a logical expression that tests whether <code>x</code> is between 10 and 20 (inclusive).</li>
-</ol>
+<p>You won’t need <code>xor()</code> often, but it exists. The truth tables behind these four operators are older than any computer. In 1854 a professor of mathematics in Cork published an algebra in which the only values were 0 and 1 and the only operations were AND, OR, and NOT; his name was George Boole, and the tables R consults when you type <code>TRUE &amp; FALSE</code> are his. They stayed a curiosity of logic for eighty years, until a master’s student at MIT noticed that a relay, a switch flipped by an electric current, obeys the same tables, so a circuit of relays could calculate with them. That student was Claude Shannon, and every processor since has been wired from the gates his thesis described.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>From logic gates to circuits
+<span class="screen-reader-only">Note</span>From truth tables to a half adder
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
 <div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The <code>&amp;</code> you typed a moment ago to combine filter conditions is the same AND operation that electrical engineers wire into silicon. In his 1937 master’s thesis, Claude Shannon showed that these truth tables could be implemented with electrical switches, and that insight bridged the gap between abstract algebra and physical circuitry. Every digital circuit is built from these operations.</p>
 <p>An AND gate has two input wires and one output wire; the output is 1 (high voltage) only when both inputs are 1. An OR gate outputs 1 when at least one input is 1. A NOT gate (also called an inverter) has one input and flips it: 1 becomes 0, 0 becomes 1. An XOR gate outputs 1 when the inputs differ.</p>
 <pre><code>AND gate         OR gate          XOR gate         NOT gate
 A  B  out        A  B  out        A  B  out        A  out
@@ -842,23 +836,7 @@ A  B  out        A  B  out        A  B  out        A  out
 1  0   0         1  0   1         1  0   1
 1  1   1         1  1   1         1  1   0</code></pre>
 <p>These are the same truth tables as R’s <code>&amp;</code>, <code>|</code>, <code>xor()</code>, and <code>!</code>. When you write <code>TRUE &amp; FALSE</code> in R, the CPU evaluates it using an AND gate (or a chain of them, for vectors).</p>
-<p>Everything a computer does, from adding numbers to rendering video, is built from combinations of these four gates. We can design a circuit the way electrical engineers do: start with inputs and outputs, build a truth table, find the minimal Boolean expression, then wire the gates.</p>
-</div>
-</div>
-</div>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Designing a half adder
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The simplest possible addition: two single bits, A and B. Two outputs: a sum bit and a carry bit (because 1 + 1 = 10 in binary, which is 0 with a carry of 1).</p>
+<p>Everything a computer does, from adding numbers to rendering video, is built from combinations of these four gates. We can design a circuit the way electrical engineers do: start with inputs and outputs, build a truth table, find the minimal Boolean expression, then wire the gates. The simplest possible addition: two single bits, A and B. Two outputs: a sum bit and a carry bit (because 1 + 1 = 10 in binary, which is 0 with a carry of 1).</p>
 <p><strong>Step 1: truth table.</strong> List every possible input combination and the desired output.</p>
 <pre><code>A  B  | Sum  Carry
 0  0  |  0     0
@@ -895,35 +873,35 @@ Figure&nbsp;8.2: A half adder: one XOR gate for the sum, one AND gate for the ca
 </div>
 <p>We can verify this in R, since R’s <code>&amp;</code>, <code>|</code>, <code>!</code>, and <code>xor()</code> are the same Boolean operations:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>half_adder <span class="ot">&lt;-</span> <span class="cf">function</span>(A, B) {</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">Sum =</span> <span class="fu">xor</span>(A, B), <span class="at">Carry =</span> A <span class="sc">&amp;</span> B)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">half_adder</span>(<span class="cn">FALSE</span>, <span class="cn">FALSE</span>)</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="fu">half_adder</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="fu">half_adder</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>)</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
-<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>half_adder <span class="ot">&lt;-</span> <span class="cf">function</span>(A, B) {</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">Sum =</span> <span class="fu">xor</span>(A, B), <span class="at">Carry =</span> A <span class="sc">&amp;</span> B)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">half_adder</span>(<span class="cn">FALSE</span>, <span class="cn">FALSE</span>)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="fu">half_adder</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a><span class="fu">half_adder</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>)</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>TRUE + TRUE</code> gives Sum = FALSE (0), Carry = TRUE (1). That’s binary 10: the number 2. But real addition involves three inputs, not two.</p>
 </div>
 </div>
 </div>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -932,7 +910,7 @@ Figure&nbsp;8.2: A half adder: one XOR gate for the sum, one AND gate for the ca
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>When you add column by column in decimal, you carry from the previous column. Binary works the same way: each column receives A, B, and a carry-in (Cin) from the column to the right.</p>
 <p><strong>Step 1: truth table.</strong> Three inputs, eight rows.</p>
@@ -974,108 +952,107 @@ Figure&nbsp;8.3: A full adder built from five logic gates. Two XOR gates compute
 </figure>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>full_adder <span class="ot">&lt;-</span> <span class="cf">function</span>(A, B, Cin) {</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">xor</span>(A, B)              <span class="co"># partial sum (first XOR)</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  Sum  <span class="ot">&lt;-</span> <span class="fu">xor</span>(p, Cin)         <span class="co"># final sum (second XOR)</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  Cout <span class="ot">&lt;-</span> (A <span class="sc">&amp;</span> B) <span class="sc">|</span> (p <span class="sc">&amp;</span> Cin) <span class="co"># carry-out</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">Sum =</span> Sum, <span class="at">Carry =</span> Cout)</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="fu">full_adder</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>)  <span class="co"># 1+1+0 = 10 binary</span></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
-<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
-<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="fu">full_adder</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>)   <span class="co"># 1+1+1 = 11 binary</span></span>
-<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
-<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
-<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
-<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>full_adder <span class="ot">&lt;-</span> <span class="cf">function</span>(A, B, Cin) {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">xor</span>(A, B)              <span class="co"># partial sum (first XOR)</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  Sum  <span class="ot">&lt;-</span> <span class="fu">xor</span>(p, Cin)         <span class="co"># final sum (second XOR)</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  Cout <span class="ot">&lt;-</span> (A <span class="sc">&amp;</span> B) <span class="sc">|</span> (p <span class="sc">&amp;</span> Cin) <span class="co"># carry-out</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">Sum =</span> Sum, <span class="at">Carry =</span> Cout)</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="fu">full_adder</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>)  <span class="co"># 1+1+0 = 10 binary</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="fu">full_adder</span>(<span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>)   <span class="co"># 1+1+1 = 11 binary</span></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Sum</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Carry</span></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>1 + 1 + 0 = 2 (binary 10: Sum=0, Carry=1). 1 + 1 + 1 = 3 (binary 11: Sum=1, Carry=1).</p>
-<p>Chain four full adders together, each one’s Cout feeding the next one’s Cin, and you have a 4-bit adder. Chain 64 of them and you can add two 64-bit numbers. A CPU is billions of these gates arranged to perform arithmetic, comparisons, and memory access. The <code>&amp;</code> you use to filter penguins (<code>body_mass_g &gt; 4000 &amp; species == "Gentoo"</code>) runs on these same gates.</p>
-<p>The workflow we followed (truth table, canonical form, minimize, circuit) is called <em>Boolean function minimization</em>. K-maps work for up to four or five inputs; for larger circuits, algorithms like Quine-McCluskey or Espresso take over. The principle, though, is always the same: specify what you want as a truth table, then find the smallest set of gates that produces it.</p>
-<p>A logic gate on its own computes one result and stops, frozen in time. Add a clock (an electrical signal that alternates between 0 and 1 at a fixed rate, say three billion times per second) and flip-flops (gates that remember their output until the next clock tick), and the circuit can feed its result back into itself as the next input. With feedback, static logic becomes computation. The calculator from <a href="ch01-two-models.html#sec-turing" class="quarto-xref"><span>Section 1.1</span></a> that added <code>3 + 5 + 2 + 8</code> by keeping a running total? It is an adder circuit driven by a clock, reading one number per tick, feeding the output back into the input. Every processor is this idea, scaled up.</p>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="sec-numbers-stored" class="level2" data-number="8.4">
-<h2 data-number="8.4" class="anchored" data-anchor-id="sec-numbers-stored"><span class="header-section-number">8.4</span> How numbers are stored</h2>
-<p>R has <code>double</code> and <code>integer</code> types (<a href="ch04-vectors.html#sec-atomic-vectors" class="quarto-xref"><span>Section 4.2</span></a>), and for most day-to-day work you never think about the difference. But the computer thinks about it constantly, because the two types are stored in fundamentally different ways.</p>
-<p>Everything is bits: 0s and 1s. An integer is stored as a binary number, so the integer 42 in binary is <code>101010</code>:</p>
+<p>Chain four full adders together, each one’s Cout feeding the next one’s Cin, and you have a 4-bit adder. Chain 32 of them and you can add two R integers, because an integer is stored as 32 of these bits. The integer 42 is <code>101010</code>:</p>
 <pre><code>  1   0   1   0   1   0
  2⁵  2⁴  2³  2²  2¹  2⁰
  32  16   8   4   2   1
 
  32 + 0 + 8 + 0 + 2 + 0 = 42</code></pre>
-<p>Each position represents a power of 2: a <code>1</code> means “include this power,” a <code>0</code> means “skip it.” R uses 32 bits for an integer, so the largest integer is 2<sup>31</sup> - 1 = 2,147,483,647 (one bit is reserved for the sign, positive or negative).</p>
+<p>Each position represents a power of 2: a <code>1</code> means “include this power,” a <code>0</code> means “skip it.” One of the 32 bits holds the sign, which leaves 31 for the magnitude and puts the largest integer at 2<sup>31</sup> - 1:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>integer.max</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2147483647</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>integer.max</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2147483647</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>A double (also called a floating-point number) is stored differently, using 64 bits split into three parts: 1 bit for the sign, 11 bits for the exponent, and 52 bits for the fraction (called the significand):</p>
-<pre><code> [sign]  [exponent: 11 bits]  [significand: 52 bits]
-   1 bit     determines           determines
-   +/-       the scale            the precision</code></pre>
-<p>The number is reconstructed as: ± fraction × 2<sup>exponent</sup>. This format (IEEE 754) can represent very large numbers (up to about 1.8 × 10<sup>308</sup>) and very small ones (down to about 2.2 × 10<sup>-308</sup>), but not all numbers exactly, which is exactly the trap that bit us with <code>0.1 + 0.2</code>.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>double.xmax</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1.797693e+308</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>double.xmin</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2.225074e-308</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A double uses 64 bits split into sign, exponent, and significand, the layout from <a href="ch06-numerical-computing.html#sec-how-r-stores-numbers" class="quarto-xref"><span>Section 6.1</span></a>, and adding two doubles takes a larger circuit that aligns the exponents before an adder like this one sums the significands. A CPU is billions of such gates arranged to perform arithmetic, comparisons, and memory access. The <code>&amp;</code> you use to filter penguins (<code>body_mass_g &gt; 4000 &amp; species == "Gentoo"</code>) runs on these same gates.</p>
+<p>The workflow we followed (truth table, canonical form, minimize, circuit) is called <em>Boolean function minimization</em>. K-maps work for up to four or five inputs; for larger circuits, algorithms like Quine-McCluskey or Espresso take over. The principle, though, is always the same: specify what you want as a truth table, then find the smallest set of gates that produces it.</p>
+<p>A logic gate on its own computes one result and stops. Add a clock (an electrical signal that alternates between 0 and 1 at a fixed rate, say three billion times per second) and flip-flops (gates that remember their output until the next clock tick), and the circuit can feed its result back into itself as the next input. Mr.&nbsp;State from <a href="ch01-two-models.html#sec-turing" class="quarto-xref"><span>Section 1.1</span></a>, holding the running total of <code>3 + 5 + 2 + 8</code>, is an adder circuit driven by a clock, reading one number per tick and feeding the output back into the input. Every processor is this idea, scaled up.</p>
 </div>
-<p>The 52-bit significand stores the closest binary approximation of each decimal number; when you add two approximations, rounding errors accumulate. <a href="ch06-numerical-computing.html" class="quarto-xref"><span>Chapter 6</span></a> covers these traps in detail, including how to detect them with <code>sprintf("%.20f", ...)</code> and how to avoid them with <code>all.equal()</code> and <code>dplyr::near()</code>.</p>
-<p>R defaults to double for all numbers unless you add the <code>L</code> suffix:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(<span class="dv">42</span>)</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "double"</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(<span class="dv">42</span>L)</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "integer"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>42</code> is a 64-bit floating-point number; <code>42L</code> is a 32-bit integer. For most data analysis, the distinction is invisible, until you compare computed values with <code>==</code> or work with very large counts. But now that you understand how R stores and compares values, the question shifts: how does R act on the results of those comparisons?</p>
+</div>
+<p>Every operator in this section takes logical vectors in and hands a logical vector back. At some point the code has to stop combining tests and act on one.</p>
+<section id="exercises-2" class="level3 unnumbered">
+<h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
+<ol type="1">
+<li>What does <code>c(TRUE, FALSE, TRUE) &amp; c(TRUE, TRUE, FALSE)</code> return?</li>
+<li>What does <code>TRUE | stop("error")</code> do? What about <code>TRUE || stop("error")</code>? Explain the difference.</li>
+<li>Write a logical expression that tests whether <code>x</code> is between 10 and 20 (inclusive).</li>
+</ol>
 </section>
-<section id="sec-if-else-expression" class="level2" data-number="8.5">
-<h2 data-number="8.5" class="anchored" data-anchor-id="sec-if-else-expression"><span class="header-section-number">8.5</span> <code>if/else</code> as an expression</h2>
-<p>In most languages, <code>if/else</code> is a <em>statement</em>: it controls which code runs but does not produce a value. In R, <code>if/else</code> is an <em>expression</em>: it evaluates to the value of whichever branch is taken, and you can assign that value directly.</p>
+</section>
+<section id="sec-if-else-expression" class="level2" data-number="8.4">
+<h2 data-number="8.4" class="anchored" data-anchor-id="sec-if-else-expression"><span class="header-section-number">8.4</span> <code>if/else</code> as an expression</h2>
+<p>Assign an <code>if</code> to a name and see what lands there:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">3</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="cf">if</span> (x <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="st">"positive"</span> <span class="cf">else</span> <span class="st">"non-positive"</span></span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>y</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "non-positive"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">3</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="cf">if</span> (x <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="st">"positive"</span> <span class="cf">else</span> <span class="st">"non-positive"</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>y</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "non-positive"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>if (x &gt; 0) "positive" else "non-positive"</code> evaluated to <code>"non-positive"</code>, and that value was assigned to <code>y</code>. This follows from <a href="ch03-expressions-names.html#sec-calling-functions" class="quarto-xref"><span>Section 3.4</span></a>: everything in R is an expression, and expressions return values. <code>if/else</code> is no exception.</p>
+<p><code>if (x &gt; 0) "positive" else "non-positive"</code> evaluated to <code>"non-positive"</code>, and that value was assigned to <code>y</code>. This follows from <a href="ch03-expressions-names.html#sec-calling-functions" class="quarto-xref"><span>Section 3.4</span></a>: everything in R is an expression, and expressions return values. <code>if/else</code> is an expression like any other, which is worth pausing on if you come from a language where <code>if</code> only steers which lines run and never produces a value of its own.</p>
 <p>Multi-line branches use curly braces, and the value of each branch is the last expression evaluated inside it:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>classify <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (x <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    label <span class="ot">&lt;-</span> <span class="st">"positive"</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    label</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">0</span>) {</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"zero"</span></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"negative"</span></span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="fu">classify</span>(<span class="dv">5</span>)</span>
-<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "positive"</span></span>
-<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a><span class="fu">classify</span>(<span class="dv">0</span>)</span>
-<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "zero"</span></span>
-<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a><span class="fu">classify</span>(<span class="sc">-</span><span class="dv">2</span>)</span>
-<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "negative"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>classify <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (x <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    label <span class="ot">&lt;-</span> <span class="st">"positive"</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    label</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">0</span>) {</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"zero"</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"negative"</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="fu">classify</span>(<span class="dv">5</span>)</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "positive"</span></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="fu">classify</span>(<span class="dv">0</span>)</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "zero"</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a><span class="fu">classify</span>(<span class="sc">-</span><span class="dv">2</span>)</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "negative"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>R has no <code>elif</code> keyword; you chain conditions with <code>else if</code>, which is just an <code>else</code> followed by another <code>if</code>. Long chains get hard to read, and when you have more than two or three branches, consider <code>switch()</code> (<a href="#sec-switch" class="quarto-xref"><span>Section 8.7</span></a>) or <code>dplyr::case_when()</code> (<a href="#sec-vectorized-conditionals" class="quarto-xref"><span>Section 8.6</span></a>).</p>
-<p>The connection to lambda calculus runs deeper than it might seem. In <a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>, we saw Church’s encoding of booleans, where <code>TRUE = λx. λy. x</code> (pick the first) and <code>FALSE = λx. λy. y</code> (pick the second). R’s <code>if/else</code> does the same thing: it takes a condition and two branches, and returns whichever branch the condition selects, just as Church’s booleans select an argument.</p>
+<p>Conditions chain with <code>else if</code>, which is an <code>else</code> followed by another <code>if</code>. Long chains get hard to read, and past two or three branches <code>switch()</code> or <code>dplyr::case_when()</code>, both later in this chapter, usually read better.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The lambda calculus connection
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In <a href="ch05-first-function.html#sec-recursion-preview" class="quarto-xref"><span>Section 5.7</span></a> you met Church’s encoding of booleans, where <code>TRUE = λx. λy. x</code> picks the first of two arguments and <code>FALSE = λx. λy. y</code> picks the second. R’s <code>if/else</code> has the same shape: it takes a condition and two branches, and returns whichever branch the condition selects.</p>
+</div>
+</div>
+</div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)) <span class="st">"yes"</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `if (c(TRUE, FALSE)) ...`:</span></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! the condition has length &gt; 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>)) <span class="st">"yes"</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `if (c(TRUE, FALSE)) ...`:</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! the condition has length &gt; 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>if</code> expects a single logical value. If you give it a vector, R uses only the first element and warns you. But data analysis rarely involves a single value; you usually need to test every element of a column at once. So what do you reach for when <code>if/else</code> won’t scale?</p>
+<p><code>if</code> expects a single logical value and refuses a longer vector. But data analysis rarely involves a single value; you usually need to test every element of a column at once. So what do you reach for when <code>if/else</code> won’t scale?</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -1085,42 +1062,42 @@ Figure&nbsp;8.3: A full adder built from five logic gates. Two XOR gates compute
 </ol>
 </section>
 </section>
-<section id="sec-vectorized-conditionals" class="level2" data-number="8.6">
-<h2 data-number="8.6" class="anchored" data-anchor-id="sec-vectorized-conditionals"><span class="header-section-number">8.6</span> Vectorized conditionals</h2>
+<section id="sec-vectorized-conditionals" class="level2" data-number="8.5">
+<h2 data-number="8.5" class="anchored" data-anchor-id="sec-vectorized-conditionals"><span class="header-section-number">8.5</span> Vectorized conditionals</h2>
 <p><code>if/else</code> works on a single value. <code>ifelse()</code> works on vectors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">5</span>)</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(x <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"neg"</span>)</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "neg" "neg" "pos" "neg" "pos"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">5</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(x <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"neg"</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "neg" "neg" "pos" "neg" "pos"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>For each element, <code>ifelse()</code> checks the condition and returns the corresponding value from the second or third argument, vectorized in the same way <code>+</code> and <code>&gt;</code> are (<a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>).</p>
-<p>But <code>ifelse()</code> has a weakness: it doesn’t check types.</p>
+<p>Give the two branches different types and watch what comes back:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(<span class="cn">TRUE</span>, <span class="dv">1</span>, <span class="st">"no"</span>)</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(<span class="cn">FALSE</span>, <span class="dv">1</span>, <span class="st">"no"</span>)</span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "no"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(<span class="cn">TRUE</span>, <span class="dv">1</span>, <span class="st">"no"</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(<span class="cn">FALSE</span>, <span class="dv">1</span>, <span class="st">"no"</span>)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "no"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>One call returns a number, the other a string. The return type depends on which branch is taken, and that can change silently when your data changes. <code>dplyr::if_else()</code> is stricter:</p>
+<p>One call returns a number, the other a string. The return type depends on which branch is taken, so it can change when your data changes, with no message. <code>dplyr::if_else()</code> checks:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">if_else</span>(<span class="cn">TRUE</span>, <span class="dv">1</span>, <span class="st">"no"</span>)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `dplyr::if_else()`:</span></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! Can't combine `true` &lt;double&gt; and `false` &lt;character&gt;.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">if_else</span>(<span class="cn">TRUE</span>, <span class="dv">1</span>, <span class="st">"no"</span>)</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `dplyr::if_else()`:</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! Can't combine `true` &lt;double&gt; and `false` &lt;character&gt;.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>It refuses to mix types, catching bugs early rather than letting them propagate downstream.</p>
+<p>It refuses to mix types, so the mismatch surfaces where it happens.</p>
 <p>For multiple conditions, <code>dplyr::case_when()</code> replaces nested <code>ifelse()</code> chains:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">5</span>)</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">&gt;</span> <span class="dv">0</span>  <span class="sc">~</span> <span class="st">"positive"</span>,</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"zero"</span>,</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">&lt;</span> <span class="dv">0</span>  <span class="sc">~</span> <span class="st">"negative"</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "negative" "zero"     "positive" "negative" "positive"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">5</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">&gt;</span> <span class="dv">0</span>  <span class="sc">~</span> <span class="st">"positive"</span>,</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"zero"</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  x <span class="sc">&lt;</span> <span class="dv">0</span>  <span class="sc">~</span> <span class="st">"negative"</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "negative" "zero"     "positive" "negative" "positive"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each line is a condition-value pair, evaluated in order; <code>case_when()</code> returns the value for the first condition that matches. Compare this to the nested version:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(x <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"positive"</span>, <span class="fu">ifelse</span>(x <span class="sc">==</span> <span class="dv">0</span>, <span class="st">"zero"</span>, <span class="st">"negative"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Both produce the same result, but <code>case_when()</code> is easier to read, easier to extend, and harder to get wrong.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ifelse</span>(x <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"positive"</span>, <span class="fu">ifelse</span>(x <span class="sc">==</span> <span class="dv">0</span>, <span class="st">"zero"</span>, <span class="st">"negative"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Both produce the same result. The nested version has to be read from the inside out, and every added condition adds a level.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1143,29 +1120,30 @@ Figure&nbsp;8.3: A full adder built from five logic gates. Two XOR gates compute
 </ol>
 </section>
 </section>
-<section id="sec-switch" class="level2" data-number="8.7">
-<h2 data-number="8.7" class="anchored" data-anchor-id="sec-switch"><span class="header-section-number">8.7</span> <code>switch()</code></h2>
+<section id="sec-switch" class="level2" data-number="8.6">
+<h2 data-number="8.6" class="anchored" data-anchor-id="sec-switch"><span class="header-section-number">8.6</span> <code>switch()</code></h2>
 <p>When you need to dispatch on a single string value, <code>switch()</code> is cleaner than a chain of <code>if/else if</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>describe <span class="ot">&lt;-</span> <span class="cf">function</span>(day) {</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">switch</span>(day,</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Monday    =</span> <span class="st">"start of the week"</span>,</span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Friday    =</span> <span class="st">"almost there"</span>,</span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">Saturday  =</span> ,</span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sunday    =</span> <span class="st">"weekend"</span>,</span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"just another day"</span></span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">"Friday"</span>)</span>
-<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "almost there"</span></span>
-<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">"Saturday"</span>)</span>
-<span id="cb38-14"><a href="#cb38-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "weekend"</span></span>
-<span id="cb38-15"><a href="#cb38-15" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">"Wednesday"</span>)</span>
-<span id="cb38-16"><a href="#cb38-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "just another day"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>describe <span class="ot">&lt;-</span> <span class="cf">function</span>(day) {</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">switch</span>(day,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">Monday    =</span> <span class="st">"start of the week"</span>,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Friday    =</span> <span class="st">"almost there"</span>,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">Saturday  =</span> ,</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Sunday    =</span> <span class="st">"weekend"</span>,</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"just another day"</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">"Friday"</span>)</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "almost there"</span></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">"Saturday"</span>)</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "weekend"</span></span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">"Wednesday"</span>)</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "just another day"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each name is matched against the input. <code>Saturday =</code> with no value falls through to the next case (<code>Sunday</code>), so both return <code>"weekend"</code>. The unnamed last entry is the default.</p>
-<p><code>switch()</code> only works with a single string (or number, but string dispatch is the common use). For vector operations, use <code>case_when()</code>. For complex branching logic, use <code>if/else if</code>. <code>switch()</code> fills the narrow gap where you have one value and several named options, and it fills it well. But the real lesson of this chapter is not about any single function. From logical vectors through comparison operators, boolean algebra, and conditional expressions, you have traced a single thread: the idea that every computation reduces to choosing between two values, <code>TRUE</code> or <code>FALSE</code>, 1 or 0, high voltage or low. The <code>if/else</code> in your R script and the AND gate in your CPU are expressions of the same underlying logic, separated by layers of abstraction but never by kind. The next chapter picks up where that thread leads: what happens when you need to make the same choice not once but thousands of times, across every row of a data frame, without writing a single loop.</p>
+<p><code>switch()</code> only works with a single string (or number, but string dispatch is the common use). For vector operations, use <code>case_when()</code>. For complex branching logic, use <code>if/else if</code>. <code>switch()</code> fills the narrow gap where you have one value and several named options, and it fills it well.</p>
+<p>Every comparison and every <code>&amp;</code> in this chapter runs in a fixed handful of gate operations, and a filter over a million rows runs a million of them. Whether that takes a second or an hour depends on something this chapter has not touched: how the amount of work grows as the data grows.</p>
 
 
 </section>
@@ -1260,53 +1238,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

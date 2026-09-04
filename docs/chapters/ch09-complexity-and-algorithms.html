@@ -663,24 +663,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>You write a loop that takes three seconds on your test data. You deploy it on the full dataset, ten times larger, and it takes five minutes. Not thirty seconds. Five minutes. You double-check the code; nothing has changed, nothing is obviously wrong. The loop is doing the same thing it did before, just on more rows. So why did a 10x increase in data produce a 100x increase in running time?</p>
-<p>The answer is not about your code being “bad,” and no amount of hardware will fix it. It is about the <em>shape</em> of growth: how running time scales with input size, and why some operations hit a wall that scales steeper than you expected. Big-O notation, hash tables, the limits of computation: these ideas draw the line between code that scales and code that chokes. They also explain why that line exists at all.</p>
+<p>You write a loop that takes three seconds on your test data. You deploy it on the full dataset, ten times larger, and it takes five minutes instead of the thirty seconds you expected. You double-check the code; nothing has changed, nothing is obviously wrong. The loop is doing the same thing it did before, just on more rows. So why did a 10x increase in data produce a 100x increase in running time?</p>
+<p>The answer is in the <em>shape</em> of the growth: how running time scales with input size. Some operations cost the same on ten rows as on ten million, some cost ten times more, and some, like the loop above, cost a hundred times more. This chapter is about telling those apart before the full dataset does it for you.</p>
 <section id="sec-why-speed-shape" class="level2" data-number="9.1">
 <h2 data-number="9.1" class="anchored" data-anchor-id="sec-why-speed-shape"><span class="header-section-number">9.1</span> Not all operations are equal</h2>
 <p>Consider two ways to find a value in a vector. <code>x[5]</code> jumps directly to the fifth memory address, regardless of how long the vector is. <code>which(x == 5)</code> checks every element one by one until it finds a match. For a vector of length 10, you would not notice the difference. For a vector of length 10 million, you would.</p>
-<p>A constant-time operation stays constant whether the input has ten elements or ten billion, while a linear operation scales proportionally, doing twice the work on twice the data. How running time scales with input size: that is the core idea of computational complexity, and once you see it, you start noticing it everywhere.</p>
+<p>The first operation costs the same whether the vector has ten elements or ten billion. The second does twice the work on twice the data. That relationship, between the size of the input and the amount of work, is what computational complexity measures.</p>
 </section>
 <section id="sec-big-o" class="level2" data-number="9.2">
 <h2 data-number="9.2" class="anchored" data-anchor-id="sec-big-o"><span class="header-section-number">9.2</span> Big-O notation</h2>
-<p>Big-O notation makes this precise: we say f(n) is O(g(n)) if, past some input size, f grows no faster than a constant multiple of g.</p>
-<p>The notation strips away constant factors and lower-order terms, which means an algorithm that takes 3n² + 100n + 7 steps is simply O(n²). The constants matter in practice (a factor of 10 is still a factor of 10), but Big-O captures the <em>shape</em> of growth, and that shape dominates once n gets large enough. When n is small, the constant factors dominate instead, and the algorithm with less overhead wins regardless of its Big-O.</p>
+<p>An operation that touches every element of a vector of length n might take 3n² + 100n + 7 steps, and no two machines agree on how long a step takes. What survives from one machine to the next is the leading term: double n and the n² part quadruples, whatever the constants are. Big-O notation keeps only that: we say f(n) is O(g(n)) if, past some input size, f grows no faster than a constant multiple of g, so 3n² + 100n + 7 is simply O(n²).</p>
+<p>The constants still matter in practice (a factor of 10 is still a factor of 10). Big-O captures the shape of growth, and that shape dominates once n gets large enough. When n is small, the constant factors dominate instead, and the algorithm with less overhead wins regardless of its Big-O.</p>
 <section id="common-complexity-classes" class="level3" data-number="9.2.1">
 <h3 data-number="9.2.1" class="anchored" data-anchor-id="common-complexity-classes"><span class="header-section-number">9.2.1</span> Common complexity classes</h3>
-<p><strong>O(1): constant time.</strong> The operation takes the same time regardless of input size. <code>length(x)</code> is O(1) because R stores the length as an attribute and never counts the elements; indexing by position (<code>x[5]</code>) is also O(1), since R computes a memory offset and jumps directly to it. A less obvious example, and a more interesting one, is hash table lookup, which gets its own section below (<a href="#sec-hash-tables" class="quarto-xref"><span>Section 9.3</span></a>).</p>
-<p><strong>O(log n): logarithmic time.</strong> Each step halves the search space. Binary search is the classic example: <code>findInterval(0.5, sorted_x)</code> finds where 0.5 falls in a sorted vector by repeatedly splitting it in half, which on a million elements takes roughly 20 comparisons and on a billion elements about 30. Logarithmic growth is <em>extremely</em> slow. So slow it barely registers.</p>
-<p><strong>O(n): linear time.</strong> You touch every element once. <code>sum(x)</code> walks the entire vector, adding each element: one pass, n additions. <code>which(x &gt; 0)</code> also scans every element once, selecting those that match. Linear is often the best you can do, because you need to at least <em>read</em> all the input.</p>
-<p><strong>O(n log n): linearithmic time.</strong> The cost of sorting. <code>sort(x)</code> for a vector of length n makes O(n log n) comparisons, which is only slightly worse than linear: sorting a million numbers takes about 20x more work than summing them, not 1,000,000x more. Can you do better? For comparison-based sorting, no: there is a proof (via decision trees) that any algorithm which sorts by comparing pairs of elements must make at least O(n log n) comparisons in the worst case. Radix sort sidesteps this bound by not comparing elements at all (it distributes them into buckets by digit) but it only works when the keys have bounded range (integers, fixed-length strings).</p>
-<p><strong>O(n²): quadratic time.</strong> Nested loops where both loops run over the input. This is where performance falls apart. The classic R example is growing a vector with <code>c()</code>:</p>
+<p><code>length(x)</code> returns instantly on any vector, because R stores the length as an attribute and never counts the elements. Indexing by position, <code>x[5]</code>, computes a memory offset and jumps to it. Operations like these are O(1), constant time: the same cost regardless of input size. A less obvious O(1) operation, and a more interesting one, is hash table lookup, which gets its own section below (<a href="#sec-hash-tables" class="quarto-xref"><span>Section 9.3</span></a>).</p>
+<p><code>findInterval(0.5, sorted_x)</code> finds where 0.5 falls in a sorted vector by splitting the vector in half, deciding which half holds the answer, and splitting again. On a million elements that takes about 20 comparisons; on a billion, about 30. This is binary search, and its cost is O(log n), logarithmic time, which grows so slowly it barely registers.</p>
+<p><code>sum(x)</code> walks the entire vector, adding each element: one pass, n additions. <code>which(x &gt; 0)</code> also scans every element once, selecting those that match. These are O(n), linear time, and linear is often the best you can do, because you need to at least <em>read</em> all the input.</p>
+<p><code>sort(x)</code> costs more than a single pass but much less than you might guess: sorting a million numbers takes about 20 times the work of summing them. Sorting by comparing pairs of elements is O(n log n), and the n log n shape is the price of comparison sorting.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Can sorting beat n log n?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>For comparison-based sorting, no. A decision-tree argument shows that any algorithm which sorts by comparing pairs of elements must make at least O(n log n) comparisons in the worst case. Radix sort sidesteps the bound by never comparing elements: it distributes them into buckets by digit, which is O(n) but only works when the keys have bounded range (integers, fixed-length strings). R’s <code>sort()</code> uses radix for most vectors, as <a href="#sec-common-algorithms" class="quarto-xref"><span>Section 9.5</span></a> describes.</p>
+</div>
+</div>
+</div>
+<p>Growing a vector with <code>c()</code> is the classic R example of the next class:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Each c() call copies the entire existing vector</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
@@ -689,8 +705,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Total copies: 1 + 2 + ... + n = n(n+1)/2 = O(n^2)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><a href="ch28-performance.html" class="quarto-xref"><span>Chapter 28</span></a> revisits this bottleneck in detail. The quadratic cost is not inevitable for append-style operations: if R used a doubling strategy (as Python’s <code>list.append</code> does), each individual append would be O(1) <em>amortized</em>. The idea is to allocate double the space when the array fills up; most appends just write to the next slot (O(1)), and the occasional O(n) resize happens rarely enough that the average cost per operation is constant. R does not do this for <code>c()</code>, which is why pre-allocation matters. A naive distance matrix computation is also O(n²): for n points, you compute n(n-1)/2 pairwise distances.</p>
-<p><strong>O(2^n): exponential time.</strong> Brute-force enumeration of all subsets. A set of n elements has 2^n subsets: at n = 20 that is about a million, at n = 30 a billion, at n = 50 over a quadrillion. Exponential algorithms are effectively unusable for large inputs, and no clever constant-factor tricks will save you.</p>
+<p>Each iteration copies everything accumulated so far, so the total work is 1 + 2 + … + n.&nbsp;That is O(n²), quadratic time, and it is the shape behind the loop in the opening: ten times the rows, a hundred times the copying. Any nested loop where both loops run over the input is quadratic, and so is a naive distance matrix, which computes n(n-1)/2 pairwise distances for n points. <a href="ch28-performance.html" class="quarto-xref"><span>Chapter 28</span></a> revisits the <code>c()</code> bottleneck in detail.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Amortized O(1): the doubling strategy
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Appending can be made cheap. Python’s <code>list.append</code> allocates double the space whenever the array fills up; most appends then write to the next free slot in O(1), and the occasional O(n) resize happens rarely enough that the average cost per append stays constant. This is called O(1) <em>amortized</em>. R’s <code>c()</code> allocates a fresh vector every time, which is why pre-allocation matters in R.</p>
+</div>
+</div>
+</div>
+<p>Enumerating every subset of a set is the last class you will meet in practice. A set of n elements has 2^n subsets: at n = 20 that is about a million, at n = 30 a billion, at n = 50 over a quadrillion. Algorithms that grow as O(2^n), exponential time, are unusable for large inputs, and no constant-factor trick will save them.</p>
 <div id="fig-bigo-curves" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-bigo-curves-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -719,7 +751,7 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <h2 data-number="9.3" class="anchored" data-anchor-id="sec-hash-tables"><span class="header-section-number">9.3</span> Hash tables: O(1) lookup from scratch</h2>
 <p>Suppose you have a list of 10,000 names and you need to check whether <code>"beta"</code> is among them. The naive approach scans the list from the beginning, comparing each entry, and on average you check half the entries before finding a match (or all of them if the name isn’t there). That is O(n).</p>
 <p>If the list is sorted, binary search gets you to O(log n). But there is a way to get O(1), constant time, regardless of how many names are in the list.</p>
-<p>The trick is to turn the name into a number. A <em>hash function</em> takes a string (or any value) and produces an integer. For example, a simple hash might sum the character codes of each letter:</p>
+<p>Start by turning each name into a number. Summing the character codes of the letters will do for now:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>simple_hash <span class="ot">&lt;-</span> <span class="cf">function</span>(key, n_slots) {</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  codes <span class="ot">&lt;-</span> <span class="fu">utf8ToInt</span>(key)</span>
@@ -733,7 +765,7 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="fu">simple_hash</span>(<span class="st">"alpha"</span>, <span class="dv">10</span>)</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 9</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Now allocate a fixed-size array (say 10 slots). To store <code>"beta" = 2</code>, compute <code>simple_hash("beta", 10)</code> and put the value in that slot; to look it up later, compute the same hash, jump directly to that slot, and read the value. No scanning. The hash function converts a search problem into an arithmetic problem.</p>
+<p>Each name now maps to a slot between 1 and 10. Allocate an array with 10 slots. To store <code>"beta" = 2</code>, compute <code>simple_hash("beta", 10)</code> and put the value in that slot; to look it up later, compute the same hash, jump directly to that slot, and read the value. No scanning. A function that turns a key into a slot number this way is a <em>hash function</em>, and it converts a search problem into an arithmetic problem.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build a hash table by hand</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>n_slots <span class="ot">&lt;-</span> <span class="dv">10</span></span>
@@ -759,55 +791,62 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup</span>(slots, <span class="st">"beta"</span>, n_slots)</span>
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>One hash computation, one array access, O(1). That is the entire idea.</p>
-<p>The problem is <em>collisions</em>: two different keys can hash to the same slot, and our <code>simple_hash</code> sums character codes, so any two strings with the same character-code sum will collide. When that happens, the slot needs to hold multiple entries, and the standard fix is <em>chaining</em>, where each slot stores a linked list of key-value pairs. On lookup, you hash to the slot, then scan the short list:</p>
+<p>One hash computation, one array access, O(1).</p>
+<p>Now hash two names that happen to use the same letters:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A hash table with chaining</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>insert_chain <span class="ot">&lt;-</span> <span class="cf">function</span>(slots, key, value, n_slots) {</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="fu">simple_hash</span>(key, n_slots)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  slots[[i]] <span class="ot">&lt;-</span> <span class="fu">c</span>(slots[[i]], <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">key =</span> key, <span class="at">value =</span> value)))</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  slots</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>lookup_chain <span class="ot">&lt;-</span> <span class="cf">function</span>(slots, key, n_slots) {</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="fu">simple_hash</span>(key, n_slots)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  chain <span class="ot">&lt;-</span> slots[[i]]</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (entry <span class="cf">in</span> chain) {</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (entry<span class="sc">$</span>key <span class="sc">==</span> key) <span class="fu">return</span>(entry<span class="sc">$</span>value)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="cn">NA</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, <span class="dv">10</span>)</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">insert_chain</span>(slots2, <span class="st">"alpha"</span>, <span class="dv">1</span>, <span class="dv">10</span>)</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">insert_chain</span>(slots2, <span class="st">"beta"</span>,  <span class="dv">2</span>, <span class="dv">10</span>)</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">insert_chain</span>(slots2, <span class="st">"gamma"</span>, <span class="dv">3</span>, <span class="dv">10</span>)</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup_chain</span>(slots2, <span class="st">"beta"</span>, <span class="dv">10</span>)</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup_chain</span>(slots2, <span class="st">"missing"</span>, <span class="dv">10</span>)</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">simple_hash</span>(<span class="st">"ab"</span>, <span class="dv">10</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">simple_hash</span>(<span class="st">"ba"</span>, <span class="dv">10</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Same slot. Two different keys landing on one slot is a <em>collision</em>, and <code>simple_hash</code> invites them, since any two strings with the same character-code sum collide. When that happens the slot has to hold more than one entry. The standard fix is <em>chaining</em>: each slot stores a list of key-value pairs, and lookup hashes to the slot, then scans the short list:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A hash table with chaining</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>insert_chain <span class="ot">&lt;-</span> <span class="cf">function</span>(slots, key, value, n_slots) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="fu">simple_hash</span>(key, n_slots)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  slots[[i]] <span class="ot">&lt;-</span> <span class="fu">c</span>(slots[[i]], <span class="fu">list</span>(<span class="fu">list</span>(<span class="at">key =</span> key, <span class="at">value =</span> value)))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  slots</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>lookup_chain <span class="ot">&lt;-</span> <span class="cf">function</span>(slots, key, n_slots) {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="fu">simple_hash</span>(key, n_slots)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  chain <span class="ot">&lt;-</span> slots[[i]]</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (entry <span class="cf">in</span> chain) {</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (entry<span class="sc">$</span>key <span class="sc">==</span> key) <span class="fu">return</span>(entry<span class="sc">$</span>value)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="cn">NA</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, <span class="dv">10</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">insert_chain</span>(slots2, <span class="st">"alpha"</span>, <span class="dv">1</span>, <span class="dv">10</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">insert_chain</span>(slots2, <span class="st">"beta"</span>,  <span class="dv">2</span>, <span class="dv">10</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>slots2 <span class="ot">&lt;-</span> <span class="fu">insert_chain</span>(slots2, <span class="st">"gamma"</span>, <span class="dv">3</span>, <span class="dv">10</span>)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup_chain</span>(slots2, <span class="st">"beta"</span>, <span class="dv">10</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lookup_chain</span>(slots2, <span class="st">"missing"</span>, <span class="dv">10</span>)</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>In the worst case, every key hashes to the same slot, the chain has n entries, and lookup degrades to O(n). But a good hash function distributes keys evenly across slots, keeping each chain short: with n keys and n slots, the average chain length is 1, and lookup is O(1) on average.</p>
 <p>R uses exactly this mechanism for environments. Every environment is a hash table mapping names to values, so when you write <code>e$beta</code>, R hashes the string <code>"beta"</code>, jumps to the right slot, and returns the value. This is also why <code>match()</code>, <code>duplicated()</code>, <code>%in%</code>, <code>unique()</code>, and <code>table()</code> are fast: they build a temporary hash table internally, making membership tests O(1) per query instead of O(n).</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># R environments are hash tables</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">new.env</span>(<span class="at">hash =</span> <span class="cn">TRUE</span>, <span class="at">parent =</span> <span class="fu">emptyenv</span>())</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>alpha <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>beta  <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>gamma <span class="ot">&lt;-</span> <span class="dv">3</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># This does NOT scan through "alpha" first.</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The hash of "beta" points directly to the right slot.</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>beta</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># R environments are hash tables</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">new.env</span>(<span class="at">hash =</span> <span class="cn">TRUE</span>, <span class="at">parent =</span> <span class="fu">emptyenv</span>())</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>alpha <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>beta  <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>gamma <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># This does NOT scan through "alpha" first.</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The hash of "beta" points directly to the right slot.</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>e<span class="sc">$</span>beta</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The constant in O(1) depends on the hash function’s speed and the collision rate. Real hash functions (R uses one internally for its environments) are more sophisticated than summing character codes, distributing keys more uniformly and handling edge cases. But the principle is always the same: convert the key to an integer, use it as an index, handle collisions with chaining.</p>
 <p>What happens when the table fills up? The chains get longer, and lookup degrades toward O(n). Real hash tables track the <em>load factor</em> (number of entries divided by number of slots) and resize, typically doubling the slot count, when it crosses a threshold (often 0.75). Resizing costs O(n) because every key must be rehashed into the new array, but it happens rarely enough that the amortized cost per insertion stays O(1).</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
-<li>What happens to <code>simple_hash</code> if two keys have the same character-code sum? Try <code>simple_hash("ab", 10)</code> and <code>simple_hash("ba", 10)</code>. Why is this a problem, and how does chaining solve it?</li>
+<li>Find two keys other than <code>"ab"</code> and <code>"ba"</code> that collide under <code>simple_hash</code> with 10 slots. Insert both into <code>slots2</code> with <code>insert_chain()</code> and confirm that <code>lookup_chain()</code> still returns the right value for each.</li>
 <li>Our hand-built hash table has a fixed number of slots. What happens as you insert many more keys than slots? How does the average chain length change? (This is why real hash tables <em>resize</em>: when the load factor exceeds a threshold, they allocate a larger array and rehash all keys.)</li>
 <li>Use <code>system.time()</code> to compare <code>x %in% y</code> versus a loop with <code>any(y == x[i])</code> for <code>x &lt;- sample(1e6)</code> and <code>y &lt;- sample(1e4)</code>. The first builds a hash table; the second does linear scans.</li>
 </ol>
@@ -815,25 +854,23 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 </section>
 <section id="sec-space-complexity" class="level2" data-number="9.4">
 <h2 data-number="9.4" class="anchored" data-anchor-id="sec-space-complexity"><span class="header-section-number">9.4</span> Space complexity</h2>
-<p>Time is not the only resource that scales. Memory matters too, especially in R where data frames can be gigabytes, and running out of RAM kills your session more decisively than a slow loop ever could.</p>
-<p>A full copy of a 1 GB data frame uses 1 GB of additional memory; two copies and you are at 3 GB total. R’s garbage collector reclaims unused memory, but if multiple large objects are live simultaneously, you can exhaust RAM. How does R decide when to copy?</p>
+<p>Memory scales too. A slow loop finishes eventually; a session that runs out of RAM ends. A full copy of a 1 GB data frame uses 1 GB of additional memory, and two copies put you at 3 GB total. R’s garbage collector reclaims memory nothing refers to any more, but while several large objects are live at once, they all count. So when does R copy?</p>
 <section id="copy-on-modify" class="level3" data-number="9.4.1">
 <h3 data-number="9.4.1" class="anchored" data-anchor-id="copy-on-modify"><span class="header-section-number">9.4.1</span> Copy-on-modify</h3>
-<p>R uses <em>copy-on-modify</em> semantics: when you assign an object to a new name, R does not immediately copy it. Both names point to the same underlying data, and a copy is triggered only when one reference is modified:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e6</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x              <span class="co"># no copy yet: x and y share the same memory</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>y[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span>           <span class="co"># NOW R copies the entire vector, then modifies element 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e6</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x              <span class="co"># no copy yet: x and y share the same memory</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>y[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span>           <span class="co"># NOW R copies the entire vector, then modifies element 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>You can verify this with <code>lobstr::obj_addr()</code>:</p>
+<p>Assigning <code>x</code> to <code>y</code> copies nothing; both names point at the same data. The copy happens at <code>y[1] &lt;- 0</code>, the moment one of them is modified. This is the copy-on-modify from <a href="ch03-expressions-names.html#sec-names-binding" class="quarto-xref"><span>Section 3.2</span></a>, seen from the memory side, and you can verify it with <code>lobstr::obj_addr()</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lobstr)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e6</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">obj_addr</span>(x) <span class="sc">==</span> <span class="fu">obj_addr</span>(y)  <span class="co"># TRUE: same memory</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>y[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">obj_addr</span>(x) <span class="sc">==</span> <span class="fu">obj_addr</span>(y)  <span class="co"># FALSE: y is now a separate copy</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lobstr)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e6</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">obj_addr</span>(x) <span class="sc">==</span> <span class="fu">obj_addr</span>(y)  <span class="co"># TRUE: same memory</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>y[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="fu">obj_addr</span>(x) <span class="sc">==</span> <span class="fu">obj_addr</span>(y)  <span class="co"># FALSE: y is now a separate copy</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Copy-on-modify is why passing large objects to functions is cheap in R: the function receives a reference, not a copy, and a copy happens only if the function modifies the object. But when modification <em>does</em> happen (say, inside a loop) the cost can compound quickly, turning what looks like an O(n) operation into something much worse.</p>
 </section>
@@ -842,36 +879,60 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <p>The <code>c()</code> loop from the quadratic example above is slow in time and wasteful in memory. Each iteration allocates a new vector of size i, copies the old data, and discards the old allocation, so the total memory allocated across all iterations is 1 + 2 + 3 + … + n = O(n²), even though the final result uses only O(n) space.</p>
 <p>Pre-allocation fixes both problems:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># O(n²) total memory allocated</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(n)) result <span class="ot">&lt;-</span> <span class="fu">c</span>(result, i)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># O(n) total memory allocated</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(n)) result[i] <span class="ot">&lt;-</span> i</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># O(n²) total memory allocated</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(n)) result <span class="ot">&lt;-</span> <span class="fu">c</span>(result, i)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># O(n) total memory allocated</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(n)) result[i] <span class="ot">&lt;-</span> i</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="measuring-memory" class="level3" data-number="9.4.3">
 <h3 data-number="9.4.3" class="anchored" data-anchor-id="measuring-memory"><span class="header-section-number">9.4.3</span> Measuring memory</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e6</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">object.size</span>(x)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 8000048 bytes</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e6</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">object.size</span>(x)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 8000048 bytes</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>object.size()</code> gives a rough estimate. For more accurate measurements, including shared memory between objects:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>lobstr<span class="sc">::</span><span class="fu">obj_size</span>(x)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Shared memory: two references to the same object</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>lobstr<span class="sc">::</span><span class="fu">obj_size</span>(x, y)  <span class="co"># same as obj_size(x), not double</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>lobstr<span class="sc">::</span><span class="fu">obj_size</span>(x)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Shared memory: two references to the same object</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>lobstr<span class="sc">::</span><span class="fu">obj_size</span>(x, y)  <span class="co"># same as obj_size(x), not double</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Some vectors take far less memory than their length suggests:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>lobstr<span class="sc">::</span><span class="fu">obj_size</span>(<span class="dv">1</span><span class="sc">:</span><span class="fl">1e7</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 680 B</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>lobstr<span class="sc">::</span><span class="fu">obj_size</span>(<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fl">1e7</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 40.00 MB</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Same ten million integers, and the shuffled copy takes sixty thousand times the space. R stores <code>1:1e7</code> as a start, an end, and a step, and only expands it when something needs the actual elements; the shuffle has no such description. (<code>object.size()</code> reports the expanded size for both.)</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Kolmogorov complexity
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The compact sequence is a small case of a general idea: the amount of information in an object is the length of the shortest program that produces it. <code>rep(1, 1e6)</code> is a million elements that a few bytes describe; a million draws from <code>rnorm()</code> have no shorter description than themselves. This quantity is called Kolmogorov complexity, it is uncomputable in general (a consequence of the halting problem in <a href="#sec-halting-problem" class="quarto-xref"><span>Section 9.6.1</span></a>), and compression algorithms approximate it from above.</p>
+</div>
+</div>
 </div>
 </section>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
 <li>Create a list of 10 data frames, each with 1000 rows and 5 columns. Use <code>lobstr::obj_size()</code> to measure the total. Is it 10 times the size of one data frame?</li>
-<li>Explain why <code>x &lt;- 1:1e8</code> uses far less memory than <code>x &lt;- as.numeric(1:1e8)</code>. (Hint: check with <code>object.size()</code>. R stores the compact sequence as just a start, end, and step, exploiting the structure. This connects to Kolmogorov complexity: the shortest program that produces a given output. “Random” data is incompressible, while structured data like <code>rep(1, 1e6)</code> can be described in a few bytes. Compression algorithms approximate Kolmogorov complexity from above.)</li>
+<li><code>x &lt;- 1:1e7</code> is compact. Which of <code>x + 0L</code>, <code>as.numeric(x)</code>, and <code>rev(x)</code> keep it compact? Check each with <code>lobstr::obj_size()</code>.</li>
 <li>Write a function that takes a data frame and returns it unchanged. Use <code>lobstr::obj_addr()</code> to verify that no copy is made.</li>
 </ol>
 </section>
@@ -881,8 +942,8 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <p>You rarely implement algorithms from scratch in R, but the built-in functions make algorithmic choices on your behalf, and knowing what they chose helps you predict when they will be fast and when they will not.</p>
 <section id="sorting" class="level3" data-number="9.5.1">
 <h3 data-number="9.5.1" class="anchored" data-anchor-id="sorting"><span class="header-section-number">9.5.1</span> Sorting</h3>
-<p><code>sort()</code> uses a hybrid introsort: quicksort for the fast average case, switching to heapsort if quicksort degrades, and insertion sort for small sub-arrays. Worst-case time is O(n log n).</p>
-<p><code>order()</code> returns the permutation that would sort the vector, also O(n log n), and for data frames it is the basis of <code>dplyr::arrange()</code>. R also offers <code>sort(x, method = "radix")</code> for integer and character vectors; radix sort is O(n) for bounded-range integers, which is why <code>data.table::setorder()</code> is fast.</p>
+<p><code>sort()</code> picks its algorithm by the type and length of the input. For numeric, integer, and logical vectors and factors shorter than 2<sup>31</sup> elements, which covers nearly everything you will sort, it uses a radix sort, the O(n) bucket method from the callout in <a href="#sec-big-o" class="quarto-xref"><span>Section 9.2</span></a>; the implementation was contributed by the authors of the data.table package. Anything else falls back to Shellsort, and <code>method = "quick"</code> is available on request. <code>?sort</code> lists the rules.</p>
+<p><code>order()</code> returns the permutation that would sort the vector, with the same choice of algorithm, and for data frames it is the basis of <code>dplyr::arrange()</code>.</p>
 </section>
 <section id="searching-and-matching" class="level3" data-number="9.5.2">
 <h3 data-number="9.5.2" class="anchored" data-anchor-id="searching-and-matching"><span class="header-section-number">9.5.2</span> Searching and matching</h3>
@@ -897,11 +958,11 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <h3 data-number="9.5.4" class="anchored" data-anchor-id="string-matching"><span class="header-section-number">9.5.4</span> String matching</h3>
 <p><code>grep()</code> and <code>grepl()</code> compile the pattern into a finite automaton, then scan the input strings. For fixed strings, <code>fixed = TRUE</code> skips regex compilation entirely:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Regex: compiles pattern, then scans</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span>(<span class="st">"item_5"</span>, x)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fixed string: faster, no regex overhead</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span>(<span class="st">"item_5"</span>, x, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Regex: compiles pattern, then scans</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span>(<span class="st">"item_5"</span>, x)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Fixed string: faster, no regex overhead</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span>(<span class="st">"item_5"</span>, x, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>For repeated matching against the same pattern, pre-compiling with <code>stringi::stri_detect_regex()</code> avoids recompilation.</p>
 </section>
@@ -922,25 +983,37 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <p>By the early twentieth century, mathematicians had been on a winning streak that stretched back decades. Cantor had tamed infinity. Frege had formalized logic. Peano had reduced arithmetic to five axioms. Every time someone asked “can we make this rigorous?” the answer had been yes.</p>
 <p>David Hilbert had watched this happen for thirty years, and in 1928 he posed the question that felt like the natural finish line: the <em>Entscheidungsproblem</em>, the decision problem. Could you build a mechanical procedure that takes any mathematical statement and tells you whether it is true or false? If such a procedure existed, mathematical truth would be computable. Every conjecture decidable, every proof checkable by turning a crank, but then in 1936 a twenty-three-year-old graduate student would shock the whole mathematical worldview.</p>
 <p>He proved that no algorithm can decide, for an arbitrary program and input, whether that program will eventually halt or run forever. It was Alan Turing, the same graduate student whose tape machine we met in <a href="ch01-two-models.html#sec-turing" class="quarto-xref"><span>Section 1.1</span></a>, now proving that his own machine had a boundary it could never cross.</p>
-<p>The specific question he settled is called the <em>halting problem</em>. The proof is one of the most beautiful arguments in mathematics, it fits in half a page, and it works by turning the assumption against itself. We give it in full, twice: once in R and once in lambda calculus.</p>
-<p><strong>The proof by contradiction (in R).</strong> Assume, for the sake of contradiction, that a function <code>halts(f, x)</code> exists. It takes any function <code>f</code> and any input <code>x</code>, and returns <code>TRUE</code> if <code>f(x)</code> terminates, <code>FALSE</code> if <code>f(x)</code> runs forever. It always returns one or the other; it never crashes or loops itself. That is the assumption we will break.</p>
+<p>The specific question he settled is called the <em>halting problem</em>. The proof fits in half a page, and it is given here in full, in R.</p>
+<p><strong>The proof by contradiction.</strong> Assume, for the sake of contradiction, that a function <code>halts(f, x)</code> exists. It takes any function <code>f</code> and any input <code>x</code>, and returns <code>TRUE</code> if <code>f(x)</code> terminates, <code>FALSE</code> if <code>f(x)</code> runs forever. It always returns one or the other; it never crashes or loops itself. That is the assumption we will break.</p>
 <p>Given <code>halts</code>, define a new function:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>trouble <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">halts</span>(trouble, x)) {</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (<span class="cn">TRUE</span>) {}   <span class="co"># loop forever</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(x)          <span class="co"># halt</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>trouble <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">halts</span>(trouble, x)) {</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (<span class="cn">TRUE</span>) {}   <span class="co"># loop forever</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(x)          <span class="co"># halt</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Now ask: does <code>trouble(trouble)</code> halt?</p>
 <p><strong>Case 1:</strong> Suppose <code>halts(trouble, trouble)</code> returns <code>TRUE</code>. Then <code>trouble(trouble)</code> enters the <code>if</code> branch and loops forever. But <code>halts</code> said it would halt. Contradiction.</p>
 <p><strong>Case 2:</strong> Suppose <code>halts(trouble, trouble)</code> returns <code>FALSE</code>. Then <code>trouble(trouble)</code> enters the <code>else</code> branch and returns <code>trouble</code>. It halts. But <code>halts</code> said it would not. Contradiction.</p>
 <p>Both cases contradict the assumption, and there is no third case (we assumed <code>halts</code> always returns <code>TRUE</code> or <code>FALSE</code>). Therefore <code>halts</code> cannot exist. No algorithm, in any language, can solve the halting problem for arbitrary programs.</p>
-<p>The argument is a <em>diagonal argument</em>, the same technique Cantor used in 1891 to prove that the real numbers are uncountable, and the same structure Godel used in 1931 for the incompleteness theorems. The trick is always the same: assume a complete listing (or decision procedure) exists, then construct something that disagrees with every entry on the diagonal.</p>
-<p><strong>The proof in lambda calculus.</strong> Seeing the same proof in lambda calculus is worth the detour, because it shows that undecidability is not a quirk of loops or mutable state or any particular language’s execution model. The result falls out of self-application alone, which means it holds for any system powerful enough to pass functions to functions — R included.</p>
-<p>Church proved the same result independently in 1936, before Turing’s paper, using the <em>lambda calculus</em> rather than a machine model. The argument has the same shape but uses different language.</p>
+<p>The argument is a <em>diagonal argument</em>, the same technique Cantor used in 1891 to prove that the real numbers are uncountable, and the same structure Gödel used in 1931 for the incompleteness theorems. The trick is always the same: assume a complete listing (or decision procedure) exists, then construct something that disagrees with every entry on the diagonal.</p>
+<p>The step that breaks <code>halts</code> is <code>trouble(trouble)</code>: a function handed itself as an argument. Nothing in R forbids that. Functions are values, values can be passed to functions, and <code>sapply(fs, \(f) f(f))</code> is legal R. Closures, recursion, and higher-order functions all depend on that freedom, and the halting problem is its price: any language that lets a function receive itself is expressive enough to build <code>trouble</code>. When a linter warns about unreachable code or an optimizer removes dead branches, it is working inside this limit, necessarily incomplete, always capable of missing something.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The same proof in lambda calculus
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Church reached the same result a few months before Turing, in April 1936, using the lambda calculus rather than a machine, and seeing his version shows that undecidability owes nothing to loops or mutable state. It falls out of self-application alone.</p>
 <p>In lambda calculus, every value is a function and every computation is function application. There are no loops; non-termination means a term <em>reduces forever</em> without reaching a normal form. For instance, the term (λx. x x)(λx. x x) applies itself to itself, producing the same term again, endlessly, never halting. This term is called Ω.</p>
 <p>Church’s question: is there a lambda term H that, given any term M, returns <code>true</code> if M has a normal form (halts) and <code>false</code> if M reduces forever?</p>
 <p>Assume H exists. Define:</p>
@@ -950,34 +1023,33 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <li>If H(D D) returns <code>true</code> (meaning D D halts), then D D reduces to Ω and loops forever. Contradiction.</li>
 <li>If H(D D) returns <code>false</code> (meaning D D diverges), then D D reduces to I and halts. Contradiction.</li>
 </ul>
-<p>Same diagonal structure, same conclusion: H cannot exist. No lambda term can decide whether an arbitrary term has a normal form.</p>
-<p>The mechanism that breaks H is self-application: a term applied to itself. That mechanism is not exotic. When you write <code>function(f) f(f)</code> in R, you are writing self-application. When you pass a function to <code>sapply</code>, you are handing a value to a function that will call it, one step from the same recursive knot. R has the same capability: functions are values, values can be passed to functions, and nothing prevents a function from receiving itself. Closures, recursion, and higher-order functions all depend on that freedom. The halting problem is the price.</p>
-<p>Any language expressive enough to let functions consume themselves is expressive enough to construct the diagonal argument, and that includes every language in this book’s lineage from Lisp onward. When a linter warns you about unreachable code or an optimizer tries to eliminate dead branches, it is working inside the limits Church proved in 1936: necessarily incomplete, always capable of missing something.</p>
-<p>Church published this in April 1936 (“An Unsolvable Problem of Elementary Number Theory”); Turing published his version in November 1936 (“On Computable Numbers”). They later proved that their two formalisms, lambda calculus and Turing machines, compute exactly the same class of functions. The halting problem is not an artifact of one model. It is a boundary.</p>
-<p><strong>Why it matters in practice.</strong> Rice’s theorem (1953) generalizes the result: <em>any</em> non-trivial semantic property of programs is undecidable. You cannot write a program that decides whether another program is “correct,” “efficient,” or “pure.” Tools like lintr and mypy use sound overapproximations, rejecting some correct programs to guarantee they never accept an incorrect one. The question is not whether your analyzer has blind spots, but where.</p>
+<p>Same diagonal structure, same conclusion: H cannot exist. No lambda term can decide whether an arbitrary term has a normal form. Church’s paper was “An Unsolvable Problem of Elementary Number Theory”; Turing’s, that November, was “On Computable Numbers”.</p>
+</div>
+</div>
+</div>
+<p><strong>Why it matters in practice.</strong> Rice’s theorem (1953) generalizes the result: <em>any</em> non-trivial semantic property of programs is undecidable. You cannot write a program that decides whether another program is “correct,” “efficient,” or “pure.” Tools like lintr and mypy use sound overapproximations, rejecting some correct programs to guarantee they never accept an incorrect one. Every analyzer has blind spots; the design decision is where to put them.</p>
 </section>
 <section id="practical-workarounds" class="level3" data-number="9.6.2">
 <h3 data-number="9.6.2" class="anchored" data-anchor-id="practical-workarounds"><span class="header-section-number">9.6.2</span> Practical workarounds</h3>
 <p>You cannot solve the halting problem in general, but you can set time limits:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># setTimeLimit: kill a computation after 5 seconds</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setTimeLimit</span>(<span class="at">elapsed =</span> <span class="dv">5</span>, <span class="at">transient =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tryCatch</span>(</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># potentially non-terminating computation</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">some_function</span>(x)</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  },</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">message</span>(<span class="st">"Computation timed out"</span>)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">setTimeLimit</span>(<span class="at">elapsed =</span> <span class="cn">Inf</span>)  <span class="co"># reset</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># setTimeLimit: kill a computation after 5 seconds</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setTimeLimit</span>(<span class="at">elapsed =</span> <span class="dv">5</span>, <span class="at">transient =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tryCatch</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  {</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># potentially non-terminating computation</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">some_function</span>(x)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">message</span>(<span class="st">"Computation timed out"</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="fu">setTimeLimit</span>(<span class="at">elapsed =</span> <span class="cn">Inf</span>)  <span class="co"># reset</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The R package <code>R.utils</code> provides <code>withTimeout()</code> for a cleaner interface. These are engineering solutions to a mathematically unsolvable problem: you cannot know whether the computation will finish, but you can decide how long you are willing to wait.</p>
 </section>
 <section id="the-church-turing-thesis" class="level3" data-number="9.6.3">
 <h3 data-number="9.6.3" class="anchored" data-anchor-id="the-church-turing-thesis"><span class="header-section-number">9.6.3</span> The Church-Turing thesis</h3>
-<p>Church and Turing proved that their two formalisms, lambda calculus and Turing machines, compute exactly the same class of functions (<a href="#sec-halting-problem" class="quarto-xref"><span>Section 9.6.1</span></a>). The <em>Church-Turing thesis</em> states that any function computable by an effective procedure can be computed by a Turing machine, or equivalently, expressed as a lambda calculus term.</p>
-<p>This has a concrete consequence: R, Python, C, Haskell, and every other general-purpose language can compute exactly the same set of functions. No language can solve the halting problem; no language can compute a function that another general-purpose language cannot. The differences between languages are speed, expressiveness, and safety, not computational power.</p>
-<p>R’s functional core (functions as values, closures, recursion) is directly descended from lambda calculus, so when you write <code>function(x) x + 1</code>, you are writing a lambda term. The equivalence means R’s functional style and C’s imperative loops are two notations for the same mathematics.</p>
+<p>Two proofs of the same boundary, from two models that look nothing alike, raised the question of whether the models themselves were equivalent. Church and Turing showed that they were: lambda calculus and Turing machines compute exactly the same class of functions, the result <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a> introduced as the <em>Church-Turing thesis</em>. The thesis goes one step further and states that any function computable by an effective procedure at all can be computed by a Turing machine, or equivalently, expressed as a lambda term.</p>
+<p>This has a concrete consequence: R, Python, C, Haskell, and every other general-purpose language can compute exactly the same set of functions. No language can solve the halting problem; no language can compute a function that another general-purpose language cannot. The differences between languages are speed, expressiveness, and safety, not computational power. R’s functions, closures, and recursion descend from the lambda calculus and C’s loops descend from the machine, and the equivalence makes them two notations for the same set of computations.</p>
 </section>
 <section id="p-vs-np" class="level3" data-number="9.6.4">
 <h3 data-number="9.6.4" class="anchored" data-anchor-id="p-vs-np"><span class="header-section-number">9.6.4</span> P vs NP</h3>
@@ -985,34 +1057,33 @@ Figure&nbsp;9.1: Common complexity classes: how operations scale with input size
 <p>The class <strong>P</strong> contains problems solvable in polynomial time; the class <strong>NP</strong> contains problems whose solutions can be <em>verified</em> in polynomial time. Whether P = NP is the most famous open question in computer science, and most researchers believe P ≠ NP, which would mean some problems are fundamentally harder to solve than to check.</p>
 <p>The subset sum problem makes the gap concrete. Given a set of integers, does any subset sum to a target value? Verifying a proposed subset is O(n), just add the numbers. Finding one by brute force means checking all 2^n subsets:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Brute force: check all 2^n subsets (exponential)</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>subset_sum_brute <span class="ot">&lt;-</span> <span class="cf">function</span>(x, target) {</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(x)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(<span class="dv">2</span><span class="sc">^</span>n) <span class="sc">-</span> <span class="dv">1</span>) {</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    bits <span class="ot">&lt;-</span> <span class="fu">as.logical</span>(<span class="fu">intToBits</span>(i)[<span class="fu">seq_len</span>(n)])</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">sum</span>(x[bits]) <span class="sc">==</span> target) <span class="fu">return</span>(x[bits])</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="cn">NULL</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co"># A greedy approximation: sort descending, take what fits (polynomial)</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>subset_sum_greedy <span class="ot">&lt;-</span> <span class="cf">function</span>(x, target) {</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">sort</span>(x, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  picked <span class="ot">&lt;-</span> <span class="fu">logical</span>(<span class="fu">length</span>(x))</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  remaining <span class="ot">&lt;-</span> target</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(x)) {</span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (x[i] <span class="sc">&lt;=</span> remaining) {</span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>      picked[i] <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>      remaining <span class="ot">&lt;-</span> remaining <span class="sc">-</span> x[i]</span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (remaining <span class="sc">==</span> <span class="dv">0</span>) x[picked] <span class="cf">else</span> <span class="cn">NULL</span></span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Brute force: check all 2^n subsets (exponential)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>subset_sum_brute <span class="ot">&lt;-</span> <span class="cf">function</span>(x, target) {</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(x)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(<span class="dv">2</span><span class="sc">^</span>n) <span class="sc">-</span> <span class="dv">1</span>) {</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    bits <span class="ot">&lt;-</span> <span class="fu">as.logical</span>(<span class="fu">intToBits</span>(i)[<span class="fu">seq_len</span>(n)])</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">sum</span>(x[bits]) <span class="sc">==</span> target) <span class="fu">return</span>(x[bits])</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="cn">NULL</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co"># A greedy approximation: sort descending, take what fits (polynomial)</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>subset_sum_greedy <span class="ot">&lt;-</span> <span class="cf">function</span>(x, target) {</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">sort</span>(x, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  picked <span class="ot">&lt;-</span> <span class="fu">logical</span>(<span class="fu">length</span>(x))</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  remaining <span class="ot">&lt;-</span> target</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(x)) {</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (x[i] <span class="sc">&lt;=</span> remaining) {</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>      picked[i] <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>      remaining <span class="ot">&lt;-</span> remaining <span class="sc">-</span> x[i]</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (remaining <span class="sc">==</span> <span class="dv">0</span>) x[picked] <span class="cf">else</span> <span class="cn">NULL</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>At n = 20 the brute-force version checks about a million subsets and finishes in under a second. At n = 40 it checks a trillion — you will not wait long enough. The greedy version runs in O(n log n) on either input but is not guaranteed to find a solution that exists. That is the P-vs-NP gap in miniature: polynomial verification, (apparently) exponential search, and a fast heuristic that trades correctness for speed.</p>
+<p>At n = 20 the brute-force version checks about a million subsets and finishes in under a second. At n = 40 it checks a trillion, and you will not wait long enough. The greedy version runs in O(n log n) on either input but can miss a solution that exists. That is the P-vs-NP gap in miniature: polynomial verification, (apparently) exponential search, and a fast heuristic that is sometimes wrong.</p>
 <p>In practice, R encounters NP-hard problems in optimization. <code>optim()</code> does not guarantee a global optimum for non-convex problems; it uses heuristic methods (Nelder-Mead, simulated annealing) that find good-enough solutions without exhaustive search. This is the pragmatic response to intractability: give up on perfection and settle for “good enough, fast.”</p>
-<p>The loop from the opening, the one that took five minutes instead of thirty seconds — you now have the vocabulary to diagnose it: somewhere in that loop, an O(n²) operation was hiding inside what looked like O(n) code, and the 10x increase in data exposed the quadratic scaling that small test sets had concealed. The growth rate was there from the start; faster hardware only postpones when you hit it.</p>
-<p>But complexity is only half the story — the other half is the data structure you choose to hold your values, and so far the only container you have is the atomic vector, which insists that everything inside it be the same type.</p>
+<p>The loop from the opening, the one that took five minutes instead of thirty seconds, had an O(n²) operation hiding inside what looked like O(n) code, most likely a <code>c()</code> or an <code>rbind()</code> growing a result one row at a time. The 10x increase in data exposed a quadratic shape that small test sets had concealed, and faster hardware would only have postponed the moment. The next chapter turns from how much work a computation does to what it works on: so far the only container you have is the atomic vector, which insists that everything inside it be the same type.</p>
 </section>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
@@ -1116,53 +1187,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

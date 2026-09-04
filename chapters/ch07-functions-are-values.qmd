@@ -16,9 +16,9 @@ In @sec-functions-are-values, you saw that a function is a value\index{first-cla
 sapply(1:5, sqrt)
 ```
 
-Notice that `sqrt` has no parentheses. You are not calling `sqrt` here; you are handing the function itself to `sapply`, which calls it five times, once per element. This is the same distinction from @sec-programs-and-proofs: `fact` is the definition (a rule), while `fact(n)` is the rule applied to an argument.
+`sqrt` has no parentheses. You are handing the function itself to `sapply`, which calls it five times, once per element. This is the same distinction from @sec-programs-and-proofs: `fact` is the definition (a rule), while `fact(n)` is the rule applied to an argument.
 
-Here is the pattern behind most of R's power: instead of writing a loop that processes each element, you hand a function to something that knows how to apply it. The loop is still running inside `sapply`, but you never had to write it. You described *what* to compute, not *how* to iterate.
+A loop is still running inside `sapply`, but you never had to write it. You handed over the function and let `sapply` do the iterating.
 
 ```{r}
 sapply(c(-3, 0, 4, -1, 7), abs)
@@ -30,9 +30,9 @@ sapply(c("hello", "world"), nchar)
 
 Any function that takes a single argument works here: `abs` computes absolute values, `nchar` counts characters, and you can pass either to `sapply` with the same syntax.
 
-`sapply` takes each element of the input, applies your function, and tries to simplify the results into a vector. When all the results have the same length (as they do here, since `sqrt` returns one number per input), you get a numeric vector back. When results differ in length or type, `sapply` returns a list instead. `lapply()`\index{lapply()} is the stricter sibling that always returns a list. (@sec-iteration-without-loops covers the distinction in detail; for now, the simple cases are enough.)
+`sapply` applies your function to each element and then tries to simplify the results into a vector. Every example above returned one value per input, so a vector came back. When the results differ in length or type, `sapply` returns a list instead, and `lapply()`\index{lapply()} always returns a list; @sec-iteration-without-loops covers when each is the right choice.
 
-A function that takes another function as an argument\index{function!as argument} is called a *higher-order function*\index{higher-order function}. `sapply` is one; most of R's power comes from others.
+A function that takes another function as an argument\index{function!as argument} is called a *higher-order function*\index{higher-order function}. `sapply` is the first of many in this book.
 
 ::: {.callout-note collapse="true"}
 ## The lambda calculus connection
@@ -64,15 +64,13 @@ sapply(1:5, function(x) x^2)
 
 `function(x) x^2` creates a function right where it is needed, with no name and no assignment; it exists only for this one call to `sapply`, and then it vanishes. This is an *anonymous function*\index{anonymous function}, and you already saw a brief example in @sec-functions-are-values.
 
-The `function(x)` prefix is verbose enough that many R programmers avoided anonymous functions for years, defaulting to named helpers even for throwaway operations. The language eventually responded.
-
-R 4.1 introduced a shorter syntax:
+Since R 4.1 there is a shorter way to write the same thing:
 
 ```{r}
 sapply(1:5, \(x) x^2)
 ```
 
-`\(x)` is shorthand for `function(x)`, and the backslash is meant to evoke the Greek letter lambda (λ), which is where the whole idea comes from (@sec-church). In lambda calculus, this function is written `λx. x²`; in R before 4.1, it is `function(x) x^2`; in R 4.1+, it is `\(x) x^2`.
+`\(x)` is shorthand for `function(x)`. The backslash is meant to evoke the Greek letter lambda (λ), which is where the whole idea comes from (@sec-church): in lambda calculus this function is written `λx. x²`.
 
 Anonymous functions shine when the operation is short and you only need it once:
 
@@ -101,9 +99,9 @@ If you use a function twice, name it. Anonymous functions belong inside `sapply`
 
 ## Storing functions in lists {#sec-functions-in-lists}
 
-Consider a data frame with mixed column types: some numeric, some character, some logical. You want a one-number summary of each column, but `mean` is meaningless for character data and `length(unique(...))` is meaningless for logicals. The brute-force solution is a chain of `if`/`else if` blocks that checks each column's type and calls the right function. It works for three types. It gets ugly at six. At twelve, it is unreadable, and every new type means hunting through the chain to find the right insertion point.
+Consider a data frame with mixed column types: some numeric, some character, some logical. You want a one-number summary of each column, but `mean` is meaningless for character data and `length(unique(...))` is meaningless for logicals. The brute-force solution is a chain of `if`/`else if` blocks that checks each column's type and calls the right function. That works for three types and gets ugly at six, and every new type means hunting through the chain for the right insertion point.
 
-The logic is fine. The problem is that it's tangled with the control flow. If functions are values, you can separate the two: store the logic in a list, keyed by type, and let a single lookup replace the entire chain.
+The summaries themselves are fine; what tangles is the control flow around them. If functions are values, you can store the summaries in a list, keyed by type, and let a single lookup replace the entire chain.
 
 ```{r}
 summarizers <- list(
@@ -117,16 +115,14 @@ summarizers$character(c("a", "b", "a", "c"))
 summarizers$logical(c(TRUE, FALSE, TRUE, TRUE))
 ```
 
-`summarizers` is a list of three functions, accessed with `$` like any named list element. A list of functions keyed by name is a *dispatch table*: given a key, it returns the function you need, no conditionals required. Adding a new type means adding one entry to the list. No `if`/`else` to restructure, no risk of breaking the branches above or below. Package internals, Shiny applications, and testing frameworks all use this pattern to select behavior at runtime.
-
-Notice what moved. In the `if`/`else` version, control flow is in charge: it interrogates the type, then calls the right function as a subordinate. In the dispatch table, the functions exist independently as values in a list, and the control flow shrinks to a single lookup. The operations no longer live inside the conditional; the conditional lives inside the data structure. A dispatch table you extend by dropping a new entry into a list; the entries that already work never see the change.
+`summarizers` is a list of three functions, accessed with `$` like any named list element. A list of functions keyed by name is a *dispatch table*: given a key, it returns the function you need. Adding a new type means adding one entry to the list, and the entries that already work never see the change. Package internals, Shiny applications, and testing frameworks all use this pattern to select behavior at runtime.
 
 ::: {.callout-note collapse="true"}
 ## Why dispatch tables feel natural in R
-In Church's lambda calculus, functions were values from the start. Packaging them inside control structures was a habit inherited from imperative languages, not a necessity. The dispatch table recovers the default: data holds the operations, and a lookup replaces the branching.
+In Church's lambda calculus, functions were values from the start, so a table of them is the ordinary way to hold several alternatives. The `if`/`else` chain is the habit of languages where functions could only be called, never stored.
 :::
 
-Here is the same idea in a simpler form:
+A smaller table makes the shape easier to see:
 
 ```{r}
 transforms <- list(
@@ -159,7 +155,7 @@ make_adder <- function(n) {
 }
 ```
 
-`make_adder` is a *function factory*: it takes a number `n` and returns a *new function*\index{function!as return value} that adds `n` to its argument:
+The body of `make_adder` is a single expression, and that expression is a function definition. Call it and see what comes back:
 
 ```{r}
 add5 <- make_adder(5)
@@ -172,11 +168,11 @@ add10 <- make_adder(10)
 add10(3)
 ```
 
-`add5` and `add10` are both functions, built by `make_adder` with different values of `n`, and each one remembers the value it was created with. `add5` remembers 5; `add10` remembers 10. How?
+`add5` and `add10` are both functions, built by `make_adder` with different values of `n`, and each one remembers the value it was created with\index{function!as return value}. A function that manufactures functions this way is a *function factory*. `add5` remembers 5; `add10` remembers 10. How?
 
 When `make_adder(5)` runs, it creates a local environment where `n = 5`. The returned function `function(x) x + n` was defined inside that environment. When you later call `add5(3)`, R finds `n` through lexical scoping (@sec-scope-first-look): it looks in the environment where the function was defined and finds `n = 5`. But that environment was created during a function call that has already returned. The call is gone. So where does the environment live?
 
-A function that travels with its creation environment is called a *closure*\index{closure}. Every function in R is technically a closure, but the term earns its weight when a function returned by another function captures variables from the enclosing scope. Closures are powerful enough to deserve their own chapter (@sec-closures-and-scope); the mechanism that makes `make_adder` work has consequences far beyond adding numbers.
+It lives with the function. A function that travels with its creation environment is called a *closure*\index{closure}. Every function in R is technically a closure, but the term earns its weight when a function returned by another function captures variables from the enclosing scope. @sec-closures-and-scope shows what else that captured environment can hold: counters, caches, and state that survives between calls.
 
 ::: {.callout-note collapse="true"}
 ## The lambda calculus connection
@@ -187,7 +183,7 @@ make_adder = λn. λx. x + n
 make_adder(5) = (λn. λx. x + n)(5) = λx. x + 5
 ```
 
-Replacing `n` with `5` gives a new function, `λx. x + 5`, which is `add5`. The returned function has one argument already filled in. This is *currying*: fixing one argument to produce a simpler function. Each call to a function factory is a beta reduction (@sec-church); the returned function is the reduced term.
+Replacing `n` with `5` gives a new function, `λx. x + 5`, which is `add5`. The returned function has one argument already filled in: this is the currying from @sec-arguments-defaults, and each call to a function factory is one beta reduction with the returned function as the reduced term.
 :::
 
 ```{r}
@@ -202,7 +198,7 @@ double(7)
 triple(7)
 ```
 
-`make_multiplier` is another function factory, producing `double` and `triple` from the same template with different values baked in. Function factories appear throughout R: custom plot themes, parameterized statistical tests, configured data transformations. Chapter @sec-function-factories covers them in depth. For now, notice that the functions we have been passing around, storing in lists, and returning from factories all share a quiet assumption: that operators like `+` and `*` are themselves functions. Are they?
+`make_multiplier` is another function factory, producing `double` and `triple` from the same template with different values baked in. Function factories appear throughout R, in custom plot themes, parameterized statistical tests, and configured data transformations, and @sec-function-factories covers them in depth. Every function in this chapter so far, passed around, stored in a list, or returned from a factory, has leaned on `+` or `*` to do its work. Are those functions too?
 
 
 ### Exercises {.unnumbered}

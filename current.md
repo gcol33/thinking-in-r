@@ -4,7 +4,7 @@ Last updated 2026-09-04.
 
 ## Status
 
-Chapters 1 to 6 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in the commit after it). Chapters 7 onward have not. Next session: ch07, ch08, ch09.
+Chapters 1 to 9 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in the commit after it). Chapters 10 onward have not. Next session: ch10, ch11, ch12.
 
 ## The problem
 
@@ -53,8 +53,17 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Callouts added: ch04 monoid, sqrt-by-iteration, functor, Haskell/Rust `Maybe`; ch05 currying, factorial in lambda calculus, proof assistants; ch06 pairwise summation, interval arithmetic.
 - ch06 storage section now opens with the `sprintf("%.20f", 0.1)` demonstration; IEEE 754 is named after it.
 
+## Notes from ch07-09
+
+- Chapter order matters for step 3: ch08 re-taught `0.1 + 0.2` and IEEE 754 storage and forward-referenced ch06 as if it came later. The double-storage section was removed; the binary-integer part moved into the full-adder callout, and comparisons back-reference @sec-floating-point-traps.
+- Two factual fixes found while reading: ch08 said `if (c(TRUE, FALSE))` warns and uses the first element (it errors, and the rendered output already showed the error); ch09 said `sort()` is introsort (it is radix for numeric/integer/logical/factor vectors under 2^31, Shellsort otherwise, per `?sort`). Check prose against rendered output whenever a chunk has `error: true`.
+- `object.size()` reports the expanded size of a compact `1:n`; `lobstr::obj_size()` reports 680 B. `as.numeric(1:n)` stays compact too; `sample()`, `rev()`, and `x + 0L` materialize.
+- ch08 `sec-recursion` pointed at ch22; Church booleans are in ch05 `sec-recursion-preview`. ch08 "calculator from @sec-turing" is Mr. State.
+- Callouts added: ch07 none new (two reworded); ch08 lambda connection for `if/else`, gates and half adder merged into one; ch09 sorting lower bound, amortized doubling, lambda-calculus halting proof, Kolmogorov complexity.
+- Bold-lead-in complexity classes (ch09) became prose paragraphs, R example first, class named at the end.
+
 ## Files for the next session
 
-- `chapters/ch07-functions-are-values.qmd`
-- `chapters/ch08-logic-control-flow.qmd`
-- `chapters/ch09-complexity-and-algorithms.qmd`
+- `chapters/ch10-lists.qmd`
+- `chapters/ch11-data-frames.qmd`
+- `chapters/ch12-strings-factors-dates.qmd`

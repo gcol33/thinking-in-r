@@ -5,35 +5,40 @@
 source(here::here("_common.R"))
 ```
 
-You write a loop that takes three seconds on your test data. You deploy it on the full dataset, ten times larger, and it takes five minutes. Not thirty seconds. Five minutes. You double-check the code; nothing has changed, nothing is obviously wrong. The loop is doing the same thing it did before, just on more rows. So why did a 10x increase in data produce a 100x increase in running time?
+You write a loop that takes three seconds on your test data. You deploy it on the full dataset, ten times larger, and it takes five minutes instead of the thirty seconds you expected. You double-check the code; nothing has changed, nothing is obviously wrong. The loop is doing the same thing it did before, just on more rows. So why did a 10x increase in data produce a 100x increase in running time?
 
-The answer is not about your code being "bad," and no amount of hardware will fix it. It is about the *shape* of growth: how running time scales with input size\index{time complexity}\index{space complexity}, and why some operations hit a wall that scales steeper than you expected. Big-O notation, hash tables, the limits of computation: these ideas draw the line between code that scales and code that chokes. They also explain why that line exists at all.
+The answer is in the *shape* of the growth: how running time scales with input size\index{time complexity}\index{space complexity}. Some operations cost the same on ten rows as on ten million, some cost ten times more, and some, like the loop above, cost a hundred times more. This chapter is about telling those apart before the full dataset does it for you.
 
 
 ## Not all operations are equal {#sec-why-speed-shape}
 
 Consider two ways to find a value in a vector. `x[5]` jumps directly to the fifth memory address, regardless of how long the vector is. `which(x == 5)` checks every element one by one until it finds a match. For a vector of length 10, you would not notice the difference. For a vector of length 10 million, you would.
 
-A constant-time operation stays constant whether the input has ten elements or ten billion, while a linear operation scales proportionally, doing twice the work on twice the data. How running time scales with input size: that is the core idea of computational complexity, and once you see it, you start noticing it everywhere.
+The first operation costs the same whether the vector has ten elements or ten billion. The second does twice the work on twice the data. That relationship, between the size of the input and the amount of work, is what computational complexity measures.
 
 
 ## Big-O notation {#sec-big-o}
 
-Big-O notation\index{Big-O notation} makes this precise: we say f(n) is O(g(n)) if, past some input size, f grows no faster than a constant multiple of g.
+An operation that touches every element of a vector of length n might take 3n² + 100n + 7 steps, and no two machines agree on how long a step takes. What survives from one machine to the next is the leading term: double n and the n² part quadruples, whatever the constants are. Big-O notation\index{Big-O notation} keeps only that: we say f(n) is O(g(n)) if, past some input size, f grows no faster than a constant multiple of g, so 3n² + 100n + 7 is simply O(n²).
 
-The notation strips away constant factors and lower-order terms, which means an algorithm that takes 3n² + 100n + 7 steps is simply O(n²). The constants matter in practice (a factor of 10 is still a factor of 10), but Big-O captures the *shape* of growth, and that shape dominates once n gets large enough. When n is small, the constant factors dominate instead, and the algorithm with less overhead wins regardless of its Big-O.
+The constants still matter in practice (a factor of 10 is still a factor of 10). Big-O captures the shape of growth, and that shape dominates once n gets large enough. When n is small, the constant factors dominate instead, and the algorithm with less overhead wins regardless of its Big-O.
 
 ### Common complexity classes
 
-**O(1)\index{O(1)}: constant time.** The operation takes the same time regardless of input size. `length(x)` is O(1) because R stores the length as an attribute and never counts the elements; indexing by position (`x[5]`) is also O(1), since R computes a memory offset and jumps directly to it. A less obvious example, and a more interesting one, is hash table lookup, which gets its own section below (@sec-hash-tables).
+`length(x)` returns instantly on any vector, because R stores the length as an attribute and never counts the elements. Indexing by position, `x[5]`, computes a memory offset and jumps to it. Operations like these are O(1)\index{O(1)}, constant time: the same cost regardless of input size. A less obvious O(1) operation, and a more interesting one, is hash table lookup, which gets its own section below (@sec-hash-tables).
 
-**O(log n): logarithmic time.** Each step halves the search space. Binary search\index{binary search} is the classic example: `findInterval(0.5, sorted_x)` finds where 0.5 falls in a sorted vector by repeatedly splitting it in half, which on a million elements takes roughly 20 comparisons and on a billion elements about 30. Logarithmic growth is *extremely* slow. So slow it barely registers.
+`findInterval(0.5, sorted_x)` finds where 0.5 falls in a sorted vector by splitting the vector in half, deciding which half holds the answer, and splitting again. On a million elements that takes about 20 comparisons; on a billion, about 30. This is binary search\index{binary search}, and its cost is O(log n), logarithmic time, which grows so slowly it barely registers.
 
-**O(n)\index{O(n)}: linear time.** You touch every element once. `sum(x)` walks the entire vector, adding each element: one pass, n additions. `which(x > 0)` also scans every element once, selecting those that match. Linear is often the best you can do, because you need to at least *read* all the input.
+`sum(x)` walks the entire vector, adding each element: one pass, n additions. `which(x > 0)` also scans every element once, selecting those that match. These are O(n)\index{O(n)}, linear time, and linear is often the best you can do, because you need to at least *read* all the input.
 
-**O(n log n)\index{O(n log n)}: linearithmic time.** The cost of sorting. `sort(x)` for a vector of length n makes O(n log n) comparisons, which is only slightly worse than linear: sorting a million numbers takes about 20x more work than summing them, not 1,000,000x more. Can you do better? For comparison-based sorting, no: there is a proof (via decision trees) that any algorithm which sorts by comparing pairs of elements must make at least O(n log n) comparisons in the worst case. Radix sort sidesteps this bound by not comparing elements at all (it distributes them into buckets by digit) but it only works when the keys have bounded range (integers, fixed-length strings).
+`sort(x)` costs more than a single pass but much less than you might guess: sorting a million numbers takes about 20 times the work of summing them. Sorting by comparing pairs of elements is O(n log n)\index{O(n log n)}, and the n log n shape is the price of comparison sorting.
 
-**O(n²)\index{O(n squared)}: quadratic time.** Nested loops where both loops run over the input. This is where performance falls apart. The classic R example is growing a vector with `c()`:
+::: {.callout-note collapse="true"}
+## Can sorting beat n log n?
+For comparison-based sorting, no. A decision-tree argument shows that any algorithm which sorts by comparing pairs of elements must make at least O(n log n) comparisons in the worst case. Radix sort sidesteps the bound by never comparing elements: it distributes them into buckets by digit, which is O(n) but only works when the keys have bounded range (integers, fixed-length strings). R's `sort()` uses radix for most vectors, as @sec-common-algorithms describes.
+:::
+
+Growing a vector with `c()` is the classic R example of the next class:
 
 ```{r}
 #| eval: false
@@ -45,9 +50,14 @@ for (i in seq_len(n)) {
 # Total copies: 1 + 2 + ... + n = n(n+1)/2 = O(n^2)
 ```
 
-@sec-performance revisits this bottleneck in detail. The quadratic cost is not inevitable for append-style operations: if R used a doubling strategy (as Python's `list.append` does), each individual append would be O(1) *amortized*. The idea is to allocate double the space when the array fills up; most appends just write to the next slot (O(1)), and the occasional O(n) resize happens rarely enough that the average cost per operation is constant. R does not do this for `c()`, which is why pre-allocation matters. A naive distance matrix computation is also O(n²): for n points, you compute n(n-1)/2 pairwise distances.
+Each iteration copies everything accumulated so far, so the total work is 1 + 2 + ... + n. That is O(n²)\index{O(n squared)}, quadratic time, and it is the shape behind the loop in the opening: ten times the rows, a hundred times the copying. Any nested loop where both loops run over the input is quadratic, and so is a naive distance matrix, which computes n(n-1)/2 pairwise distances for n points. @sec-performance revisits the `c()` bottleneck in detail.
 
-**O(2^n): exponential time.** Brute-force enumeration of all subsets. A set of n elements has 2^n subsets: at n = 20 that is about a million, at n = 30 a billion, at n = 50 over a quadrillion. Exponential algorithms are effectively unusable for large inputs, and no clever constant-factor tricks will save you.
+::: {.callout-note collapse="true"}
+## Amortized O(1): the doubling strategy
+Appending can be made cheap. Python's `list.append` allocates double the space whenever the array fills up; most appends then write to the next free slot in O(1), and the occasional O(n) resize happens rarely enough that the average cost per append stays constant. This is called O(1) *amortized*. R's `c()` allocates a fresh vector every time, which is why pre-allocation matters in R.
+:::
+
+Enumerating every subset of a set is the last class you will meet in practice. A set of n elements has 2^n subsets: at n = 20 that is about a million, at n = 30 a billion, at n = 50 over a quadrillion. Algorithms that grow as O(2^n), exponential time, are unusable for large inputs, and no constant-factor trick will save them.
 
 ![Common complexity classes: how operations scale with input size.](../images/bigo_curves.png){#fig-bigo-curves width=100%}
 
@@ -68,7 +78,7 @@ Suppose you have a list of 10,000 names and you need to check whether `"beta"` i
 
 If the list is sorted, binary search gets you to O(log n). But there is a way to get O(1), constant time, regardless of how many names are in the list.
 
-The trick is to turn the name into a number. A *hash function*\index{hash table} takes a string (or any value) and produces an integer. For example, a simple hash might sum the character codes of each letter:
+Start by turning each name into a number. Summing the character codes of the letters will do for now:
 
 ```{r}
 simple_hash <- function(key, n_slots) {
@@ -81,7 +91,7 @@ simple_hash("gamma", 10)
 simple_hash("alpha", 10)
 ```
 
-Now allocate a fixed-size array (say 10 slots). To store `"beta" = 2`, compute `simple_hash("beta", 10)` and put the value in that slot; to look it up later, compute the same hash, jump directly to that slot, and read the value. No scanning. The hash function converts a search problem into an arithmetic problem.
+Each name now maps to a slot between 1 and 10. Allocate an array with 10 slots. To store `"beta" = 2`, compute `simple_hash("beta", 10)` and put the value in that slot; to look it up later, compute the same hash, jump directly to that slot, and read the value. No scanning. A function that turns a key into a slot number this way is a *hash function*\index{hash table}, and it converts a search problem into an arithmetic problem.
 
 ```{r}
 # Build a hash table by hand
@@ -108,9 +118,16 @@ lookup <- function(slots, key, n_slots) {
 lookup(slots, "beta", n_slots)
 ```
 
-One hash computation, one array access, O(1). That is the entire idea.
+One hash computation, one array access, O(1).
 
-The problem is *collisions*: two different keys can hash to the same slot, and our `simple_hash` sums character codes, so any two strings with the same character-code sum will collide. When that happens, the slot needs to hold multiple entries, and the standard fix is *chaining*, where each slot stores a linked list of key-value pairs. On lookup, you hash to the slot, then scan the short list:
+Now hash two names that happen to use the same letters:
+
+```{r}
+simple_hash("ab", 10)
+simple_hash("ba", 10)
+```
+
+Same slot. Two different keys landing on one slot is a *collision*, and `simple_hash` invites them, since any two strings with the same character-code sum collide. When that happens the slot has to hold more than one entry. The standard fix is *chaining*: each slot stores a list of key-value pairs, and lookup hashes to the slot, then scans the short list:
 
 ```{r}
 # A hash table with chaining
@@ -160,20 +177,16 @@ What happens when the table fills up? The chains get longer, and lookup degrades
 
 ### Exercises {.unnumbered}
 
-1. What happens to `simple_hash` if two keys have the same character-code sum? Try `simple_hash("ab", 10)` and `simple_hash("ba", 10)`. Why is this a problem, and how does chaining solve it?
+1. Find two keys other than `"ab"` and `"ba"` that collide under `simple_hash` with 10 slots. Insert both into `slots2` with `insert_chain()` and confirm that `lookup_chain()` still returns the right value for each.
 2. Our hand-built hash table has a fixed number of slots. What happens as you insert many more keys than slots? How does the average chain length change? (This is why real hash tables *resize*: when the load factor exceeds a threshold, they allocate a larger array and rehash all keys.)
 3. Use `system.time()` to compare `x %in% y` versus a loop with `any(y == x[i])` for `x <- sample(1e6)` and `y <- sample(1e4)`. The first builds a hash table; the second does linear scans.
 
 
 ## Space complexity {#sec-space-complexity}
 
-Time is not the only resource that scales. Memory matters too, especially in R where data frames can be gigabytes, and running out of RAM kills your session more decisively than a slow loop ever could.
-
-A full copy of a 1 GB data frame uses 1 GB of additional memory; two copies and you are at 3 GB total. R's garbage collector reclaims unused memory, but if multiple large objects are live simultaneously, you can exhaust RAM. How does R decide when to copy?
+Memory scales too. A slow loop finishes eventually; a session that runs out of RAM ends. A full copy of a 1 GB data frame uses 1 GB of additional memory, and two copies put you at 3 GB total. R's garbage collector reclaims memory nothing refers to any more, but while several large objects are live at once, they all count. So when does R copy?
 
 ### Copy-on-modify
-
-R uses *copy-on-modify* semantics: when you assign an object to a new name, R does not immediately copy it. Both names point to the same underlying data, and a copy is triggered only when one reference is modified:
 
 ```{r}
 x <- rnorm(1e6)
@@ -181,7 +194,7 @@ y <- x              # no copy yet: x and y share the same memory
 y[1] <- 0           # NOW R copies the entire vector, then modifies element 1
 ```
 
-You can verify this with `lobstr::obj_addr()`:
+Assigning `x` to `y` copies nothing; both names point at the same data. The copy happens at `y[1] <- 0`, the moment one of them is modified. This is the copy-on-modify\index{copy-on-modify} from @sec-names-binding, seen from the memory side, and you can verify it with `lobstr::obj_addr()`:
 
 ```{r}
 #| eval: false
@@ -231,10 +244,24 @@ y <- x
 lobstr::obj_size(x, y)  # same as obj_size(x), not double
 ```
 
+Some vectors take far less memory than their length suggests:
+
+```{r}
+lobstr::obj_size(1:1e7)
+lobstr::obj_size(sample(1:1e7))
+```
+
+Same ten million integers, and the shuffled copy takes sixty thousand times the space. R stores `1:1e7` as a start, an end, and a step, and only expands it when something needs the actual elements; the shuffle has no such description. (`object.size()` reports the expanded size for both.)
+
+::: {.callout-note collapse="true"}
+## Kolmogorov complexity
+The compact sequence is a small case of a general idea: the amount of information in an object is the length of the shortest program that produces it. `rep(1, 1e6)` is a million elements that a few bytes describe; a million draws from `rnorm()` have no shorter description than themselves. This quantity is called Kolmogorov complexity, it is uncomputable in general (a consequence of the halting problem in @sec-halting-problem), and compression algorithms approximate it from above.
+:::
+
 ### Exercises {.unnumbered}
 
 1. Create a list of 10 data frames, each with 1000 rows and 5 columns. Use `lobstr::obj_size()` to measure the total. Is it 10 times the size of one data frame?
-2. Explain why `x <- 1:1e8` uses far less memory than `x <- as.numeric(1:1e8)`. (Hint: check with `object.size()`. R stores the compact sequence as just a start, end, and step, exploiting the structure. This connects to Kolmogorov complexity: the shortest program that produces a given output. "Random" data is incompressible, while structured data like `rep(1, 1e6)` can be described in a few bytes. Compression algorithms approximate Kolmogorov complexity from above.)
+2. `x <- 1:1e7` is compact. Which of `x + 0L`, `as.numeric(x)`, and `rev(x)` keep it compact? Check each with `lobstr::obj_size()`.
 3. Write a function that takes a data frame and returns it unchanged. Use `lobstr::obj_addr()` to verify that no copy is made.
 
 
@@ -244,9 +271,9 @@ You rarely implement algorithms from scratch in R, but the built-in functions ma
 
 ### Sorting
 
-`sort()` uses a hybrid introsort: quicksort for the fast average case, switching to heapsort if quicksort degrades, and insertion sort for small sub-arrays. Worst-case time is O(n log n).
+`sort()` picks its algorithm by the type and length of the input. For numeric, integer, and logical vectors and factors shorter than 2^31^ elements, which covers nearly everything you will sort, it uses a radix sort, the O(n) bucket method from the callout in @sec-big-o; the implementation was contributed by the authors of the data.table package. Anything else falls back to Shellsort, and `method = "quick"` is available on request. `?sort` lists the rules.
 
-`order()` returns the permutation that would sort the vector, also O(n log n), and for data frames it is the basis of `dplyr::arrange()`. R also offers `sort(x, method = "radix")` for integer and character vectors; radix sort is O(n) for bounded-range integers, which is why `data.table::setorder()` is fast.
+`order()` returns the permutation that would sort the vector, with the same choice of algorithm, and for data frames it is the basis of `dplyr::arrange()`.
 
 ### Searching and matching
 
@@ -292,9 +319,9 @@ David Hilbert had watched this happen for thirty years, and in 1928 he posed the
 
 He proved that no algorithm\index{algorithm} can decide, for an arbitrary program and input, whether that program will eventually halt or run forever\index{halting problem}. It was Alan Turing, the same graduate student whose tape machine we met in @sec-turing, now proving that his own machine had a boundary it could never cross.
 
-The specific question he settled is called the *halting problem*. The proof is one of the most beautiful arguments in mathematics, it fits in half a page, and it works by turning the assumption against itself. We give it in full, twice: once in R and once in lambda calculus.
+The specific question he settled is called the *halting problem*. The proof fits in half a page, and it is given here in full, in R.
 
-**The proof by contradiction (in R).** Assume, for the sake of contradiction, that a function `halts(f, x)` exists. It takes any function `f` and any input `x`, and returns `TRUE` if `f(x)` terminates, `FALSE` if `f(x)` runs forever. It always returns one or the other; it never crashes or loops itself. That is the assumption we will break.
+**The proof by contradiction.** Assume, for the sake of contradiction, that a function `halts(f, x)` exists. It takes any function `f` and any input `x`, and returns `TRUE` if `f(x)` terminates, `FALSE` if `f(x)` runs forever. It always returns one or the other; it never crashes or loops itself. That is the assumption we will break.
 
 Given `halts`, define a new function:
 
@@ -317,11 +344,14 @@ Now ask: does `trouble(trouble)` halt?
 
 Both cases contradict the assumption, and there is no third case (we assumed `halts` always returns `TRUE` or `FALSE`). Therefore `halts` cannot exist. No algorithm, in any language, can solve the halting problem for arbitrary programs\index{undecidable}.
 
-The argument is a *diagonal argument*, the same technique Cantor used in 1891 to prove that the real numbers are uncountable, and the same structure Godel used in 1931 for the incompleteness theorems. The trick is always the same: assume a complete listing (or decision procedure) exists, then construct something that disagrees with every entry on the diagonal.
+The argument is a *diagonal argument*, the same technique Cantor used in 1891 to prove that the real numbers are uncountable, and the same structure Gödel used in 1931 for the incompleteness theorems. The trick is always the same: assume a complete listing (or decision procedure) exists, then construct something that disagrees with every entry on the diagonal.
 
-**The proof in lambda calculus.** Seeing the same proof in lambda calculus is worth the detour, because it shows that undecidability is not a quirk of loops or mutable state or any particular language's execution model. The result falls out of self-application alone, which means it holds for any system powerful enough to pass functions to functions — R included.
+The step that breaks `halts` is `trouble(trouble)`: a function handed itself as an argument. Nothing in R forbids that. Functions are values, values can be passed to functions, and `sapply(fs, \(f) f(f))` is legal R. Closures, recursion, and higher-order functions all depend on that freedom, and the halting problem is its price: any language that lets a function receive itself is expressive enough to build `trouble`. When a linter warns about unreachable code or an optimizer removes dead branches, it is working inside this limit, necessarily incomplete, always capable of missing something.
 
-Church proved the same result independently in 1936, before Turing's paper, using the *lambda calculus* rather than a machine model. The argument has the same shape but uses different language.
+::: {.callout-note collapse="true"}
+## The same proof in lambda calculus
+
+Church reached the same result a few months before Turing, in April 1936, using the lambda calculus rather than a machine, and seeing his version shows that undecidability owes nothing to loops or mutable state. It falls out of self-application alone.
 
 In lambda calculus, every value is a function and every computation is function application. There are no loops; non-termination means a term *reduces forever* without reaching a normal form. For instance, the term (λx. x x)(λx. x x) applies itself to itself, producing the same term again, endlessly, never halting. This term is called Ω.
 
@@ -338,15 +368,10 @@ where Ω is the non-terminating term from above and I = λx. x is the identity (
 - If H(D D) returns `true` (meaning D D halts), then D D reduces to Ω and loops forever. Contradiction.
 - If H(D D) returns `false` (meaning D D diverges), then D D reduces to I and halts. Contradiction.
 
-Same diagonal structure, same conclusion: H cannot exist. No lambda term can decide whether an arbitrary term has a normal form.
+Same diagonal structure, same conclusion: H cannot exist. No lambda term can decide whether an arbitrary term has a normal form. Church's paper was "An Unsolvable Problem of Elementary Number Theory"; Turing's, that November, was "On Computable Numbers".
+:::
 
-The mechanism that breaks H is self-application: a term applied to itself. That mechanism is not exotic. When you write `function(f) f(f)` in R, you are writing self-application. When you pass a function to `sapply`, you are handing a value to a function that will call it, one step from the same recursive knot. R has the same capability: functions are values, values can be passed to functions, and nothing prevents a function from receiving itself. Closures, recursion, and higher-order functions all depend on that freedom. The halting problem is the price.
-
-Any language expressive enough to let functions consume themselves is expressive enough to construct the diagonal argument, and that includes every language in this book's lineage from Lisp onward. When a linter warns you about unreachable code or an optimizer tries to eliminate dead branches, it is working inside the limits Church proved in 1936: necessarily incomplete, always capable of missing something.
-
-Church published this in April 1936 ("An Unsolvable Problem of Elementary Number Theory"); Turing published his version in November 1936 ("On Computable Numbers"). They later proved that their two formalisms, lambda calculus and Turing machines, compute exactly the same class of functions. The halting problem is not an artifact of one model. It is a boundary.
-
-**Why it matters in practice.** Rice's theorem\index{Rice's theorem} (1953) generalizes the result: *any* non-trivial semantic property of programs is undecidable. You cannot write a program that decides whether another program is "correct," "efficient," or "pure." Tools like lintr and mypy use sound overapproximations, rejecting some correct programs to guarantee they never accept an incorrect one. The question is not whether your analyzer has blind spots, but where.
+**Why it matters in practice.** Rice's theorem\index{Rice's theorem} (1953) generalizes the result: *any* non-trivial semantic property of programs is undecidable. You cannot write a program that decides whether another program is "correct," "efficient," or "pure." Tools like lintr and mypy use sound overapproximations, rejecting some correct programs to guarantee they never accept an incorrect one. Every analyzer has blind spots; the design decision is where to put them.
 
 ### Practical workarounds
 
@@ -370,11 +395,9 @@ The R package `R.utils` provides `withTimeout()` for a cleaner interface. These 
 
 ### The Church-Turing thesis
 
-Church and Turing proved that their two formalisms, lambda calculus and Turing machines, compute exactly the same class of functions (@sec-halting-problem). The *Church-Turing thesis*\index{Church-Turing thesis} states that any function computable by an effective procedure can be computed by a Turing machine, or equivalently, expressed as a lambda calculus term.
+Two proofs of the same boundary, from two models that look nothing alike, raised the question of whether the models themselves were equivalent. Church and Turing showed that they were: lambda calculus and Turing machines compute exactly the same class of functions, the result @sec-church introduced as the *Church-Turing thesis*\index{Church-Turing thesis}. The thesis goes one step further and states that any function computable by an effective procedure at all can be computed by a Turing machine, or equivalently, expressed as a lambda term.
 
-This has a concrete consequence: R, Python, C, Haskell, and every other general-purpose language can compute exactly the same set of functions. No language can solve the halting problem; no language can compute a function that another general-purpose language cannot. The differences between languages are speed, expressiveness, and safety, not computational power.
-
-R's functional core (functions as values, closures, recursion) is directly descended from lambda calculus, so when you write `function(x) x + 1`, you are writing a lambda term. The equivalence means R's functional style and C's imperative loops are two notations for the same mathematics.
+This has a concrete consequence: R, Python, C, Haskell, and every other general-purpose language can compute exactly the same set of functions. No language can solve the halting problem; no language can compute a function that another general-purpose language cannot. The differences between languages are speed, expressiveness, and safety, not computational power. R's functions, closures, and recursion descend from the lambda calculus and C's loops descend from the machine, and the equivalence makes them two notations for the same set of computations.
 
 ### P vs NP
 
@@ -411,13 +434,11 @@ subset_sum_greedy <- function(x, target) {
 }
 ```
 
-At n = 20 the brute-force version checks about a million subsets and finishes in under a second. At n = 40 it checks a trillion — you will not wait long enough. The greedy version runs in O(n log n) on either input but is not guaranteed to find a solution that exists. That is the P-vs-NP gap in miniature: polynomial verification, (apparently) exponential search, and a fast heuristic that trades correctness for speed.
+At n = 20 the brute-force version checks about a million subsets and finishes in under a second. At n = 40 it checks a trillion, and you will not wait long enough. The greedy version runs in O(n log n) on either input but can miss a solution that exists. That is the P-vs-NP gap in miniature: polynomial verification, (apparently) exponential search, and a fast heuristic that is sometimes wrong.
 
 In practice, R encounters NP-hard\index{NP-hard} problems in optimization. `optim()` does not guarantee a global optimum for non-convex problems; it uses heuristic methods (Nelder-Mead, simulated annealing) that find good-enough solutions without exhaustive search. This is the pragmatic response to intractability: give up on perfection and settle for "good enough, fast."
 
-The loop from the opening, the one that took five minutes instead of thirty seconds — you now have the vocabulary to diagnose it: somewhere in that loop, an O(n²) operation was hiding inside what looked like O(n) code, and the 10x increase in data exposed the quadratic scaling that small test sets had concealed. The growth rate was there from the start; faster hardware only postpones when you hit it.
-
-But complexity is only half the story — the other half is the data structure you choose to hold your values, and so far the only container you have is the atomic vector, which insists that everything inside it be the same type.
+The loop from the opening, the one that took five minutes instead of thirty seconds, had an O(n²) operation hiding inside what looked like O(n) code, most likely a `c()` or an `rbind()` growing a result one row at a time. The 10x increase in data exposed a quadratic shape that small test sets had concealed, and faster hardware would only have postponed the moment. The next chapter turns from how much work a computation does to what it works on: so far the only container you have is the atomic vector, which insists that everything inside it be the same type.
 
 ### Exercises {.unnumbered}
 
