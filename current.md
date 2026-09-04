@@ -1,10 +1,10 @@
 # Current work: readability pass
 
-Last updated 2026-09-04 (ch22-24 session).
+Last updated 2026-09-05 (ch25-27 session).
 
 ## Status
 
-Chapters 1 to 24 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe, ch22-24 in f78a742). Chapters 25 onward have not. Next session: ch25, ch26, ch27.
+Chapters 1 to 27 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe, ch22-24 in f78a742, ch25-27 in 1571f0d). Chapters 28 onward have not. Next session: ch28, ch29, ch30.
 
 ## The problem
 
@@ -123,8 +123,19 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Cut: ch22 "turtles all the way down", "wearing a loop's clothing", "the computational equivalent of a sentence that never finds its period", "spectacularly inefficient", "pays its rent", "once you see it, you see it everywhere", "fewer people know about it", "This is not a party trick", "hiding in plain sight", "R is not Scheme"; ch23 "The answer begins with something R does not do", "the most dangerous kind of failure", "This isn't a tidyverse invention"; ch24 "S3 attached a string to an object and hoped", "Notice what you get for free", "Validation is built in, not bolted on".
 - Word counts: ch22 3854 to 3741, ch23 3202 to 2810, ch24 2411 to 2336.
 
+## Notes from ch25-27
+
+- Factual fixes from running the code and checking sources. ch25 `safe_log()` used `ifelse(x > 0, log(x), NA)`, which fires a second `NaNs produced` warning the prose never mentioned (the rendered output showed both); it now subassigns `NA` before `log()` and the prose says why. ch25 said the `add_tax("42", 0.2)` error came "three levels deep" (the multiplication is in the function body). ch25 cited "a 2003 NASA study" finding "40% of aerospace software failures came from missing code"; the study (Lutz and Mikulski, IEEE TSE 2004, seven spacecraft) reports that post-launch safety-critical changes were rarely due to incorrect requirements and mostly added handling for unanticipated situations, with no 40% figure, so the callout now says that without a number. Ariane 5 is now "about 500 million euros" (was "$370 million"; both circulate, the euro figure is the one read this session). Erlang's nine nines is now "Ericsson has claimed", with the caveat that it rests on one customer's report of one installation. ch27 named `+.gg` three times and told the reader to print it with `ggplot2:::`; in ggplot2 4.0.3 plot objects are S7, `exists("+.gg", asNamespace("ggplot2"))` is `FALSE`, and the method is reachable only through `getS3method("+", "gg")`, which the exercise now uses. ch27 said the formula interface "dates to S in the 1980s" (third version of S, early 1990s, as ch24 says) and quoted Landin as saying "a language appropriate to the problem" (not in the paper; "The Next 700 Programming Languages" opens with a 1965 AMA prospectus counting 1,700 languages in 700 application areas, which the callout now uses). ch27's closer said formulas work through "a method for `+`" (formula `+` is interpreted by `model.matrix()`, nothing dispatches on it). ch26 said Advanced R covers metaprogramming in "chapters 17 through 20" and "four chapters" (17 to 21) and that Mailund's book is Springer (Apress). ch26's quosure callout claimed a "30-year track record" for formulas (1991 to 2017); now "long before tidy evaluation existed", plus the verified fact that `class(rlang::quo(x))` is `c("quosure", "formula")`.
+- Show-before-name: ch25 validation patterns open with a fully validated `top_n_share()` chunk (new, `error: true`) and name the four kinds of check after it; `match.arg()` is shown with its calls before the "three things" explanation; interface design shows the two `my_plot()` signatures before the rule. ch26 metaprogramming is named after the quote/eval cycle (was named in the intro); AST node kinds are named after `ast(x + y * 2)` is read; `enexpr()` is shown before `enquo()`, with a new `h <- function(x) rlang::enquo(x)` chunk so "quosure" is named next to one; quasiquotation named after `!!` is shown; defuse-and-inject named after `{{ }}` (was named before `!!` existed).
+- Callouts added: ch25 "Two missing checks" (Ariane 5 and the NASA study, were main text), "Let it crash" (Erlang), "Either and Result"; ch26 "Where `quote` comes from" (lambda-calculus quoting, Lisp `quote`, homoiconicity, Python/Java/C++ parse strings; absorbed three main-text paragraphs and the @sec-church ref); ch27 "The next 700 languages" (Landin, situation first).
+- Bullet-to-prose: ch25 validation-pattern bullets and interface-design bold lead-ins; ch26 AST node kinds, good/bad uses, toolkit list (pryr dropped, lobstr kept); ch27 existing-DSL bold lead-ins (formulas, ggplot2, dplyr, data.table), techniques, design principles, the five-ingredient numbered list.
+- Cross-refs: ch26 intro dropped @sec-visualization and @sec-data-transformation; data masking and NSE now back-reference ch23 (@sec-data-masking, @sec-nse) instead of @sec-capture-evaluate and @sec-lazy-evaluation; ch27 intro kept one of its four refs (@sec-operators-are-functions).
+- ch27 `to()`: the three-line code comment about boundary validation is now one line above the checks it explains.
+- Cut: ch25 "The differences matter more than you might think", "Together with `tryCatch()`, these form R's condition handling system" (replaced by one sentence defining *condition*); ch26 "just function calls wearing different clothes", "which is a different axis entirely", "Showing off"; ch27 "not cleverness of syntax but", "does not add numbers", "syntactic, not semantic", "a burden, not a language", "Notice the tension".
+- Word counts: ch25 3133 to 3404 (one new chunk, two new callouts), ch26 2538 to 2426, ch27 3288 to 3283.
+
 ## Files for the next session
 
-- `chapters/ch25-contracts-and-defensive-code.qmd`
-- `chapters/ch26-metaprogramming.qmd`
-- `chapters/ch27-building-a-dsl.qmd`
+- `chapters/ch28-performance.qmd`
+- `chapters/ch29-r-internals.qmd`
+- `chapters/ch30-r-as-mathematics.qmd`
