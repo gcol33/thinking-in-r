@@ -615,7 +615,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#exercises-1" id="toc-exercises-1" class="nav-link" data-scroll-target="#exercises-1">Exercises</a></li>
   </ul></li>
-  <li><a href="#sec-column-wise" id="toc-sec-column-wise" class="nav-link" data-scroll-target="#sec-column-wise"><span class="header-section-number">21.7</span> Row-wise folds with c_across()</a>
+  <li><a href="#sec-c-across" id="toc-sec-c-across" class="nav-link" data-scroll-target="#sec-c-across"><span class="header-section-number">21.7</span> Row-wise folds with c_across()</a>
   <ul class="collapse">
   <li><a href="#exercises-2" id="toc-exercises-2" class="nav-link" data-scroll-target="#exercises-2">Exercises</a></li>
   </ul></li>
@@ -665,19 +665,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-reduce-init" class="level2" data-number="21.2">
 <h2 data-number="21.2" class="anchored" data-anchor-id="sec-reduce-init"><span class="header-section-number">21.2</span> The init argument</h2>
-<p>What does <code>Reduce(f, x)</code> do when <code>x</code> has one element? It returns that element without ever calling <code>f</code>. Reasonable enough. What about zero elements?</p>
+<p>What does <code>Reduce(f, x)</code> do when <code>x</code> has one element? It returns that element without calling <code>f</code>. And with zero elements?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(<span class="st">`</span><span class="at">+</span><span class="st">`</span>, <span class="fu">list</span>())</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>An error, because there is nothing to return and no identity to fall back on. The <code>init</code> argument fixes this:</p>
+<p><code>NULL</code>, because there is nothing to combine and <code>Reduce()</code> has no idea what nothing adds up to. Anything downstream that expected a number now has <code>NULL</code> instead. The <code>init</code> argument tells it:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(<span class="st">`</span><span class="at">+</span><span class="st">`</span>, <span class="fu">list</span>(), <span class="at">init =</span> <span class="dv">0</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>With <code>init</code>, the fold starts by calling <code>f(init, x[[1]])</code> instead of <code>f(x[[1]], x[[2]])</code>, which means the fold always has something to work with, even when the list is empty. The value you pass as <code>init</code> should be the identity element for the operation: 0 for addition, 1 for multiplication, <code>""</code> for <code>paste0</code>, <code>NULL</code> for <code>c()</code>. For <code>intersect</code> you would want the universal set, though R has no such thing, so you typically peel off the first element yourself.</p>
-<p>This connection between an operation, its identity element, and associativity has a name in algebra: a <em>monoid</em>. Integers under addition with identity 0 form a monoid. Strings under concatenation with identity <code>""</code> form a monoid. Lists under <code>c()</code> with identity <code>NULL</code> form a monoid. The pattern shows up everywhere, and recognizing it tells you something immediately practical: if your operation is associative, the fold can be split across chunks, parallelized, and recombined without changing the result. Google’s MapReduce (Dean and Ghemawat, 2004) is literally <code>map()</code> followed by a monoid fold, scaled to warehouses full of machines.</p>
-<p><code>Reduce()</code> is the operation that collapses a monoid. Given a list and an associative binary function, it produces a single value. That description sounds specific to lists, but the same structure appears whenever you compose things sequentially: piping functions is folding over a list of functions with composition as the binary operation and the identity function as <code>init</code>; building a ggplot layer by layer is folding over a list of layers with <code>+</code> as the operation and <code>ggplot()</code> as <code>init</code>. Tallying, concatenating, composing, intersecting: all of them are folds over a monoid.</p>
+<p>With <code>init</code>, the fold starts by calling <code>f(init, x[[1]])</code> instead of <code>f(x[[1]], x[[2]])</code>, so it always has something to work with, even on an empty list. The value to pass is the one that leaves the operation unchanged: 0 for addition, 1 for multiplication, <code>""</code> for <code>paste0</code>, <code>NULL</code> for <code>c()</code>. <a href="ch04-vectors.html#sec-no-scalars" class="quarto-xref"><span>Section 4.1</span></a> called this the identity element. For <code>intersect</code> you would want the universal set, which R has no way to write, so you typically peel off the first element yourself.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -688,7 +686,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Always pass <code>init</code> to <code>Reduce()</code>. Without it, your code breaks on empty input and behaves subtly differently on length-1 input. The identity element makes the fold total: it works for every list, including the empty one, and it still works six months from now when some upstream function returns zero results.</p>
+<p>Always pass <code>init</code> to <code>Reduce()</code>. Without it, your code returns <code>NULL</code> on empty input and behaves subtly differently on length-1 input. The identity element makes the fold total: it works for every list, including the empty one, and it still works six months from now when some upstream function returns zero results.</p>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Folding a monoid
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>An associative operation with an identity element is a <em>monoid</em>, the structure from <a href="ch04-vectors.html#sec-no-scalars" class="quarto-xref"><span>Section 4.1</span></a> that has since reappeared as verb composition, the pipe, and ggplot2 layers. <code>Reduce()</code> is the operation that collapses one: given a list and an associative binary function, it produces a single value. Piping is a fold over a list of functions with composition as the operation and the identity function as <code>init</code>; building a ggplot layer by layer is a fold over a list of layers with <code>+</code> as the operation and <code>ggplot()</code> as <code>init</code>. Associativity is also what makes a fold splittable: chunks can be folded separately and their results folded again without changing the answer, which is the shape of Google’s MapReduce (Dean and Ghemawat, 2004), <code>map()</code> followed by a monoid fold across a warehouse of machines.</p>
+</div>
 </div>
 </div>
 </section>
@@ -702,7 +716,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The left fold computes <code>(((1 - 2) - 3) - 4) = -8</code>. The right fold computes <code>(1 - (2 - (3 - 4))) = -2</code>. For associative operations (addition, multiplication, <code>paste0</code>, <code>c()</code>, <code>intersect</code>, <code>union</code>) the direction does not matter; you get the same answer either way, and left fold is the natural default. The difference only surfaces for non-associative operations: subtraction, division, exponentiation.</p>
-<p>In Haskell, <code>foldl</code> and <code>foldr</code> are separate functions, and choosing between them is a design decision with performance implications (lazy evaluation makes right folds cheaper in some cases). In R, <code>right = TRUE</code> is rarely needed. If you find yourself reaching for a right fold, ask first whether your binary function simply has its arguments in the wrong order.</p>
+<p>In R, <code>right = TRUE</code> is rarely needed. If you find yourself reaching for a right fold, ask first whether your binary function simply has its arguments in the wrong order.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Haskell’s two folds
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Haskell has <code>foldl</code> and <code>foldr</code> as separate functions, and there the choice matters. With lazy evaluation a right fold can stop early, even on an infinite list, when the combining function does not need its second argument; a left fold over a long list builds a tower of unevaluated thunks before anything is added. R’s <code>Reduce()</code> evaluates eagerly, so <code>right = TRUE</code> only changes the nesting order.</p>
+</div>
+</div>
+</div>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -715,7 +745,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-accumulate" class="level2" data-number="21.4">
 <h2 data-number="21.4" class="anchored" data-anchor-id="sec-accumulate"><span class="header-section-number">21.4</span> accumulate: keeping the intermediates</h2>
-<p>Sometimes the final result is not enough. You want every intermediate step: the running total after each deposit, the growing sentence after each word, the high-water mark after each measurement. Base R handles this by adding a single argument:</p>
+<p>Sometimes you want every intermediate step, and only the last one comes out of <code>Reduce()</code>: the running total after each deposit, the growing sentence after each word, the high-water mark after each measurement. Base R handles this by adding a single argument:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(<span class="st">`</span><span class="at">+</span><span class="st">`</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="at">accumulate =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  1  3  6 10 15</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -743,7 +773,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  1  3  6 10 15</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Same results. The differences from base <code>Reduce()</code> are syntactic: <code>.x</code> and <code>.f</code> instead of positional arguments, <code>.init</code> instead of <code>init</code>, and <code>.dir = "backward"</code> instead of <code>right = TRUE</code>. The purrr versions also accept lambda-style formulas, though anonymous functions with <code>\()</code> are clearer.</p>
-<p>Where purrr adds genuine power is <code>reduce2()</code>, which folds over two lists in parallel, handing an extra argument from the second list at each step:</p>
+<p>purrr also has <code>reduce2()</code>, which has no base equivalent: it folds over two lists in parallel, handing an extra argument from the second list at each step:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">reduce2</span>(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>),</span>
@@ -756,7 +786,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-reduce-patterns" class="level2" data-number="21.6">
 <h2 data-number="21.6" class="anchored" data-anchor-id="sec-reduce-patterns"><span class="header-section-number">21.6</span> Practical patterns</h2>
-<p><strong>Combining data frames.</strong> When <code>split()</code> or repeated API calls hand you a list of data frames, <code>Reduce(rbind, dfs)</code> stacks them. For large lists, <code>do.call(rbind, dfs)</code> is faster because it avoids the O(n<sup>2</sup>) copying that comes from binding two at a time, growing the result frame with every step.</p>
+<p>When <code>split()</code> or repeated API calls hand you a list of data frames, <code>Reduce(rbind, dfs)</code> stacks them:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>dfs <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">y =</span> <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>)),</span>
@@ -772,14 +802,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5 5 e</span></span>
 <span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6 6 f</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Nested list extraction.</strong> Walking into a deeply nested structure one key at a time:</p>
+<p>Each step binds two frames and copies the growing result, so on a long list the cost is O(n<sup>2</sup>). <code>do.call(rbind, dfs)</code> binds all of them in one call, and <code>list_rbind()</code> from <a href="ch19-iteration-without-loops.html#sec-typed-variants" class="quarto-xref"><span>Section 19.4</span></a> does the same for tibbles.</p>
+<p>Walking into a deeply nested structure one key at a time is a fold too:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>nested <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="fu">list</span>(<span class="at">b =</span> <span class="fu">list</span>(<span class="at">c =</span> <span class="dv">42</span>)))</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(\(x, i) x[[i]], <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>), <span class="at">init =</span> nested)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 42</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each step indexes one level deeper. The fold replaces a chain of <code>[[</code> calls. (purrr’s <code>pluck()</code> does the same thing with better error messages.)</p>
-<p><strong>Set operations across many sets:</strong></p>
+<p>Set operations extend to any number of sets the same way:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>sets <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>), <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>), <span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">6</span>))</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(intersect, sets)</span>
@@ -787,12 +818,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(union, sets)</span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1 2 3 4 5 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>State machines with accumulate.</strong> An <code>accumulate()</code> call can model any sequential process where each step depends on the previous state:</p>
+<p>And <code>accumulate()</code> can model any sequential process where each step depends on the previous state. A bank balance after each deposit and withdrawal:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple bank account: deposits and withdrawals</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>transactions <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="sc">-</span><span class="dv">20</span>, <span class="sc">-</span><span class="dv">30</span>, <span class="dv">50</span>, <span class="sc">-</span><span class="dv">10</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">accumulate</span>(transactions, <span class="st">`</span><span class="at">+</span><span class="st">`</span>)</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 100  80  50 100  90</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>transactions <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="sc">-</span><span class="dv">20</span>, <span class="sc">-</span><span class="dv">30</span>, <span class="dv">50</span>, <span class="sc">-</span><span class="dv">10</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">accumulate</span>(transactions, <span class="st">`</span><span class="at">+</span><span class="st">`</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 100  80  50 100  90</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The running balance after each transaction. For more complex state, where the accumulator needs to carry multiple fields rather than a single number, use a list as the accumulator and a function that unpacks, updates, and repacks it.</p>
 <section id="exercises-1" class="level3 unnumbered">
@@ -804,10 +834,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 </section>
 </section>
-<section id="sec-column-wise" class="level2" data-number="21.7">
-<h2 data-number="21.7" class="anchored" data-anchor-id="sec-column-wise"><span class="header-section-number">21.7</span> Row-wise folds with c_across()</h2>
-<p><code>Reduce()</code> folds across the elements of a list. In <a href="ch19-iteration-without-loops.html#sec-across-revisited" class="quarto-xref"><span>Section 19.8</span></a>, you saw <code>across()</code> apply a function across the columns of a data frame. But what about folding across columns <em>within a single row</em>? That is a row-wise reduction, and <code>dplyr::c_across()</code> handles it.</p>
-<p>The setup is <code>rowwise()</code>, which tells dplyr to treat each row as a group of one:</p>
+<section id="sec-c-across" class="level2" data-number="21.7">
+<h2 data-number="21.7" class="anchored" data-anchor-id="sec-c-across"><span class="header-section-number">21.7</span> Row-wise folds with c_across()</h2>
+<p><code>across()</code> (<a href="ch19-iteration-without-loops.html#sec-across-revisited" class="quarto-xref"><span>Section 19.8</span></a>) applies a function down each column. Folding across the columns <em>within one row</em> is a different direction, and it starts with <code>rowwise()</code>, which tells dplyr to treat each row as a group of one:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="ot">&lt;-</span> palmerpenguins<span class="sc">::</span>penguins</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -824,7 +853,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 Adelie  Torgers…           40.3          18                 195        3250</span></span>
 <span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: sex &lt;fct&gt;, year &lt;int&gt;, bill_ratio &lt;dbl&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>c_across()</code> gathers the specified columns into a vector for each row, so you can pass that vector to any summary function:</p>
+<p><code>c_across()</code> gathers the named columns of the current row into a vector, so any summary function can take it:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">b =</span> <span class="dv">4</span><span class="sc">:</span><span class="dv">6</span>, <span class="at">c =</span> <span class="dv">7</span><span class="sc">:</span><span class="dv">9</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>df <span class="sc">|&gt;</span></span>
@@ -838,8 +867,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2     2     5     8    15</span></span>
 <span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     3     6     9    18</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Each row’s <code>a</code>, <code>b</code>, and <code>c</code> values are collected into a vector, summed, and stored in <code>total</code>. Same fold as <code>Reduce()</code>, same monoid structure (<a href="#sec-reduce-init" class="quarto-xref"><span>Section 21.2</span></a>), just across columns instead of down a list.</p>
-<p><code>rowwise()</code> + <code>c_across()</code> processes one row at a time in R, so it scales poorly. On 100,000 rows, <code>rowSums()</code> finishes in milliseconds because it is vectorized in C; the <code>rowwise()</code> version takes seconds. Use <code>c_across()</code> when the operation is genuinely complex or when you need tidyselect helpers to pick columns. Otherwise use <code>rowSums()</code> or <code>pmax()</code>.</p>
+<p>Each row’s <code>a</code>, <code>b</code>, and <code>c</code> values are collected into a vector, summed, and stored in <code>total</code>: the same fold <code>Reduce()</code> does down a list, run across the columns of a row instead.</p>
+<p><code>rowwise()</code> + <code>c_across()</code> processes one row at a time in R, so it scales poorly. On 100,000 rows, <code>rowSums()</code> finishes in milliseconds because it is vectorized in C; the <code>rowwise()</code> version takes tens of seconds. Use <code>c_across()</code> when the operation is genuinely complex or when you need tidyselect helpers to pick columns. Otherwise use <code>rowSums()</code> or <code>pmax()</code>.</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
@@ -852,8 +881,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-when-to-fold" class="level2" data-number="21.8">
 <h2 data-number="21.8" class="anchored" data-anchor-id="sec-when-to-fold"><span class="header-section-number">21.8</span> When to fold and when not to</h2>
 <p><code>Reduce()</code> is the right tool when you have a binary operation and a list of things to combine: merging data frames, chaining set operations, collapsing nested structures. It is the wrong tool when a vectorized function already exists. <code>sum(x)</code> is faster and clearer than <code>Reduce(</code>+<code>, x)</code>. <code>paste(x, collapse = " ")</code> beats <code>Reduce(paste, x)</code>. The base R cumulative functions (<code>cumsum</code>, <code>cumprod</code>, <code>cummax</code>, <code>cummin</code>) are compiled C and will always outperform <code>accumulate(</code>+<code>, x)</code>. Reach for <code>Reduce()</code> when your binary operation has no built-in vectorized cousin.</p>
-<p><code>Reduce()</code> also becomes awkward when the accumulator needs complex state. If your fold carries a list with multiple fields and each step updates several of them conditionally, you are no longer folding; you are writing a state machine with the fold syntax as a straitjacket. That is better expressed as an explicit loop or a recursive function (<a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>), where the state updates are visible and the control flow is honest.</p>
-<p>Graham Hutton proved in 1999 that fold can express <em>any</em> function on finite lists. This is a theoretical universality result, not practical advice. Just because you <em>can</em> write something as a fold does not mean it will be readable, or maintainable, or that the person who inherits your code (including future you) will thank you for it.</p>
+<p><code>Reduce()</code> also becomes awkward when the accumulator needs complex state. If your fold carries a list with multiple fields and each step updates several of them conditionally, you are writing a state machine and the fold is in the way. An explicit loop or a recursive function (<a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>) shows the state updates where the reader can see them.</p>
+<p>In 1999 Graham Hutton showed that fold can express <em>any</em> function on finite lists. That is a universality result, not practical advice. Just because something <em>can</em> be written as a fold does not mean it will be readable six months later.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -864,7 +893,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Fold is the most underused functional in R. Most programmers who discover <code>map()</code> never learn <code>Reduce()</code>, and they end up writing loops for exactly the problems fold solves in a single line. If you take one thing from this chapter: next time you write a loop that carries an accumulator variable, growing it with each pass, stop and try <code>Reduce()</code> first. You might not need that loop at all.</p>
+<p>Fold is the underused functional. Next time you write a loop that carries an accumulator variable, growing it with each pass, try <code>Reduce()</code> first. You might not need that loop at all.</p>
 </div>
 </div>
 
@@ -961,53 +990,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

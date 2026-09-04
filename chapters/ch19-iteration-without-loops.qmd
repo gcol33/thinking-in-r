@@ -8,9 +8,7 @@ library(purrr)
 library(dplyr)
 ```
 
-You have a list of three data frames and you want to compute the mean of a column in each one. Six lines of `for` loop, or one line of `map()`. The `map()` version is shorter, but the real difference is structural.
-
-Functions are values (@sec-functions-are-values-chapter) and you can pass them to other functions (@sec-passing-functions).
+You have a list of three data frames and you want the mean of one column in each. You can write six lines of `for` loop, or you can hand the computation to a function that does the looping for you. @sec-passing-functions showed functions being passed as arguments; this chapter is what that buys you.
 
 This chapter uses three packages. Load them now if you are following along:
 
@@ -52,15 +50,13 @@ A functional says the same thing in one line:
 map_dbl(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-Same answer. No index variable, no pre-allocation, no name copying. You said what to compute; `map_dbl` handled the iteration.
+Same answer. No index variable, no pre-allocation, no name copying. You said what to compute and `map_dbl()` handled the iteration\index{iteration}. A function that takes another function and applies it across a collection like this is called a *functional*\index{functional}.
 
-A *functional* builds on that idea: it is a higher-order function that handles the iteration\index{iteration} for you. You give it a function and a collection; it applies the function to each element, manages the indexing and pre-allocation, and returns the results.
-
-The problem with `for` loops is not performance; in modern R, a well-written loop is fast. The problem is that loops mix the *mechanism* of iteration (allocate, index, store) with the *content* of the computation (compute a mean). Functionals separate the two. The mechanism disappears inside the functional; the content lives in the function you pass to it. And once those two concerns are separated, each becomes easier to read, test, and reuse.
+A well-written loop in modern R runs as fast as the functional. What the loop mixed together was the *mechanism* of iteration (allocate, index, store) and the *content* of the computation (compute a mean). The functional keeps the mechanism inside itself and leaves the content in the function you pass, and once the two are apart, each is easier to read, test, and reuse on its own.
 
 ::: callout-tip
 ## Opinion
-For loops are not bad R. They are verbose R. If you find yourself writing the same loop scaffolding three or four times in a project, a functional is waiting to collapse all that boilerplate into a single expressive line.
+For loops are verbose R. Once the same scaffolding appears three or four times in a project, a functional replaces all of it with one line.
 :::
 
 ### Exercises {.unnumbered}
@@ -71,13 +67,19 @@ For loops are not bad R. They are verbose R. If you find yourself writing the sa
 
 ## `lapply()` and `sapply()`: base R functionals {#sec-lapply-sapply}
 
-The idea of handing a function to something that applies it to every element in a collection is older than R, older than S, older than most programming languages people still use. John McCarthy's 1960 paper described `mapcar`, a Lisp function that takes a function and a list and returns a new list with the function applied to each element. The name `map` became standard in later languages (Scheme, ML, Haskell), and R inherited the concept twice: once through `lapply()` in base R, and again through `purrr::map()` in the tidyverse. `lapply()` is R's oldest version of that idea:
+`lapply()`\index{lapply()} is base R's version of the same idea:
 
 ```{r}
 lapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-`lapply(x, f)`\index{lapply()} applies `f` to each element of `x` and returns a list. Always a list. That predictability is its strength.
+`lapply(x, f)` applies `f` to each element of `x` and returns a list. Always a list. That predictability is its strength.
+
+::: {.callout-note collapse="true"}
+## Where `map` comes from
+
+Handing a function to something that applies it to every element of a list is older than R and older than S. John McCarthy's 1960 paper on Lisp defined `maplist`, which applies a function to each successive tail of a list, and the LISP 1.5 manual added `mapcar`, which applies it to each element. Later languages (Scheme, ML, Haskell) settled on the name `map`. R inherited the idea twice: once as `lapply()` in base R, and again as `purrr::map()` in the tidyverse.
+:::
 
 `sapply()`\index{sapply()} does the same thing, but tries to "simplify" the result:
 
@@ -85,7 +87,7 @@ lapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 sapply(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-When every call to `f` returns a single value, `sapply()` hands you a named vector. But if `f` returns different lengths for different elements, `sapply()` falls back to a list, silently. You cannot predict the return type without knowing the output of `f` for every element of `x`. Fine at the console; unreliable inside a function that other code depends on.
+When every call to `f` returns a single value, `sapply()` hands you a named vector. But if `f` returns different lengths for different elements, `sapply()` falls back to a list. You cannot predict the return type without knowing the output of `f` for every element of `x`. Fine at the console; unreliable inside a function that other code depends on.
 
 `vapply()`\index{vapply()} solves this by making you declare the expected type:
 
@@ -109,7 +111,7 @@ mapply(paste, c("one", "two", "three"), c("fish", "cat", "bird"))
 
 ::: callout-tip
 ## Opinion
-Use `lapply()` when you want a list. Use `vapply()` when you want a vector and want safety. Never use `sapply()` in non-interactive code: its return type depends on the data, and that is a bug hiding in your pipeline, waiting for the one input that changes everything.
+Use `lapply()` when you want a list. Use `vapply()` when you want a vector and want safety. Never use `sapply()` in non-interactive code: its return type depends on the data, and that is a bug waiting in your pipeline.
 :::
 
 ### Exercises {.unnumbered}
@@ -129,32 +131,28 @@ map(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 
 Apply a function to each element, return a list. So why bother with a new package?
 
-Three reasons. First, typed variants: `map_dbl()`\index{map\_dbl()} returns a double vector, `map_chr()`\index{map\_chr()} returns a character vector, and if the function returns the wrong type, you get an error. No more guessing, no more silent simplification.
+The typed variants. `map_dbl()`\index{map\_dbl()} returns a double vector, `map_chr()`\index{map\_chr()} a character vector, and if the function returns the wrong type you get an error where `sapply()` would have handed you a list:
 
 ```{r}
 map_dbl(penguins_split, \(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-Second, consistency with the pipe. `map()` and its variants are designed to sit naturally in a pipeline:
+Like `lapply()`, `map()` takes the collection first, so it sits naturally after a pipe:
 
 ```{r}
 penguins_split |>
   map_dbl(\(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-Third, you may encounter the formula shorthand `~ mean(.x$body_mass_g, na.rm = TRUE)`, purrr's anonymous function syntax from before R 4.1 introduced `\(x)`. You will still see it in existing codebases, but prefer `\(x)` in new code.
+You may encounter the formula shorthand `~ mean(.x$body_mass_g, na.rm = TRUE)` in older code, purrr's anonymous-function syntax from before R 4.1 introduced `\(x)`. Prefer `\(x)` in new code.
 
-`map()` always returns a list and `map_dbl()` always returns a double vector, regardless of the data. This type stability is the core advantage over `sapply()`, and it matters more than it sounds: in a long pipeline, knowing the exact shape of every intermediate result is the difference between debugging for five seconds and debugging for an hour.
+`map()` always returns a list and `map_dbl()` always returns a double vector, whatever the data. In a long pipeline that is what lets you know the shape of every intermediate result without running it. And the list has three elements, so the function runs three times: the structure of the data determines how many applications occur, and you stop managing the iteration yourself.
 
-::: callout-note
+::: {.callout-note collapse="true"}
 ## Functors and the shape of iteration
 
 `map()` embodies a pattern from category theory: the *functor*. `map(xs, f)` applies `f` to each element of `xs`, preserving the container structure (a list of three elements in, a list of three elements out). A functor lifts a function between values (`f :: A -> B`) to a function between containers (`map(f) :: List(A) -> List(B)`). You do not need the theory to use `map()`, but recognizing the pattern explains why `map()` feels the same whether you apply it to a list, a vector, or a set of data frame columns with `across()`: it is the same structural idea in different containers.
 :::
-
-With `map()`, the list has three elements, so the function runs three times; the structure itself determines how many applications occur. You stop managing the iteration and let the data's shape manage it for you.
-
-The typed variants enforce something even stricter.
 
 ### Exercises {.unnumbered}
 
@@ -165,12 +163,7 @@ The typed variants enforce something even stricter.
 
 ## Typed variants {#sec-typed-variants}
 
-The typed variants of `map()` enforce both the type and the length of each result:
-
-- `map_dbl(.x, .f)`: each call to `.f` must return a single double. Result is a numeric vector.
-- `map_chr(.x, .f)`: each call must return a single string. Result is a character vector.
-- `map_lgl(.x, .f)`\index{map\_lgl()}: each call must return a single logical. Result is a logical vector.
-- `map_int(.x, .f)`\index{map\_int()}: each call must return a single integer. Result is an integer vector.
+`map_int()` and `map_lgl()` complete the set:
 
 ```{r}
 map_int(penguins_split, nrow)
@@ -180,7 +173,7 @@ map_int(penguins_split, nrow)
 map_lgl(penguins_split, \(df) any(is.na(df$body_mass_g)))
 ```
 
-If `.f` returns the wrong type or a vector of length other than one, you get an error:
+Each typed variant checks both the type and the length of every result: `map_dbl()` wants a single double per call, `map_chr()` a single string, `map_lgl()`\index{map\_lgl()} a single logical, `map_int()`\index{map\_int()} a single integer. Anything else is an error:
 
 ```{r}
 #| error: true
@@ -189,7 +182,7 @@ map_dbl(penguins_split, \(df) df$body_mass_g)
 
 When the output does not match your expectation, you find out immediately, not three functions downstream when something produces `NULL` instead of a number.
 
-For results that are data frames, the older `map_dfr()` is deprecated. The current pattern is `map()` followed by `list_rbind()`:
+For results that are data frames, the current pattern is `map()` followed by `list_rbind()`; the older `map_dfr()` still works but is superseded:
 
 ```{r}
 penguins_split |>
@@ -212,7 +205,7 @@ penguins_split |>
 
 ## Iterating over multiple inputs {#sec-map2-pmap}
 
-Sometimes a single list is not enough. You need to walk over two inputs in lockstep, pulling one element from each on every step. `map2()` handles this:
+Sometimes you need to walk over two inputs in lockstep, pulling one element from each on every step. `map2()` handles this:
 
 ```{r}
 species_names <- names(penguins_split)
@@ -240,7 +233,7 @@ Each row of parameters becomes one call. `pmap()` is the general case; `map2()` 
 
 The base R equivalents are `Map(f, x, y)`\index{Map()} (which returns a list, like `map2()`) and `mapply(f, x, y)` (which simplifies, like `sapply()`). The same warning applies: `mapply` is unpredictable in return type.
 
-Where `pmap()` really shines is in configuration-driven workflows, places where you want to fit different models to different subsets with different formulas, all controlled by a single table of parameters. Suppose you want to regress body mass on flipper length for each species, but with a different formula for each:
+`pmap()` earns its place when a table of parameters drives the work: different models on different subsets with different formulas, all in one tibble. Suppose you want to regress body mass on flipper length for each species, but with a different formula for each:
 
 ```{r}
 configs <- tibble(
@@ -295,7 +288,7 @@ penguins_split |>
   map_dbl(\(df) mean(df$body_mass_g, na.rm = TRUE))
 ```
 
-The `walk()` prints a line for each species, then passes `penguins_split` through unchanged to `map_dbl()`. Side effects and computation in one pipeline, each handled by the right tool. But there is a category of iteration that no functional -- not `map()`, not `walk()` -- can handle cleanly.
+The `walk()` prints a line for each species, then passes `penguins_split` through unchanged to `map_dbl()`. Side effects and computation in one pipeline. One kind of iteration, though, is still out of reach for every functional so far.
 
 ### Exercises {.unnumbered}
 
@@ -305,12 +298,9 @@ The `walk()` prints a line for each species, then passes `penguins_split` throug
 
 ## When loops are fine {#sec-when-loops-are-fine}
 
-Not everything should be a functional. Loops earn their place in three situations.
-
-**When iterations depend on each other.** If the result of iteration `i` feeds into iteration `i + 1`, a functional cannot help you, because functionals assume independence between elements. Simulation chains, iterative algorithms, and accumulating state all need explicit loops. (purrr's `reduce()` and `accumulate()` handle some of these sequential cases, and you will meet them in @sec-reduce-and-accumulate.)
+Not everything should be a functional. Here is a random walk, where each step depends on the one before it:
 
 ```{r}
-# Random walk: each step depends on the previous
 x <- numeric(20)
 x[1] <- 0
 for (i in 2:20) {
@@ -319,9 +309,11 @@ for (i in 2:20) {
 x
 ```
 
-**When the loop body is complex.** If you need `next` to skip elements, `break` to stop early, or multiple conditional branches that depend on runtime state, a loop is often clearer than contorting the logic into a function passed to `map()`.
+`map()` cannot write this, because it hands each element to the function on its own and assumes the elements are independent. Whenever iteration `i` needs the result of iteration `i - 1` (simulation chains, iterative algorithms, anything that carries state), the loop is the honest tool. purrr's `reduce()` and `accumulate()` handle some of these sequential cases, and @sec-reduce-and-accumulate covers them.
 
-**When you are still learning.** A loop you understand is better than a functional you do not. Use `map()` when the pattern clicks; until then, write the loop, get the right answer, and refactor later when the shape of the problem becomes obvious.
+A loop is also clearer when the body is complex. `next` to skip elements, `break` to stop early, several branches that depend on runtime state: contorting all of that into a function passed to `map()` costs more than it saves.
+
+And a loop you understand is better than a functional you do not. Use `map()` when the pattern clicks; until then, write the loop, get the right answer, and refactor later when the shape of the problem becomes obvious.
 
 ::: callout-tip
 ## Opinion
@@ -331,14 +323,14 @@ Replace a loop with a functional when the pattern is "do this to each thing inde
 
 ## `across()` revisited {#sec-across-revisited}
 
-In @sec-column-wise, you saw `across()`\index{across()} for applying a function to multiple columns inside a dplyr verb. So what is `across()`, exactly? It is `map()` thinking applied inside a data frame pipeline.
+In @sec-more-verbs you used `across()`\index{across()} to apply a function to several columns inside a dplyr verb:
 
 ```{r}
 penguins |>
   summarise(across(where(is.numeric), \(x) mean(x, na.rm = TRUE)))
 ```
 
-`across(.cols, .fns)` takes a column selection and a function (or list of functions) and applies the function to each selected column. It is iteration over columns, the same structural idea as `map()` iterating over list elements, but specialized for the column-wise case inside dplyr verbs.
+`across(.cols, .fns)` takes a column selection and a function (or a list of functions) and applies the function to each selected column. That is `map()` over the columns of a data frame, specialized for the inside of a dplyr verb.
 
 Multiple functions at once:
 

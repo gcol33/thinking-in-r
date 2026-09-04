@@ -658,8 +658,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>You have a list of three data frames and you want to compute the mean of a column in each one. Six lines of <code>for</code> loop, or one line of <code>map()</code>. The <code>map()</code> version is shorter, but the real difference is structural.</p>
-<p>Functions are values (<a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>) and you can pass them to other functions (<a href="ch07-functions-are-values.html#sec-passing-functions" class="quarto-xref"><span>Section 7.1</span></a>).</p>
+<p>You have a list of three data frames and you want the mean of one column in each. You can write six lines of <code>for</code> loop, or you can hand the computation to a function that does the looping for you. <a href="ch07-functions-are-values.html#sec-passing-functions" class="quarto-xref"><span>Section 7.1</span></a> showed functions being passed as arguments; this chapter is what that buys you.</p>
 <p>This chapter uses three packages. Load them now if you are following along:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
@@ -699,9 +698,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie Chinstrap    Gentoo </span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3700.662  3733.088  5076.016</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Same answer. No index variable, no pre-allocation, no name copying. You said what to compute; <code>map_dbl</code> handled the iteration.</p>
-<p>A <em>functional</em> builds on that idea: it is a higher-order function that handles the iteration for you. You give it a function and a collection; it applies the function to each element, manages the indexing and pre-allocation, and returns the results.</p>
-<p>The problem with <code>for</code> loops is not performance; in modern R, a well-written loop is fast. The problem is that loops mix the <em>mechanism</em> of iteration (allocate, index, store) with the <em>content</em> of the computation (compute a mean). Functionals separate the two. The mechanism disappears inside the functional; the content lives in the function you pass to it. And once those two concerns are separated, each becomes easier to read, test, and reuse.</p>
+<p>Same answer. No index variable, no pre-allocation, no name copying. You said what to compute and <code>map_dbl()</code> handled the iteration. A function that takes another function and applies it across a collection like this is called a <em>functional</em>.</p>
+<p>A well-written loop in modern R runs as fast as the functional. What the loop mixed together was the <em>mechanism</em> of iteration (allocate, index, store) and the <em>content</em> of the computation (compute a mean). The functional keeps the mechanism inside itself and leaves the content in the function you pass, and once the two are apart, each is easier to read, test, and reuse on its own.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -712,7 +710,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>For loops are not bad R. They are verbose R. If you find yourself writing the same loop scaffolding three or four times in a project, a functional is waiting to collapse all that boilerplate into a single expressive line.</p>
+<p>For loops are verbose R. Once the same scaffolding appears three or four times in a project, a functional replaces all of it with one line.</p>
 </div>
 </div>
 <section id="exercises" class="level3 unnumbered">
@@ -725,7 +723,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-lapply-sapply" class="level2" data-number="19.2">
 <h2 data-number="19.2" class="anchored" data-anchor-id="sec-lapply-sapply"><span class="header-section-number">19.2</span> <code>lapply()</code> and <code>sapply()</code>: base R functionals</h2>
-<p>The idea of handing a function to something that applies it to every element in a collection is older than R, older than S, older than most programming languages people still use. John McCarthy’s 1960 paper described <code>mapcar</code>, a Lisp function that takes a function and a list and returns a new list with the function applied to each element. The name <code>map</code> became standard in later languages (Scheme, ML, Haskell), and R inherited the concept twice: once through <code>lapply()</code> in base R, and again through <code>purrr::map()</code> in the tidyverse. <code>lapply()</code> is R’s oldest version of that idea:</p>
+<p><code>lapply()</code> is base R’s version of the same idea:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(penguins_split, \(df) <span class="fu">mean</span>(df<span class="sc">$</span>body_mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $Adelie</span></span>
@@ -738,13 +736,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5076.016</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>lapply(x, f)</code> applies <code>f</code> to each element of <code>x</code> and returns a list. Always a list. That predictability is its strength.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where <code>map</code> comes from
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Handing a function to something that applies it to every element of a list is older than R and older than S. John McCarthy’s 1960 paper on Lisp defined <code>maplist</code>, which applies a function to each successive tail of a list, and the LISP 1.5 manual added <code>mapcar</code>, which applies it to each element. Later languages (Scheme, ML, Haskell) settled on the name <code>map</code>. R inherited the idea twice: once as <code>lapply()</code> in base R, and again as <code>purrr::map()</code> in the tidyverse.</p>
+</div>
+</div>
+</div>
 <p><code>sapply()</code> does the same thing, but tries to “simplify” the result:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sapply</span>(penguins_split, \(df) <span class="fu">mean</span>(df<span class="sc">$</span>body_mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie Chinstrap    Gentoo </span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3700.662  3733.088  5076.016</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>When every call to <code>f</code> returns a single value, <code>sapply()</code> hands you a named vector. But if <code>f</code> returns different lengths for different elements, <code>sapply()</code> falls back to a list, silently. You cannot predict the return type without knowing the output of <code>f</code> for every element of <code>x</code>. Fine at the console; unreliable inside a function that other code depends on.</p>
+<p>When every call to <code>f</code> returns a single value, <code>sapply()</code> hands you a named vector. But if <code>f</code> returns different lengths for different elements, <code>sapply()</code> falls back to a list. You cannot predict the return type without knowing the output of <code>f</code> for every element of <code>x</code>. Fine at the console; unreliable inside a function that other code depends on.</p>
 <p><code>vapply()</code> solves this by making you declare the expected type:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vapply</span>(penguins_split, \(df) <span class="fu">mean</span>(df<span class="sc">$</span>body_mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="fu">numeric</span>(<span class="dv">1</span>))</span>
@@ -774,7 +788,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Use <code>lapply()</code> when you want a list. Use <code>vapply()</code> when you want a vector and want safety. Never use <code>sapply()</code> in non-interactive code: its return type depends on the data, and that is a bug hiding in your pipeline, waiting for the one input that changes everything.</p>
+<p>Use <code>lapply()</code> when you want a list. Use <code>vapply()</code> when you want a vector and want safety. Never use <code>sapply()</code> in non-interactive code: its return type depends on the data, and that is a bug waiting in your pipeline.</p>
 </div>
 </div>
 <section id="exercises-1" class="level3 unnumbered">
@@ -801,36 +815,37 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5076.016</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Apply a function to each element, return a list. So why bother with a new package?</p>
-<p>Three reasons. First, typed variants: <code>map_dbl()</code> returns a double vector, <code>map_chr()</code> returns a character vector, and if the function returns the wrong type, you get an error. No more guessing, no more silent simplification.</p>
+<p>The typed variants. <code>map_dbl()</code> returns a double vector, <code>map_chr()</code> a character vector, and if the function returns the wrong type you get an error where <code>sapply()</code> would have handed you a list:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">map_dbl</span>(penguins_split, \(df) <span class="fu">mean</span>(df<span class="sc">$</span>body_mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie Chinstrap    Gentoo </span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3700.662  3733.088  5076.016</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Second, consistency with the pipe. <code>map()</code> and its variants are designed to sit naturally in a pipeline:</p>
+<p>Like <code>lapply()</code>, <code>map()</code> takes the collection first, so it sits naturally after a pipe:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>penguins_split <span class="sc">|&gt;</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dbl</span>(\(df) <span class="fu">mean</span>(df<span class="sc">$</span>body_mass_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie Chinstrap    Gentoo </span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3700.662  3733.088  5076.016</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Third, you may encounter the formula shorthand <code>~ mean(.x$body_mass_g, na.rm = TRUE)</code>, purrr’s anonymous function syntax from before R 4.1 introduced <code>\(x)</code>. You will still see it in existing codebases, but prefer <code>\(x)</code> in new code.</p>
-<p><code>map()</code> always returns a list and <code>map_dbl()</code> always returns a double vector, regardless of the data. This type stability is the core advantage over <code>sapply()</code>, and it matters more than it sounds: in a long pipeline, knowing the exact shape of every intermediate result is the difference between debugging for five seconds and debugging for an hour.</p>
+<p>You may encounter the formula shorthand <code>~ mean(.x$body_mass_g, na.rm = TRUE)</code> in older code, purrr’s anonymous-function syntax from before R 4.1 introduced <code>\(x)</code>. Prefer <code>\(x)</code> in new code.</p>
+<p><code>map()</code> always returns a list and <code>map_dbl()</code> always returns a double vector, whatever the data. In a long pipeline that is what lets you know the shape of every intermediate result without running it. And the list has three elements, so the function runs three times: the structure of the data determines how many applications occur, and you stop managing the iteration yourself.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
 <span class="screen-reader-only">Note</span>Functors and the shape of iteration
 </div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p><code>map()</code> embodies a pattern from category theory: the <em>functor</em>. <code>map(xs, f)</code> applies <code>f</code> to each element of <code>xs</code>, preserving the container structure (a list of three elements in, a list of three elements out). A functor lifts a function between values (<code>f :: A -&gt; B</code>) to a function between containers (<code>map(f) :: List(A) -&gt; List(B)</code>). You do not need the theory to use <code>map()</code>, but recognizing the pattern explains why <code>map()</code> feels the same whether you apply it to a list, a vector, or a set of data frame columns with <code>across()</code>: it is the same structural idea in different containers.</p>
 </div>
 </div>
-<p>With <code>map()</code>, the list has three elements, so the function runs three times; the structure itself determines how many applications occur. You stop managing the iteration and let the data’s shape manage it for you.</p>
-<p>The typed variants enforce something even stricter.</p>
+</div>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
@@ -842,13 +857,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-typed-variants" class="level2" data-number="19.4">
 <h2 data-number="19.4" class="anchored" data-anchor-id="sec-typed-variants"><span class="header-section-number">19.4</span> Typed variants</h2>
-<p>The typed variants of <code>map()</code> enforce both the type and the length of each result:</p>
-<ul>
-<li><code>map_dbl(.x, .f)</code>: each call to <code>.f</code> must return a single double. Result is a numeric vector.</li>
-<li><code>map_chr(.x, .f)</code>: each call must return a single string. Result is a character vector.</li>
-<li><code>map_lgl(.x, .f)</code>: each call must return a single logical. Result is a logical vector.</li>
-<li><code>map_int(.x, .f)</code>: each call must return a single integer. Result is an integer vector.</li>
-</ul>
+<p><code>map_int()</code> and <code>map_lgl()</code> complete the set:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">map_int</span>(penguins_split, nrow)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie Chinstrap    Gentoo </span></span>
@@ -859,7 +868,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie Chinstrap    Gentoo </span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      TRUE     FALSE      TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>If <code>.f</code> returns the wrong type or a vector of length other than one, you get an error:</p>
+<p>Each typed variant checks both the type and the length of every result: <code>map_dbl()</code> wants a single double per call, <code>map_chr()</code> a single string, <code>map_lgl()</code> a single logical, <code>map_int()</code> a single integer. Anything else is an error:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">map_dbl</span>(penguins_split, \(df) df<span class="sc">$</span>body_mass_g)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `map_dbl()`:</span></span>
@@ -869,7 +878,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! Result must be length 1, not 152.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>When the output does not match your expectation, you find out immediately, not three functions downstream when something produces <code>NULL</code> instead of a number.</p>
-<p>For results that are data frames, the older <code>map_dfr()</code> is deprecated. The current pattern is <code>map()</code> followed by <code>list_rbind()</code>:</p>
+<p>For results that are data frames, the current pattern is <code>map()</code> followed by <code>list_rbind()</code>; the older <code>map_dfr()</code> still works but is superseded:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>penguins_split <span class="sc">|&gt;</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map</span>(\(df) <span class="fu">tibble</span>(</span>
@@ -897,7 +906,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-map2-pmap" class="level2" data-number="19.5">
 <h2 data-number="19.5" class="anchored" data-anchor-id="sec-map2-pmap"><span class="header-section-number">19.5</span> Iterating over multiple inputs</h2>
-<p>Sometimes a single list is not enough. You need to walk over two inputs in lockstep, pulling one element from each on every step. <code>map2()</code> handles this:</p>
+<p>Sometimes you need to walk over two inputs in lockstep, pulling one element from each on every step. <code>map2()</code> handles this:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>species_names <span class="ot">&lt;-</span> <span class="fu">names</span>(penguins_split)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>species_counts <span class="ot">&lt;-</span> <span class="fu">map_int</span>(penguins_split, nrow)</span>
@@ -928,7 +937,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Each row of parameters becomes one call. <code>pmap()</code> is the general case; <code>map2()</code> is the special case for exactly two inputs.</p>
 <p>The base R equivalents are <code>Map(f, x, y)</code> (which returns a list, like <code>map2()</code>) and <code>mapply(f, x, y)</code> (which simplifies, like <code>sapply()</code>). The same warning applies: <code>mapply</code> is unpredictable in return type.</p>
-<p>Where <code>pmap()</code> really shines is in configuration-driven workflows, places where you want to fit different models to different subsets with different formulas, all controlled by a single table of parameters. Suppose you want to regress body mass on flipper length for each species, but with a different formula for each:</p>
+<p><code>pmap()</code> earns its place when a table of parameters drives the work: different models on different subsets with different formulas, all in one tibble. Suppose you want to regress body mass on flipper length for each species, but with a different formula for each:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>configs <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> penguins_split,</span>
@@ -982,7 +991,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie Chinstrap    Gentoo </span></span>
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3700.662  3733.088  5076.016</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The <code>walk()</code> prints a line for each species, then passes <code>penguins_split</code> through unchanged to <code>map_dbl()</code>. Side effects and computation in one pipeline, each handled by the right tool. But there is a category of iteration that no functional – not <code>map()</code>, not <code>walk()</code> – can handle cleanly.</p>
+<p>The <code>walk()</code> prints a line for each species, then passes <code>penguins_split</code> through unchanged to <code>map_dbl()</code>. Side effects and computation in one pipeline. One kind of iteration, though, is still out of reach for every functional so far.</p>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
@@ -993,23 +1002,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-when-loops-are-fine" class="level2" data-number="19.7">
 <h2 data-number="19.7" class="anchored" data-anchor-id="sec-when-loops-are-fine"><span class="header-section-number">19.7</span> When loops are fine</h2>
-<p>Not everything should be a functional. Loops earn their place in three situations.</p>
-<p><strong>When iterations depend on each other.</strong> If the result of iteration <code>i</code> feeds into iteration <code>i + 1</code>, a functional cannot help you, because functionals assume independence between elements. Simulation chains, iterative algorithms, and accumulating state all need explicit loops. (purrr’s <code>reduce()</code> and <code>accumulate()</code> handle some of these sequential cases, and you will meet them in <a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a>.)</p>
+<p>Not everything should be a functional. Here is a random walk, where each step depends on the one before it:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Random walk: each step depends on the previous</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="dv">20</span>)</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>x[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">20</span>) {</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  x[i] <span class="ot">&lt;-</span> x[i <span class="sc">-</span> <span class="dv">1</span>] <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="dv">1</span>)</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>x</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1]  0.0000000 -0.0627141  1.2421556  3.5288009  2.1399402  1.8611515</span></span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [7]  1.7278301  2.3637805  2.0795276 -0.5769278 -3.0173947 -1.6972814</span></span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [13] -2.0039200 -3.7852284 -3.9571458 -2.7424711 -0.8472776 -1.2777467</span></span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [19] -1.5350161 -3.2981792</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="dv">20</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>x[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span><span class="dv">20</span>) {</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  x[i] <span class="ot">&lt;-</span> x[i <span class="sc">-</span> <span class="dv">1</span>] <span class="sc">+</span> <span class="fu">rnorm</span>(<span class="dv">1</span>)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>x</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1]  0.0000000 -0.0627141  1.2421556  3.5288009  2.1399402  1.8611515</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [7]  1.7278301  2.3637805  2.0795276 -0.5769278 -3.0173947 -1.6972814</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [13] -2.0039200 -3.7852284 -3.9571458 -2.7424711 -0.8472776 -1.2777467</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [19] -1.5350161 -3.2981792</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>When the loop body is complex.</strong> If you need <code>next</code> to skip elements, <code>break</code> to stop early, or multiple conditional branches that depend on runtime state, a loop is often clearer than contorting the logic into a function passed to <code>map()</code>.</p>
-<p><strong>When you are still learning.</strong> A loop you understand is better than a functional you do not. Use <code>map()</code> when the pattern clicks; until then, write the loop, get the right answer, and refactor later when the shape of the problem becomes obvious.</p>
+<p><code>map()</code> cannot write this, because it hands each element to the function on its own and assumes the elements are independent. Whenever iteration <code>i</code> needs the result of iteration <code>i - 1</code> (simulation chains, iterative algorithms, anything that carries state), the loop is the honest tool. purrr’s <code>reduce()</code> and <code>accumulate()</code> handle some of these sequential cases, and <a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a> covers them.</p>
+<p>A loop is also clearer when the body is complex. <code>next</code> to skip elements, <code>break</code> to stop early, several branches that depend on runtime state: contorting all of that into a function passed to <code>map()</code> costs more than it saves.</p>
+<p>And a loop you understand is better than a functional you do not. Use <code>map()</code> when the pattern clicks; until then, write the loop, get the right answer, and refactor later when the shape of the problem becomes obvious.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1026,7 +1034,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-across-revisited" class="level2" data-number="19.8">
 <h2 data-number="19.8" class="anchored" data-anchor-id="sec-across-revisited"><span class="header-section-number">19.8</span> <code>across()</code> revisited</h2>
-<p>In <a href="ch21-reduce-and-accumulate.html#sec-column-wise" class="quarto-xref"><span>Section 21.7</span></a>, you saw <code>across()</code> for applying a function to multiple columns inside a dplyr verb. So what is <code>across()</code>, exactly? It is <code>map()</code> thinking applied inside a data frame pipeline.</p>
+<p>In <a href="ch14-data-transformation.html#sec-more-verbs" class="quarto-xref"><span>Section 14.7</span></a> you used <code>across()</code> to apply a function to several columns inside a dplyr verb:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), \(x) <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))</span>
@@ -1035,7 +1043,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;            &lt;dbl&gt;         &lt;dbl&gt;             &lt;dbl&gt;       &lt;dbl&gt; &lt;dbl&gt;</span></span>
 <span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1           43.9          17.2              201.       4202. 2008.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>across(.cols, .fns)</code> takes a column selection and a function (or list of functions) and applies the function to each selected column. It is iteration over columns, the same structural idea as <code>map()</code> iterating over list elements, but specialized for the column-wise case inside dplyr verbs.</p>
+<p><code>across(.cols, .fns)</code> takes a column selection and a function (or a list of functions) and applies the function to each selected column. That is <code>map()</code> over the columns of a data frame, specialized for the inside of a dplyr verb.</p>
 <p>Multiple functions at once:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>penguins <span class="sc">|&gt;</span></span>
@@ -1167,53 +1175,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

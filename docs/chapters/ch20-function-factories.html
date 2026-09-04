@@ -650,10 +650,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Suppose you need twelve formatting functions: one for dollars, one for euros, one for percentages, one for each of nine other currencies your client cares about. You could write twelve functions by hand, each identical except for a prefix string. Or you could write one function that manufactures the other twelve. In <a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a>, you saw <code>make_adder</code>, a function that returns a function; in <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a>, you learned why it works, because the returned function is a closure that captures its creation environment. This chapter puts both ideas to serious use, building entire families of functions from a single template.</p>
+<p>Suppose you need twelve formatting functions: one for dollars, one for euros, one for percentages, one for each of nine other currencies your client cares about. You could write twelve functions by hand, each identical except for a prefix string. Or you could write one function that manufactures the other twelve. You have already built one of these: <code>make_adder</code> returns a function that remembers <code>n</code>, and <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a> explained why the memory holds, because the returned function is a closure over the environment it was made in. This chapter builds whole families of functions from a single template.</p>
 <section id="sec-factory-pattern" class="level2" data-number="20.1">
 <h2 data-number="20.1" class="anchored" data-anchor-id="sec-factory-pattern"><span class="header-section-number">20.1</span> The pattern</h2>
-<p>A function factory is a function that returns a function:</p>
+<p>Start with one that raises numbers to a power:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>power <span class="ot">&lt;-</span> <span class="cf">function</span>(exponent) {</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) x <span class="sc">^</span> exponent</span>
@@ -668,9 +668,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cube</span>(<span class="dv">5</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 125</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>When you call <code>power(2)</code>, R creates an execution environment where <code>exponent</code> is 2, then returns an anonymous function that closes over that environment. <code>square</code> remembers <code>exponent = 2</code> forever; <code>cube</code> remembers <code>exponent = 3</code>. Same logic, different parameters. The factory produces a <em>family</em> of related functions, and each member of that family carries its own private copy of the parameter that distinguishes it from its siblings.</p>
-<p>The name for this pattern is <em>function factory</em>, and the functions it produces are <em>closures</em>.</p>
-<p>Function factories are <em>partial application</em> made explicit: <code>power(2)</code> fixes one argument of a two-argument operation and returns a function of the remaining argument. In lambda calculus, <code>power</code> is <code>λe. λx. x^e</code>; applying it to 2 gives <code>λx. x^2</code>. This decomposition of multi-argument functions into chains of single-argument functions is called <em>currying</em> (Schonfinkel 1924, Curry 1958). In Haskell, all functions are curried by default: <code>add 5 3</code> is really <code>(add 5) 3</code>, where <code>add 5</code> returns a function. R’s function factories are manual currying.</p>
+<p>When you call <code>power(2)</code>, R creates an execution environment where <code>exponent</code> is 2, then returns an anonymous function that closes over that environment. <code>square</code> remembers <code>exponent = 2</code> forever; <code>cube</code> remembers <code>exponent = 3</code>. Same logic, different parameters. <code>power</code> produces a <em>family</em> of related functions, and each member carries its own private copy of the parameter that distinguishes it from its siblings.</p>
+<p>A function that returns a function this way is a <em>function factory</em>, and the functions it produces are closures.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Partial application and currying
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><code>power(2)</code> fixes one argument of a two-argument operation and returns a function of the remaining argument: <em>partial application</em>. In lambda calculus, <code>power</code> is <code>λe. λx. x^e</code>, and applying it to 2 gives <code>λx. x^2</code>, the currying from <a href="ch05-first-function.html#sec-arguments-defaults" class="quarto-xref"><span>Section 5.2</span></a>. Haskell curries every function by default, so <code>add 5 3</code> is really <code>(add 5) 3</code>, with <code>add 5</code> returning a function. A function factory in R is currying done by hand.</p>
+</div>
+</div>
+</div>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -682,7 +697,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-lazy-eval-trap" class="level2" data-number="20.2">
 <h2 data-number="20.2" class="anchored" data-anchor-id="sec-lazy-eval-trap"><span class="header-section-number">20.2</span> The lazy evaluation trap</h2>
-<p>Here is a bug that will cost you an afternoon if you have never seen it before. R evaluates arguments lazily, meaning they are not computed until they are actually used, and this seemingly innocent optimization has consequences for factories that are anything but innocent (the <em>lazy evaluation trap</em>):</p>
+<p>Here is a bug that costs an afternoon the first time you meet it:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>exp <span class="ot">&lt;-</span> <span class="dv">2</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>sq <span class="ot">&lt;-</span> <span class="fu">power</span>(exp)</span>
@@ -690,7 +705,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sq</span>(<span class="dv">5</span>)</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 125</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>That returns 125, not 25. Why? Because the variable <code>exponent</code> inside the factory is a <em>promise</em> pointing to <code>exp</code> in the calling environment. When <code>sq(5)</code> finally forces the evaluation of <code>exponent</code>, <code>exp</code> has already been changed to 3. The factory captured a promise, not a value.</p>
+<p>That returns 125, not 25. R evaluates an argument the first time it is used, which can be long after the call, and until then it stores the unevaluated expression in an object called a <em>promise</em> (<a href="ch23-lazy-evaluation.html#sec-promises" class="quarto-xref"><span>Section 23.1</span></a> has the full mechanism). Inside <code>power(exp)</code>, <code>exponent</code> is a promise holding the expression <code>exp</code>. Nothing in the factory body uses <code>exponent</code>, so it stays a promise, and by the time <code>sq(5)</code> finally needs it, <code>exp</code> in the calling environment has become 3. The factory captured a promise, not a value. This is the <em>lazy evaluation trap</em>.</p>
 <p>The loop version is worse:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fns <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
@@ -721,7 +736,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sq</span>(<span class="dv">5</span>)</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 25</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>25, as expected. The loop version needs <code>force()</code> too, but the idiomatic solution is <code>lapply</code>, which sidesteps the problem entirely:</p>
+<p>25, as expected. The loop version has no argument to force: all three functions share the single <code>i</code> in the global environment. <code>lapply()</code> sidesteps the problem:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fns <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, \(i) <span class="cf">function</span>(x) x <span class="sc">^</span> i)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -732,7 +747,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>fns[[<span class="dv">3</span>]](<span class="dv">2</span>)</span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 8</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Why does this work when the <code>for</code> loop didn’t? Because the anonymous function <code>\(i)</code> creates a new scope for each iteration. When <code>lapply</code> calls <code>\(i)</code> with the value <code>1</code>, that call gets its own execution environment where <code>i</code> is <code>1</code>, and the inner <code>function(x) x ^ i</code> closes over that environment. The next call gets a fresh environment where <code>i</code> is <code>2</code>, and so on. Each manufactured function captures a different <code>i</code> in a different environment, whereas in the <code>for</code> loop there is only one <code>i</code> in one environment and every function points to the same variable. The <code>\(i)</code> wrapper is doing what <code>force()</code> does, but structurally: by binding <code>i</code> as a function argument, it forces evaluation at the moment of the call.</p>
+<p>Why does this work when the <code>for</code> loop didn’t? Because the anonymous function <code>\(i)</code> creates a new scope for each iteration. When <code>lapply</code> calls <code>\(i)</code> with the value <code>1</code>, that call gets its own execution environment where <code>i</code> is <code>1</code>, and the inner <code>function(x) x ^ i</code> closes over that environment. The next call gets a fresh environment where <code>i</code> is <code>2</code>, and so on. Each manufactured function captures a different <code>i</code> in a different environment, whereas in the <code>for</code> loop there is only one <code>i</code> in one environment and every function points to it. <code>lapply()</code> also forces the argument before <code>\(i)</code> returns, so the promise problem from <code>power(exp)</code> cannot recur inside it.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -743,7 +758,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Every factory should <code>force()</code> every argument that the manufactured function uses. Make this a habit, not a debugging exercise. The lazy evaluation trap is one of the most common sources of subtle bugs in R, and <code>force()</code> costs nothing.</p>
+<p>Every factory should <code>force()</code> every argument that the manufactured function uses. Make this a habit, not a debugging exercise. <code>force()</code> costs nothing, and the bug it prevents is invisible from the outside.</p>
 </div>
 </div>
 <section id="exercises-1" class="level3 unnumbered">
@@ -762,8 +777,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-practical-factories" class="level2" data-number="20.3">
 <h2 data-number="20.3" class="anchored" data-anchor-id="sec-practical-factories"><span class="header-section-number">20.3</span> Practical factories</h2>
-<p>The pattern shows up wherever you find yourself repeating the same logic with different parameters: formatting, filtering, statistical transformations, anywhere a family of behaviors differs by a handful of constants.</p>
-<p><strong>Parameterized formatters.</strong> A factory can bake a prefix and suffix into a formatting function:</p>
+<p>The pattern shows up wherever the same logic repeats with different parameters. A formatter, for one, can have its prefix and suffix baked in:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>make_formatter <span class="ot">&lt;-</span> <span class="cf">function</span>(prefix, <span class="at">suffix =</span> <span class="st">""</span>) {</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">force</span>(prefix)</span>
@@ -780,7 +794,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pct</span>(<span class="fl">0.15</span>)</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0.15%"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Threshold filters.</strong> A factory can produce filter functions for different cutoffs:</p>
+<p>A filter can carry its cutoff:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>above <span class="ot">&lt;-</span> <span class="cf">function</span>(threshold) {</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">force</span>(threshold)</span>
@@ -791,7 +805,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="fu">above_zero</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">5</span>))</span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3 5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Statistical function families.</strong> The Box-Cox transformation is parameterized by a single value, lambda, which makes it a natural fit for a factory:</p>
+<p>And a statistical transformation that depends on a single parameter is a natural factory. The Box-Cox transformation is <code>log(x)</code> when its parameter lambda is 0 and <code>(x^lambda - 1) / lambda</code> otherwise:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>box_cox <span class="ot">&lt;-</span> <span class="cf">function</span>(lambda) {</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">force</span>(lambda)</span>
@@ -810,8 +824,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="fu">bc0</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>))</span>
 <span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.0000000 0.6931472 1.3862944</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Notice something subtle about that <code>if</code> statement: it runs once, when the factory is called, not every time the produced function is called. The factory picks the right formula at creation time and returns a function that does no branching at all.</p>
-<p>This is staged computation: you separate the cost of <em>choosing</em> behavior from the cost of <em>running</em> behavior. The <code>if</code> branch evaluates once, during construction; the produced function evaluates many times, during use, and pays nothing for the choice that was already made. The same pattern drives much of ggplot2. When you call <code>scale_color_brewer(palette = "Set1")</code>, the factory runs once at plot-build time, baking the palette into a function that maps data values to colors. If it re-evaluated the palette choice every time it colored a point, the plot would slow to a crawl on large datasets. ggplot2 gains its speed from that separation: the decision moves from the data path (runs per point) to the construction path (runs once). Every factory you write makes a version of the same trade.</p>
+<p>That <code>if</code> runs once, when the factory is called, and never again: the produced function does no branching at all. The choice of formula is paid for at construction time, and every later call to <code>bc0</code> or <code>bc1</code> pays only for the arithmetic. ggplot2 works the same way. <code>scale_color_brewer(palette = "Set1")</code> calls a factory, <code>pal_brewer()</code>, that returns a function mapping values to colors, so the palette is looked up once when the scale is built and the returned function only does the mapping. Separating the cost of <em>choosing</em> behavior from the cost of <em>running</em> it is called staged computation, and every factory you write does a version of it.</p>
 <p>The next section starts from the other direction: instead of building a function from parameters, you take a function that already exists and modify its behavior.</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
@@ -823,7 +836,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-memoization" class="level2" data-number="20.4">
 <h2 data-number="20.4" class="anchored" data-anchor-id="sec-memoization"><span class="header-section-number">20.4</span> Memoization</h2>
-<p>Sometimes you already have the right function, and the only problem is speed. Memoization wraps a function so it caches its results: the first call computes normally, but subsequent calls with the same arguments return the cached value instantly, skipping the computation entirely.</p>
+<p>Sometimes you already have the right function, and the only problem is speed:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(memoise)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -840,29 +853,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.00    0.00    1.03</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">fast_square</span>(<span class="dv">10</span>))</span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.02    0.00    0.02</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.02    0.00    0.00</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The first call takes about a second. The second is instant, because <code>memoise</code> recognizes the argument and returns the cached result without re-executing the function body.</p>
-<p><code>forget()</code> clears the cache:</p>
+<p>The first call takes about a second. The second is instant: <code>memoise()</code> remembered the argument and returned the stored result without running the body. Wrapping a function so that it caches its results this way is <em>memoization</em>. <code>forget()</code> clears the cache:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">forget</span>(fast_square)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>When to memoize:</strong></p>
-<ul>
-<li>Expensive computations with repeated inputs</li>
-<li>API calls</li>
-<li>Simulations</li>
-<li>Recursive algorithms like Fibonacci</li>
-<li>File parsing</li>
-</ul>
-<p><strong>When not to:</strong></p>
-<ul>
-<li>Functions with side effects (plotting, writing files)</li>
-<li>Functions whose inputs are large or unique every time (the cache grows without bound)</li>
-<li>Functions that depend on external state (database contents, system time)</li>
-</ul>
-<p>Memoization trades memory for speed, and it only pays off when inputs recur.</p>
+<p>A cache only pays off when inputs recur: expensive computations called repeatedly with the same arguments, API calls, simulation steps, recursive algorithms like Fibonacci that revisit the same subproblems, parsing the same file twice. It goes wrong on functions with side effects (a memoized plot is drawn once and never again), on functions whose inputs are large or new every time (the cache grows without bound), and on functions that depend on external state such as database contents or the system clock, where the cached answer goes stale.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -873,9 +871,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-function-operators" class="level2" data-number="20.5">
 <h2 data-number="20.5" class="anchored" data-anchor-id="sec-function-operators"><span class="header-section-number">20.5</span> Function operators</h2>
-<p>What do you do when a function might fail on some inputs, but you need to apply it to hundreds of values and cannot afford to let one error kill the whole pipeline? You could wrap every call in <code>tryCatch</code>. Or you could wrap the function itself once, producing a new function that handles errors gracefully everywhere it is called.</p>
-<p>A function operator takes a function as input and returns a modified function as output. Like a factory, but the raw material is a function rather than a number or string.</p>
-<p><code>safely()</code> wraps a function so it never errors, returning instead a list with <code>$result</code> and <code>$error</code>:</p>
+<p>What do you do when a function might fail on some inputs, but you need to apply it to hundreds of values and cannot afford to let one error kill the whole pipeline? You could wrap every call in <code>tryCatch</code>. Or you could wrap the function itself once:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -893,7 +889,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $error</span></span>
 <span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;simpleError in .f(...): non-numeric argument to mathematical function&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This wrapping is called a <em>decorator</em> in Python (where <code>@decorator</code> syntax makes it first-class) and appeared in the Gang of Four design patterns book (1994). R has no <code>@</code>-syntax, but <code>safely()</code>, <code>memoise()</code>, and <code>with_logging()</code> are all decorators: they modify behavior by wrapping, without changing the original.</p>
+<p><code>safely()</code> took <code>log</code> and returned a new function that never errors; it returns a list with <code>$result</code> and <code>$error</code> instead. A function that takes a function and returns a modified function is a <em>function operator</em>: a factory whose raw material is a function rather than a number or a string.</p>
 <p><code>possibly()</code> is simpler: it returns a default value on error:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>careful_log <span class="ot">&lt;-</span> <span class="fu">possibly</span>(log, <span class="at">otherwise =</span> <span class="cn">NA</span>)</span>
@@ -933,7 +929,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Calling function with 1 argument(s)</span></span>
 <span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Notice the <code>force(f)</code> call. Function operators are factories whose input happens to be a function, so the same lazy evaluation trap from <a href="#sec-lazy-eval-trap" class="quarto-xref"><span>Section 20.2</span></a> applies: without <code>force()</code>, <code>f</code> is a promise, and if the variable it points to changes before the operator’s result is called, you get the wrong function.</p>
+<p><code>with_logging()</code> calls <code>force(f)</code> for the same reason <code>power()</code> did. A function operator is a factory whose input happens to be a function, so the lazy evaluation trap from <a href="#sec-lazy-eval-trap" class="quarto-xref"><span>Section 20.2</span></a> applies: without <code>force()</code>, <code>f</code> is a promise, and if the variable it points to changes before the operator’s result is called, you get the wrong function.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Decorators
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Python calls this wrapping a <em>decorator</em> and gives it syntax: <code>@decorator</code> above a function definition replaces the function with the wrapped version. The pattern is older than the syntax; it is one of the twenty-three in the Gang of Four’s <em>Design Patterns</em> (1994). R has no <code>@</code>, but <code>safely()</code>, <code>memoise()</code>, and <code>with_logging()</code> are all decorators: they change behavior by wrapping, leaving the original function untouched.</p>
+</div>
+</div>
+</div>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -945,7 +957,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-composing-factories-operators" class="level2" data-number="20.6">
 <h2 data-number="20.6" class="anchored" data-anchor-id="sec-composing-factories-operators"><span class="header-section-number">20.6</span> Composing factories and operators</h2>
-<p>Each of these patterns (factories, operators, functionals like <code>map()</code>) does one small thing. The real power emerges when you compose them:</p>
+<p>Each of these patterns (factories, operators, functionals like <code>map()</code>) does one small thing, and they combine:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>safe_log <span class="ot">&lt;-</span> <span class="fu">safely</span>(log)</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">map</span>(<span class="fu">list</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="st">"a"</span>, <span class="dv">10</span>), safe_log)</span>
@@ -969,7 +981,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ..$ result: num 2.3</span></span>
 <span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ..$ error : NULL</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>safely(log)</code> is a function operator applied to <code>log</code>; the result is passed to <code>map()</code>, a functional from <a href="ch07-functions-are-values.html#sec-passing-functions" class="quarto-xref"><span>Section 7.1</span></a>. Three concepts from three chapters, working together in a single pipeline. What if you need both safety <em>and</em> logging on the same function?</p>
+<p><code>safely(log)</code> is a function operator applied to <code>log</code>, and the result goes to <code>map()</code>. What if you need both safety <em>and</em> logging on the same function?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>safe_logged_log <span class="ot">&lt;-</span> <span class="fu">with_logging</span>(<span class="fu">safely</span>(log))</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_logged_log</span>(<span class="dv">10</span>)</span>
@@ -1097,53 +1109,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
