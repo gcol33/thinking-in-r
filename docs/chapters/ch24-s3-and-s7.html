@@ -681,20 +681,23 @@ Figure&nbsp;24.1: S3 dispatch: R constructs a method name from the generic and t
 </div>
 <p>Dispatch is R picking <em>which</em> function to call, the same principle as “everything that happens is a function call” (<a href="ch07-functions-are-values.html#sec-operators-are-functions" class="quarto-xref"><span>Section 7.5</span></a>).</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
 <span class="screen-reader-only">Note</span>The type-theory connection
 </div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>In type theory, the type of an expression determines which reduction rules apply. S3 dispatch is the same idea: the class attribute determines which method runs, and the generic is a polymorphic term whose behavior is resolved at runtime by inspecting the type of its argument. This is <em>ad-hoc polymorphism</em> (different code for different types), as opposed to the <em>parametric polymorphism</em> of Hindley-Milner type systems, where the same code works for all types. R does not have parametric polymorphism in the formal sense, but functions like <code>length()</code> and <code>c()</code> behave parametrically: they work on any vector regardless of element type.</p>
-<p>S3 dispatch also connects to sum types. When you give an object a class, you are tagging it as one variant of a type. <code>class(x) = "penguin"</code> says “this object is a penguin, not a dog, not a book.” The generic function then <em>pattern matches</em> on the tag, dispatching to the method for that variant, exactly how sum types work in Haskell (<code>case x of</code>) or Rust (<code>match x</code>): inspect the tag, run the corresponding branch. R’s mechanism is informal (a string attribute instead of a compiler-checked type), but the algebraic structure is the same sum type you saw with <code>TRUE | FALSE</code> (<a href="ch08-logic-control-flow.html#sec-logical-vectors" class="quarto-xref"><span>Section 8.1</span></a>) and factor levels (<a href="ch12-strings-factors-dates.html#sec-why-factors" class="quarto-xref"><span>Section 12.4</span></a>). The class vector is the tag; <code>UseMethod()</code> is the match.</p>
+<p>S3 dispatch also connects to sum types. When you give an object a class, you are tagging it as one variant of a type. <code>class(x) = "penguin"</code> says “this object is a penguin, not a dog, not a book.” The generic function then <em>pattern matches</em> on the tag, dispatching to the method for that variant, exactly how sum types work in Haskell (<code>case x of</code>) or Rust (<code>match x</code>): inspect the tag, run the corresponding branch. R’s mechanism is informal (a string attribute instead of a compiler-checked type), but the algebraic structure is the same sum type you saw with factor levels (<a href="ch12-strings-factors-dates.html#sec-why-factors" class="quarto-xref"><span>Section 12.4</span></a>). The class vector is the tag; <code>UseMethod()</code> is the match.</p>
+<p>The difference is exhaustiveness. In Haskell, the compiler verifies before the program runs that every case is handled. In R, you find out at runtime that no method exists for your class, and <code>print.default</code> picks up the slack. Attaching a class string to any object without declaring a type hierarchy first suits interactive work, where data structures evolve faster than formal definitions; the cost is that every missing method surfaces only when someone passes an object you did not anticipate.</p>
 </div>
 </div>
-<p>When you call <code>print(x)</code> and R inspects <code>class(x)</code> to choose a method, the class attribute is playing the same role that a type annotation plays in a statically typed language: it determines which code runs. In Haskell, the compiler verifies at compile time that every case is handled. In R, you find out at runtime that no method exists for your class, and <code>print.default</code> picks up the slack. That informality gives you freedom — attaching a class string to any object without declaring a type hierarchy first is useful in interactive work, where data structures evolve faster than formal definitions. But the freedom costs you exhaustiveness: every missing method is a bug that only surfaces when someone passes an object you did not anticipate.</p>
+</div>
 </section>
 <section id="sec-s3-basics" class="level2" data-number="24.2">
 <h2 data-number="24.2" class="anchored" data-anchor-id="sec-s3-basics"><span class="header-section-number">24.2</span> S3 basics</h2>
@@ -734,43 +737,43 @@ Figure&nbsp;24.1: S3 dispatch: R constructs a method name from the generic and t
 </section>
 <section id="sec-s3-classes-properly" class="level2" data-number="24.3">
 <h2 data-number="24.3" class="anchored" data-anchor-id="sec-s3-classes-properly"><span class="header-section-number">24.3</span> Writing S3 classes properly</h2>
-<p>Setting a class with <code>structure()</code> works, but it’s fragile. Nothing stops someone from creating a <code>"penguin"</code> with a numeric name or negative mass. The established best practice is three functions: a constructor, a validator, and a helper.</p>
-<p>The <strong>constructor</strong> (<code>new_penguin</code>) creates the object with minimal checks. It is for developers:</p>
+<p>Setting a class with <code>structure()</code> works on anything, including a penguin with a number for a name and a negative mass:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>new_penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(name, mass) {</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">structure</span>(<span class="fu">list</span>(<span class="at">name =</span> name, <span class="at">mass =</span> mass), <span class="at">class =</span> <span class="st">"penguin"</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bad <span class="ot">&lt;-</span> <span class="fu">structure</span>(<span class="fu">list</span>(<span class="at">name =</span> <span class="dv">42</span>, <span class="at">mass =</span> <span class="sc">-</span><span class="dv">100</span>), <span class="at">class =</span> <span class="st">"penguin"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(bad)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Hello, 42"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The <strong>validator</strong> (<code>validate_penguin</code>) checks invariants. It ensures the object makes sense:</p>
+<p>Every method you write for <code>"penguin"</code> now has to cope with objects like <code>bad</code>, or fail on them. The usual answer is to route construction through three functions. The first creates the object with no checks at all, and is meant for developers:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>validate_penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.character</span>(x<span class="sc">$</span>name) <span class="sc">||</span> <span class="fu">length</span>(x<span class="sc">$</span>name) <span class="sc">!=</span> <span class="dv">1</span>) {</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"`name` must be a single character string"</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.numeric</span>(x<span class="sc">$</span>mass) <span class="sc">||</span> <span class="fu">length</span>(x<span class="sc">$</span>mass) <span class="sc">!=</span> <span class="dv">1</span> <span class="sc">||</span> x<span class="sc">$</span>mass <span class="sc">&lt;=</span> <span class="dv">0</span>) {</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"`mass` must be a single positive number"</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  x</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>new_penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(name, mass) {</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">structure</span>(<span class="fu">list</span>(<span class="at">name =</span> name, <span class="at">mass =</span> mass), <span class="at">class =</span> <span class="st">"penguin"</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The <strong>helper</strong> (<code>penguin</code>) is user-facing. It calls the constructor, then the validator:</p>
+<p>The second checks that the object makes sense and returns it unchanged if it does:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(name, mass) {</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">validate_penguin</span>(<span class="fu">new_penguin</span>(name, mass))</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>validate_penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.character</span>(x<span class="sc">$</span>name) <span class="sc">||</span> <span class="fu">length</span>(x<span class="sc">$</span>name) <span class="sc">!=</span> <span class="dv">1</span>) {</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"`name` must be a single character string"</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.numeric</span>(x<span class="sc">$</span>mass) <span class="sc">||</span> <span class="fu">length</span>(x<span class="sc">$</span>mass) <span class="sc">!=</span> <span class="dv">1</span> <span class="sc">||</span> x<span class="sc">$</span>mass <span class="sc">&lt;=</span> <span class="dv">0</span>) {</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"`mass` must be a single positive number"</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  x</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Now compare:</p>
+<p>The third is the one users call. It runs the first and then the second:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Direct construction: no safety net</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>bad <span class="ot">&lt;-</span> <span class="fu">structure</span>(<span class="fu">list</span>(<span class="at">name =</span> <span class="dv">42</span>, <span class="at">mass =</span> <span class="sc">-</span><span class="dv">100</span>), <span class="at">class =</span> <span class="st">"penguin"</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper: catches the problem</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">penguin</span>(<span class="dv">42</span>, <span class="dv">3750</span>)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `validate_penguin()`:</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! `name` must be a single character string</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(name, mass) {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">validate_penguin</span>(<span class="fu">new_penguin</span>(name, mass))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This separation of concerns comes from Advanced R: construction is cheap, validation is careful, and the user interface is clean.</p>
-<p>If you write S3 classes, write all three functions.</p>
+<p>Now the same mistake is caught at the door:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">penguin</span>(<span class="dv">42</span>, <span class="dv">3750</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `validate_penguin()`:</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! `name` must be a single character string</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Advanced R names the three the <em>constructor</em>, the <em>validator</em>, and the <em>helper</em>: construction is cheap, validation is careful, and the user interface is clean. If you write S3 classes, write all three.</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -783,28 +786,28 @@ Figure&nbsp;24.1: S3 dispatch: R constructs a method name from the generic and t
 <h2 data-number="24.4" class="anchored" data-anchor-id="sec-s3-inheritance"><span class="header-section-number">24.4</span> Inheritance</h2>
 <p>S3 supports single inheritance via class vectors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>emperor <span class="ot">&lt;-</span> <span class="fu">structure</span>(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Emperor"</span>, <span class="at">mass =</span> <span class="dv">23000</span>, <span class="at">dive_depth =</span> <span class="dv">500</span>),</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="fu">c</span>(<span class="st">"diving_penguin"</span>, <span class="st">"penguin"</span>)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(emperor)</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "diving_penguin" "penguin"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>emperor <span class="ot">&lt;-</span> <span class="fu">structure</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">name =</span> <span class="st">"Emperor"</span>, <span class="at">mass =</span> <span class="dv">23000</span>, <span class="at">dive_depth =</span> <span class="dv">500</span>),</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="fu">c</span>(<span class="st">"diving_penguin"</span>, <span class="st">"penguin"</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(emperor)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "diving_penguin" "penguin"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>When you call <code>greet(emperor)</code>, R looks for <code>greet.diving_penguin</code> first, then <code>greet.penguin</code>, then <code>greet.default</code>. The class vector is a priority list.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sloop<span class="sc">::</span><span class="fu">s3_dispatch</span>(<span class="fu">greet</span>(emperor))</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    greet.diving_penguin</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; =&gt; greet.penguin</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    greet.default</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>sloop<span class="sc">::</span><span class="fu">s3_dispatch</span>(<span class="fu">greet</span>(emperor))</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    greet.diving_penguin</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; =&gt; greet.penguin</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    greet.default</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>No <code>greet.diving_penguin</code> exists, so R falls through to <code>greet.penguin</code>. You can define a specialized method and use <code>NextMethod()</code> to delegate to the parent:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>greet.diving_penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) {</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  parent_greeting <span class="ot">&lt;-</span> <span class="fu">NextMethod</span>()</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste</span>(parent_greeting, <span class="st">"(dives to"</span>, x<span class="sc">$</span>dive_depth, <span class="st">"m)"</span>)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(emperor)</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Hello, Emperor (dives to 500 m)"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>greet.diving_penguin <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) {</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  parent_greeting <span class="ot">&lt;-</span> <span class="fu">NextMethod</span>()</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste</span>(parent_greeting, <span class="st">"(dives to"</span>, x<span class="sc">$</span>dive_depth, <span class="st">"m)"</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(emperor)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Hello, Emperor (dives to 500 m)"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>NextMethod()</code> calls the next method in the chain, like <code>super()</code> in Python or Java. The diving penguin method adds dive information to whatever the penguin method already produces.</p>
 <p>Keep inheritance shallow. One or two levels is typical in R. Deep hierarchies (five classes deep, overriding methods at every level) are rare and usually a sign you want a different design. If you find yourself building a tree of classes, step back and ask whether composition (storing one object inside another) would be simpler.</p>
@@ -818,11 +821,9 @@ Figure&nbsp;24.1: S3 dispatch: R constructs a method name from the generic and t
 </section>
 <section id="sec-why-s3-works" class="level2" data-number="24.5">
 <h2 data-number="24.5" class="anchored" data-anchor-id="sec-why-s3-works"><span class="header-section-number">24.5</span> Why S3 works</h2>
-<p>S3 is R’s dominant OOP system, and the name tells you where it came from. When John Chambers designed the S language at Bell Labs in the early 1980s, he needed a way to make <code>print()</code> and <code>summary()</code> do different things for different kinds of objects. The solution was deliberately informal: attach a class string to any object, and let the generic function look up the right method by pasting the generic name and the class name together. No class registry, no formal type hierarchy, no compiler checks. Just a naming convention. This was S version 3, so the system became known as S3.</p>
-<p>It was supposed to be temporary. By 1998, Chambers had designed S4, a formal OOP system with typed slots, multiple dispatch, and a class registry enforced by <code>setClass()</code> and <code>setGeneric()</code>. S4 was adopted by the Bioconductor project for its genomics infrastructure, but the rest of the R community kept using S3. S3 let package authors add methods to existing generics without coordination, which is exactly what a decentralized ecosystem of 20,000+ CRAN packages needs.</p>
-<p>Three decades later, S7 arrived. A joint working group from R-Core, Bioconductor, and the tidyverse designed it to combine S3’s simplicity with S4’s safety.</p>
-<p>S3 requires no registration, no formal definitions, and no boilerplate. You can prototype quickly: slap a class on a list and start writing methods.</p>
-<p>The downside is obvious: no enforcement. Nothing stops you from creating a <code>"penguin"</code> with a numeric name or negative mass, unless you write the validator yourself. S3 trusts the programmer.</p>
+<p>S3 is R’s dominant OOP system, and the name tells you where it came from. By the early 1990s, S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>) had grown a library of statistical models, and every one of them needed <code>print()</code>, <code>summary()</code>, and <code>plot()</code> to do something different. The solution its designers chose was a naming convention: attach a class string to any object, and let the generic function find the right method by pasting the generic name and the class name together. No class registry, no formal type hierarchy, no compiler checks. It arrived in 1992 as part of the third version of S, and the system has been called S3 ever since.</p>
+<p>It was supposed to be temporary. By 1998, John Chambers had designed S4, a formal OOP system with typed slots, multiple dispatch, and a class registry enforced by <code>setClass()</code> and <code>setGeneric()</code>. The Bioconductor project adopted S4 for its genomics infrastructure, but the rest of the R community kept using S3. A method for an existing generic can be added by anyone, in any package, without coordination, and that is what a decentralized ecosystem of 20,000+ CRAN packages needs. A class goes on a list in one line, and the first method can follow in the next.</p>
+<p>The price is enforcement. Nothing stops you from creating a <code>"penguin"</code> with a numeric name or negative mass, unless you write the validator yourself. S3 trusts the programmer.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -841,87 +842,84 @@ Figure&nbsp;24.1: S3 dispatch: R constructs a method name from the generic and t
 <h2 data-number="24.6" class="anchored" data-anchor-id="sec-s4-brief"><span class="header-section-number">24.6</span> S4 in brief</h2>
 <p>S4 adds formality. <code>setClass()</code> defines a class with typed <em>slots</em>, <code>setGeneric()</code> creates a generic, and <code>setMethod()</code> registers a method:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setClass</span>(<span class="st">"Animal"</span>,</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">slots =</span> <span class="fu">list</span>(</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"character"</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mass =</span> <span class="st">"numeric"</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">setGeneric</span>(<span class="st">"describe"</span>, <span class="cf">function</span>(x, ...) <span class="fu">standardGeneric</span>(<span class="st">"describe"</span>))</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">setMethod</span>(<span class="st">"describe"</span>, <span class="st">"Animal"</span>, <span class="cf">function</span>(x, ...) {</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste</span>(x<span class="sc">@</span>name, <span class="st">"weighs"</span>, x<span class="sc">@</span>mass, <span class="st">"g"</span>)</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">"Animal"</span>, <span class="at">name =</span> <span class="st">"Cat"</span>, <span class="at">mass =</span> <span class="dv">4500</span>)</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>a<span class="sc">@</span>name</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(a)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setClass</span>(<span class="st">"Animal"</span>,</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">slots =</span> <span class="fu">list</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> <span class="st">"character"</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mass =</span> <span class="st">"numeric"</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">setGeneric</span>(<span class="st">"describe"</span>, <span class="cf">function</span>(x, ...) <span class="fu">standardGeneric</span>(<span class="st">"describe"</span>))</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">setMethod</span>(<span class="st">"describe"</span>, <span class="st">"Animal"</span>, <span class="cf">function</span>(x, ...) {</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste</span>(x<span class="sc">@</span>name, <span class="st">"weighs"</span>, x<span class="sc">@</span>mass, <span class="st">"g"</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="fu">new</span>(<span class="st">"Animal"</span>, <span class="at">name =</span> <span class="st">"Cat"</span>, <span class="at">mass =</span> <span class="dv">4500</span>)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>a<span class="sc">@</span>name</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(a)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Slots are accessed with <code>@</code> instead of <code>$</code>. Validation can be built in via the <code>validity</code> argument to <code>setClass()</code>.</p>
-<p>S4’s distinctive feature is <em>multiple dispatch</em>: <code>setMethod("combine", c("Matrix", "vector"), ...)</code> chooses a method based on the types of <em>both</em> arguments, not just the first. S3 dispatches on one argument only and cannot naturally express “when type A meets type B, do C.” The trade-off is real: single dispatch is simpler, multiple dispatch is more expressive but harder to reason about.</p>
+<p>S4’s distinctive feature is <em>multiple dispatch</em>: <code>setMethod("combine", c("Matrix", "vector"), ...)</code> chooses a method based on the types of <em>both</em> arguments. S3 dispatches on one argument only and has no direct way to say “when type A meets type B, do C.” Multiple dispatch is the more expressive of the two and the harder to reason about, since the method that runs depends on a combination of classes rather than one.</p>
 <p>S4 is used extensively in Bioconductor and some base R infrastructure (the Matrix package, the methods package). This book does not teach S4 in depth. If you need it, you will know: Bioconductor work, formal class hierarchies, or extending packages that already use S4. For most R programming, S3 or S7 is the right choice.</p>
 </section>
 <section id="sec-s7" class="level2" data-number="24.7">
 <h2 data-number="24.7" class="anchored" data-anchor-id="sec-s7"><span class="header-section-number">24.7</span> S7</h2>
-<p>S7 is available on CRAN. In May 2024, R-Core merged four patches into base R (version 4.4) that generalize the internal dispatch machinery to support systems like S7. Those patches did not add S7 to base R, but they changed the foundation underneath it: <code>UseMethod()</code> and the method lookup tables now accommodate external OOP systems that follow S7’s functional dispatch model. The long-term plan, stated by the R Consortium OOP Working Group, is to incorporate S7 into base R itself.</p>
-<p>S3 attached a string to an object and hoped someone would write the right method. S4 replaced hope with a registry, typed slots, and <code>setClass()</code> declarations. S7 takes a third path: the entire OOP system is made of functions you call, compose, and pass around — the same primitive this book has been building on since <a href="ch05-first-function.html" class="quarto-xref"><span>Chapter 5</span></a>. The objects have typed properties and built-in validation, but the machinery that defines classes, creates generics, and dispatches methods is itself just functions.</p>
-<p>Classes are created with <code>new_class()</code>:</p>
+<p>S7 is a CRAN package, designed by the R Consortium’s Object-Oriented Programming Working Group, which includes members of R-Core, Bioconductor, and the tidyverse. Base R has been changing underneath it: R 4.3.0 added two generics, <code>nameOfClass()</code> and <code>chooseOpsMethod()</code>, through which <code>inherits()</code> and the operator group generics consult other object systems, and R 4.4.0 renamed the internal S4 object type to a general one. Each change is credited in R’s NEWS file to the working group and described as support for “experimenting with alternative object systems”. The S7 package itself is still a package, and its stated goal is to be a successor to S3 and S4.</p>
+<p>Where S3 keeps its class in a string and S4 keeps it in a registry, S7 builds the whole system out of functions you call, compose, and pass around, the same primitive this book has been building on since <a href="ch05-first-function.html" class="quarto-xref"><span>Chapter 5</span></a>. The objects have typed properties and built-in validation, but the machinery that defines classes, creates generics, and dispatches methods is itself just functions. A class comes from <code>new_class()</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(S7)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>penguin <span class="ot">&lt;-</span> <span class="fu">new_class</span>(<span class="st">"penguin"</span>,</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">properties =</span> <span class="fu">list</span>(</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> class_character,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mass =</span> class_double</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">validator =</span> <span class="cf">function</span>(self) {</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (self<span class="sc">@</span>mass <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="st">"mass must be positive"</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co"># penguin is now a constructor function:</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">penguin</span>(<span class="at">name =</span> <span class="st">"Adelie"</span>, <span class="at">mass =</span> <span class="dv">3750</span>)</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>p</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;penguin&gt;</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ name: chr "Adelie"</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ mass: num 3750</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(S7)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>penguin <span class="ot">&lt;-</span> <span class="fu">new_class</span>(<span class="st">"penguin"</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">properties =</span> <span class="fu">list</span>(</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">name =</span> class_character,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mass =</span> class_double</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">validator =</span> <span class="cf">function</span>(self) {</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (self<span class="sc">@</span>mass <span class="sc">&lt;=</span> <span class="dv">0</span>) <span class="st">"mass must be positive"</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co"># penguin is now a constructor function:</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">penguin</span>(<span class="at">name =</span> <span class="st">"Adelie"</span>, <span class="at">mass =</span> <span class="dv">3750</span>)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>p</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;penguin&gt;</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ name: chr "Adelie"</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ mass: num 3750</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Properties are typed and validated. You access them with <code>@</code>, like S4 slots, but the syntax is cleaner. The validator returns an error message string (or <code>NULL</code> if valid), rather than calling <code>stop()</code>.</p>
 <p>Generics and methods use <code>new_generic()</code> and <code>method()</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>greet <span class="ot">&lt;-</span> <span class="fu">new_generic</span>(<span class="st">"greet"</span>, <span class="st">"x"</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">method</span>(greet, penguin) <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) {</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste</span>(<span class="st">"Hello,"</span>, x<span class="sc">@</span>name)</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">penguin</span>(<span class="at">name =</span> <span class="st">"Adelie"</span>, <span class="at">mass =</span> <span class="dv">3750</span>)</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>p<span class="sc">@</span>name</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Adelie"</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(p)</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Hello, Adelie"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>greet <span class="ot">&lt;-</span> <span class="fu">new_generic</span>(<span class="st">"greet"</span>, <span class="st">"x"</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">method</span>(greet, penguin) <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) {</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste</span>(<span class="st">"Hello,"</span>, x<span class="sc">@</span>name)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">penguin</span>(<span class="at">name =</span> <span class="st">"Adelie"</span>, <span class="at">mass =</span> <span class="dv">3750</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>p<span class="sc">@</span>name</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Adelie"</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(p)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Hello, Adelie"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Notice what you get for free: the class constructor (<code>penguin(...)</code>) is generated automatically with named arguments matching the properties. The validator runs on construction. Properties are type-checked. Compare this to the three-function pattern you had to build by hand in <a href="#sec-s3-classes-properly" class="quarto-xref"><span>Section 24.3</span></a>.</p>
-<p><strong>S7 over S3</strong>: properties have declared types (<code>class_character</code>, <code>class_double</code>, <code>class_integer</code>). Validation is built in, not bolted on. The syntax for generics and methods is explicit and clean. And S7 is fully compatible with S3: S7 methods can dispatch on S3 classes, and S3 methods can dispatch on S7 classes.</p>
-<p><strong>S7 over S4</strong>: the syntax is simpler, with no <code>setClass</code>/<code>setGeneric</code>/<code>setMethod</code> ceremony. It builds on S3 dispatch, which everything already uses, and it was designed for the modern R ecosystem rather than as a parallel system.</p>
+<p>The constructor <code>penguin(...)</code> was generated for you, with named arguments matching the properties, the validator ran on construction, and each property was checked against its declared type. That is the three-function pattern from <a href="#sec-s3-classes-properly" class="quarto-xref"><span>Section 24.3</span></a>, written once by the package instead of once per class. Against S4, the difference is ceremony: no <code>setClass</code>/<code>setGeneric</code>/<code>setMethod</code> triplet, and dispatch that builds on the S3 mechanism everything already uses, so S7 methods can dispatch on S3 classes and S3 methods on S7 classes.</p>
 <p>Inheritance uses the <code>parent</code> argument:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>diving_penguin <span class="ot">&lt;-</span> <span class="fu">new_class</span>(<span class="st">"diving_penguin"</span>,</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">parent =</span> penguin,</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">properties =</span> <span class="fu">list</span>(</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dive_depth =</span> class_double</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>emperor <span class="ot">&lt;-</span> <span class="fu">diving_penguin</span>(<span class="at">name =</span> <span class="st">"Emperor"</span>, <span class="at">mass =</span> <span class="dv">23000</span>, <span class="at">dive_depth =</span> <span class="dv">500</span>)</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>emperor</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;diving_penguin&gt;</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ name      : chr "Emperor"</span></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ mass      : num 23000</span></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ dive_depth: num 500</span></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(emperor)</span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Hello, Emperor"</span></span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="co"># inherited from the penguin method</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>diving_penguin <span class="ot">&lt;-</span> <span class="fu">new_class</span>(<span class="st">"diving_penguin"</span>,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">parent =</span> penguin,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">properties =</span> <span class="fu">list</span>(</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">dive_depth =</span> class_double</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>emperor <span class="ot">&lt;-</span> <span class="fu">diving_penguin</span>(<span class="at">name =</span> <span class="st">"Emperor"</span>, <span class="at">mass =</span> <span class="dv">23000</span>, <span class="at">dive_depth =</span> <span class="dv">500</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>emperor</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;diving_penguin&gt;</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ name      : chr "Emperor"</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ mass      : num 23000</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  @ dive_depth: num 500</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(emperor)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Hello, Emperor"</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="co"># inherited from the penguin method</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The child class inherits the parent’s properties and methods. You can override methods for the child class the same way: <code>method(greet, diving_penguin) &lt;- function(x, ...) ...</code>.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
@@ -1039,53 +1037,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
