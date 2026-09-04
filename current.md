@@ -1,10 +1,10 @@
 # Current work: readability pass
 
-Last updated 2026-09-04.
+Last updated 2026-09-04 (ch13-15 session).
 
 ## Status
 
-Chapters 1 to 12 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in the commit after it). Chapters 13 onward have not. Next session: ch13, ch14, ch15.
+Chapters 1 to 15 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in the commit after it). Chapters 16 onward have not. Next session: ch16, ch17, ch18.
 
 ## The problem
 
@@ -72,8 +72,19 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - ch12 regex: the two `str_detect()` examples and `str_view()` now come before the building-block table.
 - Code chunks added: ch11 `str(list(a = 1:5, b = 1:3))` and the failing `data.frame(a = 1:5, b = 1:3)`; ch12 `%m+%`, `days(1)`/`ddays(1)`, and the DST example. Adding a chunk before a figure renumbers `unnamed-chunk-N-1.png` in `_freeze/` and `docs/`; delete the orphaned old one.
 
+## Notes from ch13-15
+
+- Three factual fixes from running the code: ch14 said `distinct(penguins, species, island)` gives seven combinations (five); ch14 closing said Adelie average 3,706 g (3,701; the rendered output already showed 3701); ch14 Opinion said `summarise()` "silently" peels off the last grouping variable (dplyr 1.2.1 prints a "has regrouped the output" message, and the freeze output already contained it). The main text now points at that message when it first appears.
+- Broken cross-ref: ch13 "the full treatment of database-backed dplyr is in @sec-databases" pointed at its own section. Now @sec-columnar-engines (ch28). Grep every `@sec-` in a chapter against the chapter's own labels; a self-reference renders fine and is invisible unless you click it.
+- Show-before-name: ch14 now loads `palmerpenguins` and prints `penguins` before the five verbs are listed (the list is one prose sentence, no bullets); `group_by()` is shown as the fix for the one-row `summarise()` before it is named; ch15 names function composition after the `clean_and_summarise` code, and the `|>` section no longer names composition or @sec-church at all.
+- Callouts added: ch13 "There is no CSV standard" (IBM/RFC 4180 history) and the pure-function callout moved from the top of the CSV section to after the `col_types` example; ch14 "Codd's algebra" (relational algebra, IMS, SQL/pandas/data.table), which back-references the ch11 relational-model callout via @sec-list-of-vectors; ch15 "Kleisli composition" (the `%>%` monad analogy).
+- Bullet-to-prose: ch13 readr and readxl argument lists (code first, arguments named after); ch15 nesting/intermediates/overwriting and the five "when not to pipe" cases lost their bold lead-ins, code unchanged.
+- McIlroy (ch15) is now situation first: the 1964 Bell Labs memo and the garden-hose line, then the Unix `|` nine years later, then the name.
+- Cut: ch13 circular closer ("Which brings us back to where we started"), ch14 "This is actually surprising" and the "Compare the two calls" teacher-mode paragraph, ch15 "Pipes made them legible" mic drop and the chapter-as-destination closer.
+- Word counts: ch13 2841 to 2850, ch14 2570 to 2458, ch15 2181 to 2078.
+
 ## Files for the next session
 
-- `chapters/ch13-reading-writing-data.qmd`
-- `chapters/ch14-data-transformation.qmd`
-- `chapters/ch15-pipes-and-composition.qmd`
+- `chapters/ch16-tidy-data.qmd`
+- `chapters/ch17-visualization.qmd`
+- `chapters/ch18-closures-and-scope.qmd`

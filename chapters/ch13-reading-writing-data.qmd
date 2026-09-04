@@ -7,7 +7,7 @@ source(here::here("_common.R"))
 
 Try loading a CSV you downloaded six months ago from a government portal. The accented characters in city names have turned into question marks, the column that should be numeric is full of strings because row 4,012 contains the word "pending," and the file path you hard-coded starts with `C:/Users/someone_else/`. Three lines of `read.csv()` and three different failures, none of which have anything to do with your analysis. Every data project begins here, in the gap between the file on disk and the clean data frame in memory, and that gap is wider than most tutorials admit.
 
-This chapter is about crossing it. CSV, Excel, databases, binary formats: each has its own traps, and two problems cut across all of them (file paths and character encodings) with a persistence that borders on malice.
+This chapter is about crossing it. CSV, Excel, databases, binary formats: each has its own traps, and two problems, file paths and character encodings, cut across all of them.
 
 
 ## File paths {#sec-file-paths}
@@ -35,7 +35,7 @@ here::here("data", "penguins.csv")
 
 It works on any machine, any OS, any nesting depth. Every file path in this chapter uses `here::here()`.
 
-Paths\index{file path}\index{absolute path} hide one more trap, and it is entirely cosmetic until it isn't: slash direction. Forward slashes work everywhere in R, even on Windows, so `"data/penguins.csv"` is always valid. Backslashes need escaping (`"data\\penguins.csv"`), which you will forget exactly once before switching to forward slashes permanently.
+Paths\index{file path}\index{absolute path} hide one more trap: slash direction. Forward slashes work everywhere in R, even on Windows, so `"data/penguins.csv"` is always valid. Backslashes need escaping (`"data\\penguins.csv"`), which you will forget exactly once before switching to forward slashes permanently.
 
 Before reading any file, verify it exists. A clear error you write yourself beats a cryptic one from deep inside `read.csv()`:
 
@@ -57,26 +57,16 @@ if (!file.exists(path)) stop("File not found: ", path)
 
 ## Reading CSV files {#sec-reading-csv}
 
-::: {.callout-note collapse="true"}
-## Reading a file is not a pure function
-
-Reading a file is a function: hand it a path, get back a data frame. You could write the type signature as `read_csv :: FilePath -> DataFrame`. In a purely functional world the same path would always produce the same data frame, but I/O demolishes that guarantee because someone could edit the file between calls, or the disk could fail, or the network share could vanish. R doesn't track this in its type system; the function looks pure but isn't. Haskell solves the problem by wrapping I/O in a monad (`readFile :: FilePath -> IO String`), making the side effect visible in the type. R trusts you to know the difference.
-
-That trust has consequences. Every call to `read_csv()` implicitly assumes: this file has not changed since I last looked, the encoding is what I think it is, and the column that was numeric in row 1 is still numeric in row 4012. When any of those assumptions break, the failure is hard to diagnose because the function *looks* deterministic — same path, same call — but the world behind the path has shifted. This is why `readr` lets you specify `col_types` explicitly: you are declaring the contract the file must satisfy, and `readr` validates it on your behalf. Without that declaration, the function infers types from the first thousand rows and hopes the rest agree. Specifying types is the functional programmer's workaround for a function that cannot be pure.
-:::
-
-Comma-separated values\index{CSV} date to the 1970s on IBM mainframes, and there is still no real standard. RFC 4180 (2005) tried, but Excel, R, Python, and most other tools disagree on quoting rules, newlines inside fields, and encoding. "My CSV won't load" is perhaps the only truly universal data experience.
-
-Base R reads CSVs with `read.csv()`\index{read.csv()}:
+Base R reads a comma-separated file\index{CSV} with `read.csv()`\index{read.csv()}:
 
 ```{r}
 #| eval: false
 df <- read.csv(here::here("data", "penguins.csv"))
 ```
 
-It works, but the defaults are quirky. In older versions of R, `read.csv()` converted strings to factors automatically (`stringsAsFactors = TRUE`), the same pain point from @sec-data-frames. Since R 4.0 the default is `FALSE`, but you will still encounter old code and old advice that assume otherwise. The quirks, however, run deeper than `stringsAsFactors`.
+Its defaults come from an older R. Before R 4.0, `read.csv()` turned every string column into a factor (`stringsAsFactors = TRUE`), the same pain point from @sec-data-frames, and old scripts still carry `stringsAsFactors = FALSE` to switch it off. The current default is `FALSE`, but `read.csv()` still guesses column types without telling you what it guessed, reads large files slowly, and returns a plain data frame.
 
-`readr::read_csv()`\index{read\_csv()}\index{readr (package)} addresses most of them:
+`readr::read_csv()`\index{read\_csv()}\index{readr (package)} fixes all three:
 
 ```{r}
 #| eval: false
@@ -86,12 +76,7 @@ df <- read_csv(here::here("data", "penguins.csv"))
 
 `read_csv()` prints the column types it guessed, so you catch mistakes immediately. It also never converts strings to factors, reads large files faster, and returns a tibble (@sec-tibbles) instead of a plain data frame. For most work, `read_csv()` is simply the better default.
 
-Key arguments worth knowing:
-
-- `col_types`: specify column types explicitly instead of letting readr guess.
-- `na`: which strings should be treated as missing values (default: `c("", "NA")`).
-- `skip`: skip header lines before reading data.
-- `locale`: control decimal marks, encodings, and date formats.
+When the guesses are wrong, or when a file uses its own spelling for missing values, you say so in the call:
 
 ```{r}
 #| eval: false
@@ -107,9 +92,19 @@ df <- read_csv(
 )
 ```
 
+`col_types` declares each column's type instead of letting readr guess, and `na` lists the strings to treat as missing (the default is `c("", "NA")`). Two more arguments come up often: `skip` drops header lines before the data starts, and `locale` controls decimal marks, encodings, and date formats.
+
 ::: callout-tip
 ## Opinion
 Specify `col_types` explicitly in any script you will run more than once. readr guesses types from the first 1,000 rows, which works beautifully until row 1,001 contains a string in what it decided was a numeric column. Guessing is for exploration; production code deserves certainty.
+:::
+
+::: {.callout-note collapse="true"}
+## Reading a file is not a pure function
+
+Reading a file is a function: hand it a path, get back a data frame. You could write the type signature as `read_csv :: FilePath -> DataFrame`. In a purely functional world the same path would always produce the same data frame, but I/O demolishes that guarantee because someone could edit the file between calls, or the disk could fail, or the network share could vanish. R doesn't track this in its type system; the function looks pure but isn't. Haskell solves the problem by wrapping I/O in a monad (`readFile :: FilePath -> IO String`), making the side effect visible in the type. R trusts you to know the difference.
+
+That trust has consequences. Every call to `read_csv()` implicitly assumes: this file has not changed since I last looked, the encoding is what I think it is, and the column that was numeric in row 1 is still numeric in row 4012. When any of those assumptions break, the failure is hard to diagnose because the function *looks* deterministic (same path, same call) but the world behind the path has shifted. This is why `readr` lets you specify `col_types` explicitly: you are declaring the contract the file must satisfy, and `readr` validates it on your behalf. Without that declaration, the function infers types from the first thousand rows and hopes the rest agree. Specifying types is the functional programmer's workaround for a function that cannot be pure.
 :::
 
 For European CSVs where `;` is the delimiter and `,` the decimal mark, use `read_csv2()`. For tab-separated files, `read_tsv()`. For anything else, `read_delim()` lets you specify whatever delimiter the file actually uses:
@@ -118,6 +113,12 @@ For European CSVs where `;` is the delimiter and `,` the decimal mark, use `read
 #| eval: false
 read_delim(here::here("data", "pipes.txt"), delim = "|")
 ```
+
+::: {.callout-note collapse="true"}
+## There is no CSV standard
+
+Comma-separated values date to the 1970s on IBM mainframes, and there is still no real standard. RFC 4180 (2005) tried, but Excel, R, Python, and most other tools disagree on quoting rules, newlines inside fields, and encoding. "My CSV won't load" is perhaps the only truly universal data experience.
+:::
 
 
 ### Exercises {.unnumbered}
@@ -166,11 +167,7 @@ library(readxl)
 df <- read_excel(here::here("data", "survey.xlsx"))
 ```
 
-Key arguments:
-
-- `sheet`: select a sheet by name or index.
-- `range`: read a specific cell range (e.g., `"B3:D15"`).
-- `col_types`, `na`, `skip`: same idea as readr.
+A workbook rarely has one sheet with the data starting in cell A1, so most calls name the sheet and the block of cells they want:
 
 ```{r}
 #| eval: false
@@ -181,6 +178,8 @@ df <- read_excel(
   na = c("", "N/A")
 )
 ```
+
+`sheet` takes a name or an index, `range` takes a cell range in Excel's own notation, and `col_types`, `na`, and `skip` work as they do in readr.
 
 When you don't know the structure of an Excel file (and with Excel files, you often don't), list the sheet names first:
 
@@ -252,7 +251,7 @@ result <- dbGetQuery(con, "SELECT * FROM read_parquet('data/big_table.parquet')"
 dbDisconnect(con, shutdown = TRUE)
 ```
 
-The real power, though, comes from combining databases with dplyr. Instead of writing SQL by hand you can use dplyr verbs on a database table and let R translate them into the appropriate SQL dialect behind the scenes:
+You can also skip the SQL. dplyr verbs work on a database table, and R translates them into the right SQL dialect before sending the query:
 
 ```{r}
 #| eval: false
@@ -262,7 +261,7 @@ tbl(con, "measurements") |>
   summarise(mean_value = mean(value))
 ```
 
-dplyr generates the SQL for you. The full treatment of database-backed dplyr is in @sec-databases.
+dplyr generates the SQL for you. The full treatment of database-backed dplyr is in @sec-columnar-engines.
 
 What these tools share is a common interface: you describe what you want, and the backend figures out how to get it. But databases solve the "too big" problem by moving computation to the data. What if you just want a faster file?
 
@@ -285,9 +284,7 @@ df <- readRDS(here::here("cache", "processed.rds"))
 
 RDS is fast, compact, and preserves R types exactly: factors, dates, attributes, nested lists, everything. The catch is that it is R-only. Python can't read it, Excel can't read it, and the moment a collaborator opens Jupyter instead of RStudio, you need a different format.
 
-CSV is human-readable, which is wonderful for debugging and terrible for performance. The bottleneck is structural: CSV is row-oriented, storing each record as a unit, so reading a single column means scanning every row and throwing away everything you don't need. Columnar formats (Parquet, Feather, DuckDB's native format) flip this arrangement by storing each column contiguously, which makes analytical queries that touch few columns but many rows dramatically faster while also compressing far better because similar values sit next to each other. This row-versus-column distinction shapes every file format decision in data engineering.
-
-Parquet is that format:
+CSV is human-readable, which is wonderful for debugging and terrible for performance. A CSV stores one row after another, so reading a single column means scanning every row and throwing away the rest. Parquet stores each column as its own contiguous block instead:
 
 ```{r}
 #| eval: false
@@ -296,9 +293,9 @@ write_parquet(df, here::here("data", "measurements.parquet"))
 df <- read_parquet(here::here("data", "measurements.parquet"))
 ```
 
-Parquet files are columnar, compressed, and readable by R, Python, Spark, DuckDB, and dozens of other tools. They are typically a fraction of the size of equivalent CSVs and far faster to read.
+A query that needs three columns of a fifty-column Parquet file reads only those three, and because similar values sit next to each other, the file compresses far better than the same table as CSV. Parquet files are typically a fraction of the size of the equivalent CSV, and R, Python, Spark, DuckDB, and dozens of other tools read them.
 
-Arrow's Feather format offers yet another trade-off: faster than Parquet for reading and writing, but producing larger files because it prioritizes speed over compression. Use Parquet for storage and sharing; use Feather for speed-critical intermediate files where disk space is cheap:
+Arrow's Feather format reads and writes faster than Parquet and produces larger files, because it skips most of the compression. Use Parquet for storage and sharing; use Feather for speed-critical intermediate files where disk space is cheap:
 
 ```{r}
 #| eval: false
@@ -375,7 +372,7 @@ Encoding(x)
 x_utf8 <- iconv(x, from = "latin1", to = "UTF-8")
 ```
 
-The practical rule fits in one sentence: use `readr` (it assumes UTF-8), and when characters still come out wrong, pass the correct encoding explicitly. Which brings us back to where we started: the gap between the file on disk and the data frame in memory is full of invisible decisions (paths, delimiters, types, encodings) that someone made for you, often badly, and that break the moment you move the file to a different machine.
+The practical rule fits in one sentence: use `readr` (it assumes UTF-8), and when characters still come out wrong, pass the correct encoding explicitly. Encoding is the last of the decisions someone made for you when the file was written, after the path, the delimiter, and the column types, and like the others it only shows itself when the file moves to a machine that made a different choice.
 
 
 ### Exercises {.unnumbered}

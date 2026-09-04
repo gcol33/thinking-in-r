@@ -658,7 +658,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Try loading a CSV you downloaded six months ago from a government portal. The accented characters in city names have turned into question marks, the column that should be numeric is full of strings because row 4,012 contains the word “pending,” and the file path you hard-coded starts with <code>C:/Users/someone_else/</code>. Three lines of <code>read.csv()</code> and three different failures, none of which have anything to do with your analysis. Every data project begins here, in the gap between the file on disk and the clean data frame in memory, and that gap is wider than most tutorials admit.</p>
-<p>This chapter is about crossing it. CSV, Excel, databases, binary formats: each has its own traps, and two problems cut across all of them (file paths and character encodings) with a persistence that borders on malice.</p>
+<p>This chapter is about crossing it. CSV, Excel, databases, binary formats: each has its own traps, and two problems, file paths and character encodings, cut across all of them.</p>
 <section id="sec-file-paths" class="level2" data-number="13.1">
 <h2 data-number="13.1" class="anchored" data-anchor-id="sec-file-paths"><span class="header-section-number">13.1</span> File paths</h2>
 <p>Every R session has a working directory, and all relative paths resolve from it:</p>
@@ -684,7 +684,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>It works on any machine, any OS, any nesting depth. Every file path in this chapter uses <code>here::here()</code>.</p>
-<p>Paths hide one more trap, and it is entirely cosmetic until it isn’t: slash direction. Forward slashes work everywhere in R, even on Windows, so <code>"data/penguins.csv"</code> is always valid. Backslashes need escaping (<code>"data\\penguins.csv"</code>), which you will forget exactly once before switching to forward slashes permanently.</p>
+<p>Paths hide one more trap: slash direction. Forward slashes work everywhere in R, even on Windows, so <code>"data/penguins.csv"</code> is always valid. Backslashes need escaping (<code>"data\\penguins.csv"</code>), which you will forget exactly once before switching to forward slashes permanently.</p>
 <p>Before reading any file, verify it exists. A clear error you write yourself beats a cryptic one from deep inside <code>read.csv()</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>)</span>
@@ -702,42 +702,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-reading-csv" class="level2" data-number="13.2">
 <h2 data-number="13.2" class="anchored" data-anchor-id="sec-reading-csv"><span class="header-section-number">13.2</span> Reading CSV files</h2>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Reading a file is not a pure function
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>Reading a file is a function: hand it a path, get back a data frame. You could write the type signature as <code>read_csv :: FilePath -&gt; DataFrame</code>. In a purely functional world the same path would always produce the same data frame, but I/O demolishes that guarantee because someone could edit the file between calls, or the disk could fail, or the network share could vanish. R doesn’t track this in its type system; the function looks pure but isn’t. Haskell solves the problem by wrapping I/O in a monad (<code>readFile :: FilePath -&gt; IO String</code>), making the side effect visible in the type. R trusts you to know the difference.</p>
-<p>That trust has consequences. Every call to <code>read_csv()</code> implicitly assumes: this file has not changed since I last looked, the encoding is what I think it is, and the column that was numeric in row 1 is still numeric in row 4012. When any of those assumptions break, the failure is hard to diagnose because the function <em>looks</em> deterministic — same path, same call — but the world behind the path has shifted. This is why <code>readr</code> lets you specify <code>col_types</code> explicitly: you are declaring the contract the file must satisfy, and <code>readr</code> validates it on your behalf. Without that declaration, the function infers types from the first thousand rows and hopes the rest agree. Specifying types is the functional programmer’s workaround for a function that cannot be pure.</p>
-</div>
-</div>
-</div>
-<p>Comma-separated values date to the 1970s on IBM mainframes, and there is still no real standard. RFC 4180 (2005) tried, but Excel, R, Python, and most other tools disagree on quoting rules, newlines inside fields, and encoding. “My CSV won’t load” is perhaps the only truly universal data experience.</p>
-<p>Base R reads CSVs with <code>read.csv()</code>:</p>
+<p>Base R reads a comma-separated file with <code>read.csv()</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>It works, but the defaults are quirky. In older versions of R, <code>read.csv()</code> converted strings to factors automatically (<code>stringsAsFactors = TRUE</code>), the same pain point from <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>. Since R 4.0 the default is <code>FALSE</code>, but you will still encounter old code and old advice that assume otherwise. The quirks, however, run deeper than <code>stringsAsFactors</code>.</p>
-<p><code>readr::read_csv()</code> addresses most of them:</p>
+<p>Its defaults come from an older R. Before R 4.0, <code>read.csv()</code> turned every string column into a factor (<code>stringsAsFactors = TRUE</code>), the same pain point from <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>, and old scripts still carry <code>stringsAsFactors = FALSE</code> to switch it off. The current default is <code>FALSE</code>, but <code>read.csv()</code> still guesses column types without telling you what it guessed, reads large files slowly, and returns a plain data frame.</p>
+<p><code>readr::read_csv()</code> fixes all three:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>read_csv()</code> prints the column types it guessed, so you catch mistakes immediately. It also never converts strings to factors, reads large files faster, and returns a tibble (<a href="ch11-data-frames.html#sec-tibbles" class="quarto-xref"><span>Section 11.6</span></a>) instead of a plain data frame. For most work, <code>read_csv()</code> is simply the better default.</p>
-<p>Key arguments worth knowing:</p>
-<ul>
-<li><code>col_types</code>: specify column types explicitly instead of letting readr guess.</li>
-<li><code>na</code>: which strings should be treated as missing values (default: <code>c("", "NA")</code>).</li>
-<li><code>skip</code>: skip header lines before reading data.</li>
-<li><code>locale</code>: control decimal marks, encodings, and date formats.</li>
-</ul>
+<p>When the guesses are wrong, or when a file uses its own spelling for missing values, you say so in the call:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"survey.csv"</span>),</span>
@@ -750,6 +726,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">na =</span> <span class="fu">c</span>(<span class="st">""</span>, <span class="st">"NA"</span>, <span class="st">"missing"</span>)</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p><code>col_types</code> declares each column’s type instead of letting readr guess, and <code>na</code> lists the strings to treat as missing (the default is <code>c("", "NA")</code>). Two more arguments come up often: <code>skip</code> drops header lines before the data starts, and <code>locale</code> controls decimal marks, encodings, and date formats.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -763,9 +740,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Specify <code>col_types</code> explicitly in any script you will run more than once. readr guesses types from the first 1,000 rows, which works beautifully until row 1,001 contains a string in what it decided was a numeric column. Guessing is for exploration; production code deserves certainty.</p>
 </div>
 </div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Reading a file is not a pure function
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Reading a file is a function: hand it a path, get back a data frame. You could write the type signature as <code>read_csv :: FilePath -&gt; DataFrame</code>. In a purely functional world the same path would always produce the same data frame, but I/O demolishes that guarantee because someone could edit the file between calls, or the disk could fail, or the network share could vanish. R doesn’t track this in its type system; the function looks pure but isn’t. Haskell solves the problem by wrapping I/O in a monad (<code>readFile :: FilePath -&gt; IO String</code>), making the side effect visible in the type. R trusts you to know the difference.</p>
+<p>That trust has consequences. Every call to <code>read_csv()</code> implicitly assumes: this file has not changed since I last looked, the encoding is what I think it is, and the column that was numeric in row 1 is still numeric in row 4012. When any of those assumptions break, the failure is hard to diagnose because the function <em>looks</em> deterministic (same path, same call) but the world behind the path has shifted. This is why <code>readr</code> lets you specify <code>col_types</code> explicitly: you are declaring the contract the file must satisfy, and <code>readr</code> validates it on your behalf. Without that declaration, the function infers types from the first thousand rows and hopes the rest agree. Specifying types is the functional programmer’s workaround for a function that cannot be pure.</p>
+</div>
+</div>
+</div>
 <p>For European CSVs where <code>;</code> is the delimiter and <code>,</code> the decimal mark, use <code>read_csv2()</code>. For tab-separated files, <code>read_tsv()</code>. For anything else, <code>read_delim()</code> lets you specify whatever delimiter the file actually uses:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_delim</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"pipes.txt"</span>), <span class="at">delim =</span> <span class="st">"|"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>There is no CSV standard
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Comma-separated values date to the 1970s on IBM mainframes, and there is still no real standard. RFC 4180 (2005) tried, but Excel, R, Python, and most other tools disagree on quoting rules, newlines inside fields, and encoding. “My CSV won’t load” is perhaps the only truly universal data experience.</p>
+</div>
+</div>
 </div>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
@@ -804,12 +814,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"survey.xlsx"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Key arguments:</p>
-<ul>
-<li><code>sheet</code>: select a sheet by name or index.</li>
-<li><code>range</code>: read a specific cell range (e.g., <code>"B3:D15"</code>).</li>
-<li><code>col_types</code>, <code>na</code>, <code>skip</code>: same idea as readr.</li>
-</ul>
+<p>A workbook rarely has one sheet with the data starting in cell A1, so most calls name the sheet and the block of cells they want:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"survey.xlsx"</span>),</span>
@@ -818,6 +823,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">na =</span> <span class="fu">c</span>(<span class="st">""</span>, <span class="st">"N/A"</span>)</span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p><code>sheet</code> takes a name or an index, <code>range</code> takes a cell range in Excel’s own notation, and <code>col_types</code>, <code>na</code>, and <code>skip</code> work as they do in readr.</p>
 <p>When you don’t know the structure of an Excel file (and with Excel files, you often don’t), list the sheet names first:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">excel_sheets</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"survey.xlsx"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -877,14 +883,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">dbGetQuery</span>(con, <span class="st">"SELECT * FROM read_parquet('data/big_table.parquet')"</span>)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con, <span class="at">shutdown =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The real power, though, comes from combining databases with dplyr. Instead of writing SQL by hand you can use dplyr verbs on a database table and let R translate them into the appropriate SQL dialect behind the scenes:</p>
+<p>You can also skip the SQL. dplyr verbs work on a database table, and R translates them into the right SQL dialect before sending the query:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(RSQLite<span class="sc">::</span><span class="fu">SQLite</span>(), here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"example.sqlite"</span>))</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tbl</span>(con, <span class="st">"measurements"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;</span> <span class="dv">2020</span>) <span class="sc">|&gt;</span></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean_value =</span> <span class="fu">mean</span>(value))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>dplyr generates the SQL for you. The full treatment of database-backed dplyr is in <a href="#sec-databases" class="quarto-xref"><span>Section 13.5</span></a>.</p>
+<p>dplyr generates the SQL for you. The full treatment of database-backed dplyr is in <a href="ch28-performance.html#sec-columnar-engines" class="quarto-xref"><span>Section 28.5</span></a>.</p>
 <p>What these tools share is a common interface: you describe what you want, and the backend figures out how to get it. But databases solve the “too big” problem by moving computation to the data. What if you just want a faster file?</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
@@ -902,15 +908,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"cache"</span>, <span class="st">"processed.rds"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>RDS is fast, compact, and preserves R types exactly: factors, dates, attributes, nested lists, everything. The catch is that it is R-only. Python can’t read it, Excel can’t read it, and the moment a collaborator opens Jupyter instead of RStudio, you need a different format.</p>
-<p>CSV is human-readable, which is wonderful for debugging and terrible for performance. The bottleneck is structural: CSV is row-oriented, storing each record as a unit, so reading a single column means scanning every row and throwing away everything you don’t need. Columnar formats (Parquet, Feather, DuckDB’s native format) flip this arrangement by storing each column contiguously, which makes analytical queries that touch few columns but many rows dramatically faster while also compressing far better because similar values sit next to each other. This row-versus-column distinction shapes every file format decision in data engineering.</p>
-<p>Parquet is that format:</p>
+<p>CSV is human-readable, which is wonderful for debugging and terrible for performance. A CSV stores one row after another, so reading a single column means scanning every row and throwing away the rest. Parquet stores each column as its own contiguous block instead:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow)</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_parquet</span>(df, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"measurements.parquet"</span>))</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"measurements.parquet"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Parquet files are columnar, compressed, and readable by R, Python, Spark, DuckDB, and dozens of other tools. They are typically a fraction of the size of equivalent CSVs and far faster to read.</p>
-<p>Arrow’s Feather format offers yet another trade-off: faster than Parquet for reading and writing, but producing larger files because it prioritizes speed over compression. Use Parquet for storage and sharing; use Feather for speed-critical intermediate files where disk space is cheap:</p>
+<p>A query that needs three columns of a fifty-column Parquet file reads only those three, and because similar values sit next to each other, the file compresses far better than the same table as CSV. Parquet files are typically a fraction of the size of the equivalent CSV, and R, Python, Spark, DuckDB, and dozens of other tools read them.</p>
+<p>Arrow’s Feather format reads and writes faster than Parquet and produces larger files, because it skips most of the compression. Use Parquet for storage and sharing; use Feather for speed-critical intermediate files where disk space is cheap:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_feather</span>(df, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"cache"</span>, <span class="st">"fast_cache.feather"</span>))</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_feather</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"cache"</span>, <span class="st">"fast_cache.feather"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -1014,7 +1019,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert from Latin-1 to UTF-8</span></span>
 <span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>x_utf8 <span class="ot">&lt;-</span> <span class="fu">iconv</span>(x, <span class="at">from =</span> <span class="st">"latin1"</span>, <span class="at">to =</span> <span class="st">"UTF-8"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The practical rule fits in one sentence: use <code>readr</code> (it assumes UTF-8), and when characters still come out wrong, pass the correct encoding explicitly. Which brings us back to where we started: the gap between the file on disk and the data frame in memory is full of invisible decisions (paths, delimiters, types, encodings) that someone made for you, often badly, and that break the moment you move the file to a different machine.</p>
+<p>The practical rule fits in one sentence: use <code>readr</code> (it assumes UTF-8), and when characters still come out wrong, pass the correct encoding explicitly. Encoding is the last of the decisions someone made for you when the file was written, after the path, the delimiter, and the column types, and like the others it only shows itself when the file moves to a machine that made a different choice.</p>
 <section id="exercises-6" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-6">Exercises</h3>
 <ol type="1">
@@ -1116,53 +1121,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
