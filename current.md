@@ -1,10 +1,10 @@
 # Current work: readability pass
 
-Last updated 2026-09-04 (ch16-18 session).
+Last updated 2026-09-04 (ch19-21 session).
 
 ## Status
 
-Chapters 1 to 18 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in the commit after it). Chapters 19 onward have not. Next session: ch19, ch20, ch21.
+Chapters 1 to 21 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe). Chapters 22 onward have not. Next session: ch22, ch23, ch24.
 
 ## The problem
 
@@ -96,8 +96,22 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Flag for another session: ch02 line 86 says S had lexical scoping "exactly as in the `make_adder` example"; ch18 now says S looked free variables up in the top-level workspace (R FAQ 3.3.1). One of the two chapters has to move.
 - Word counts: ch16 2508 to 2392, ch17 3591 to 3261, ch18 3158 to 2873.
 
+## Notes from ch19-21
+
+- Three factual fixes from running the code: ch21 said `Reduce(`+`, list())` errors (it returns `NULL`; the chunk had `error: true` and the prose now explains the `NULL`); ch19 called `map_dfr()` deprecated (purrr 1.2.2 runs it without a message; it is superseded); ch20 said "the loop version needs `force()` too" (the `for` loop has no argument to force; every closure shares the one global `i`). Also verified with a classed `[[` method that `lapply()` forces `FUN`'s argument before `FUN` returns, so the prose says so without a version number (the R 3.2.0 NEWS entry is not in the `news()` database shipped with R 4.6).
+- Broken cross-ref: ch19 "In @sec-column-wise, you saw `across()`" pointed forward at ch21's row-wise `c_across()` section. `across()` is taught in ch14 @sec-more-verbs. ch21's section relabelled `sec-c-across` (only ch19 referenced the old label).
+- Undefined term: "promise" was used in ch20 as if known, and no chapter before ch23 defines it. ch20 now defines it in one sentence at first use with a forward ref to @sec-promises.
+- Re-teaching removed: ch20 currying paragraph (Schönfinkel, Curry, Haskell) is now a callout that back-references @sec-arguments-defaults, where ch05 names currying; ch21 monoid paragraphs (three "form a monoid" sentences, MapReduce, pipe, ggplot) are now one callout pointing at @sec-no-scalars, and the main text says "identity element" once with the same back-ref.
+- Show-before-name: ch19 `lapply()` code before the McCarthy `maplist`/`mapcar` history (callout; the 1960 paper defines `maplist`, `mapcar` is LISP 1.5); ch19 "functional" named after the `map_dbl()` line; ch20 factory named after `power()`, promise and lazy evaluation trap named after the 125, memoization named after the two `system.time()` calls, function operator named after `safely(log)`; ch21 `rowwise()`/`c_across()` code before "row-wise".
+- Bullet-to-prose: ch19 typed variants (now `map_int`/`map_lgl` chunks first, then one sentence listing all four), ch19 "when loops are fine" (random walk chunk first, then the three cases as paragraphs), ch20 practical factories and memoize/don't-memoize lists, ch21 practical patterns.
+- Callouts added: ch19 "Where `map` comes from", functor callout made collapsible; ch20 "Partial application and currying", "Decorators" (moved after `with_logging()` is defined, since it named that function before it existed); ch21 "Folding a monoid", "Haskell's two folds" (rewritten: `foldr` can stop early on an infinite list, `foldl` builds thunks; the old "cheaper in some cases" was vaguer).
+- ggplot2 claim in ch20 replaced: "the plot would slow to a crawl" and "ggplot2 gains its speed from that separation" are gone; `scale_colour_brewer()` calls `pal_brewer()`, which returns the palette function, and that is what the prose now says.
+- ch21 `rowwise()` timing: measured 37 s vs 0.02 s on 100,000 rows; prose says "tens of seconds" (was "seconds").
+- Cut: ch19 "three reasons" enumeration for purrr (the pipe reason was false, `lapply()` pipes just as well), "debugging for five seconds vs an hour", "not `map()`, not `walk()`"; ch20 "Three concepts from three chapters", "The real power emerges"; ch21 "Most programmers who discover `map()` never learn `Reduce()`", "fold syntax as a straitjacket".
+- Word counts: ch19 2773 to 2581, ch20 2064 to 1980, ch21 2095 to 2031.
+
 ## Files for the next session
 
-- `chapters/ch19-iteration-without-loops.qmd`
-- `chapters/ch20-function-factories.qmd`
-- `chapters/ch21-reduce-and-accumulate.qmd`
+- `chapters/ch22-recursion-and-fixed-points.qmd`
+- `chapters/ch23-lazy-evaluation.qmd`
+- `chapters/ch24-s3-and-s7.qmd`
