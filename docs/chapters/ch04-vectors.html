@@ -663,7 +663,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>That <code>[1]</code> has been there since Chapter 1, quietly announcing something you probably didn’t notice: you never made a number. You made a vector.</p>
 <section id="sec-no-scalars" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="sec-no-scalars"><span class="header-section-number">4.1</span> There are no scalars</h2>
-<p>In C or Python, a single number and a collection of numbers are fundamentally different types: one is a scalar, the other is an array or list. R erases that distinction. Every value in R is a vector: <code>42</code> is a numeric vector of length 1, <code>"hello"</code> is a character vector of length 1, and <code>TRUE</code> is a logical vector of length 1.</p>
+<p>Ask R how long a number is:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="dv">42</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
@@ -672,8 +672,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="cn">TRUE</span>)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Why would a language erase the distinction between “one thing” and “many things”? Because S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>), the language R descends from, was built for people who work with columns of data, not individual numbers. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale, which means every operation you write, from arithmetic to comparison, has to reckon with that choice.</p>
-<p><code>x * 2</code> works the same whether <code>x</code> has one element or a million, because <code>x</code> is always a vector and R doesn’t need a special case for scalars; it just operates on vectors. But how do you build them?</p>
+<p>Each one has a length, and the length is 1. <code>42</code> is a numeric vector with one element, <code>"hello"</code> a character vector with one element, <code>TRUE</code> a logical vector with one element. Most languages keep a single number and a collection of numbers as two different kinds of thing, a scalar and an array. R has only the collection.</p>
+<p>Why would a language erase the distinction between “one thing” and “many things”? Because S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>), the language R descends from, was built for people who work with columns of data. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale, which means every operation you write, from arithmetic to comparison, has to reckon with that choice.</p>
+<p><code>x * 2</code> works the same whether <code>x</code> has one element or a million, because <code>x</code> is always a vector and R needs no special case for scalars. But how do you build them?</p>
 </section>
 <section id="sec-atomic-vectors" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="sec-atomic-vectors"><span class="header-section-number">4.2</span> Atomic vectors</h2>
@@ -696,19 +697,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 = c(c(58, 62, 55), c(75, 80, 71))
 = c(58, 62, 55, 75, 80, 71)
 = [58, 62, 55, 75, 80, 71]</code></pre>
-<p>Each step replaces a name or function call with its value. <code>morning</code> becomes <code>c(58, 62, 55)</code>, the nested <code>c()</code> calls flatten into one, and the last step is where term replacement ends and the computer takes over: R allocates a contiguous block of memory, stores six numbers side by side, and the expression has been reduced to a value that lives in memory.</p>
-<p>This is term replacement, the logic at the heart of Church’s lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>). In Chapter 1, <code>add(3, add(5, 10))</code> reduced step by step until only <code>18</code> remained. Here, <code>c(morning, afternoon)</code> reduces to a six-element vector. Even building a data structure is a function call that reduces to a value.</p>
+<p>Each step replaces a name or function call with its value. <code>morning</code> becomes <code>c(58, 62, 55)</code>, the nested <code>c()</code> calls flatten into one, and at the last step the computer takes over: R allocates a contiguous block of memory and stores six numbers side by side.</p>
+<p>This is the same term replacement that folded <code>add(3, add(5, 10))</code> down to <code>18</code> in <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>. Here, <code>c(morning, afternoon)</code> reduces to a six-element vector. Even building a data structure is a function call that reduces to a value.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>For the curious
+<span class="screen-reader-only">Note</span>Grouping and <code>NULL</code>
 </div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p><code>c()</code> has two properties worth noticing. First, it is <em>associative</em>: <code>c(c(1, 2), c(3, 4))</code> and <code>c(1, c(2, c(3, 4)))</code> both produce <code>c(1, 2, 3, 4)</code>. Grouping doesn’t matter. Second, <code>c(x, NULL)</code> returns <code>x</code> unchanged, so <code>NULL</code> acts as an <em>identity element</em>: combining with it does nothing. An operation that is associative and has an identity element is called a <em>monoid</em>. Addition with 0 is a monoid. String concatenation with <code>""</code> is a monoid. <code>c()</code> with <code>NULL</code> is a monoid. The pattern keeps showing up: dplyr pipelines (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>), function composition (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>), and <code>Reduce()</code> (<a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a>) all rely on it.</p>
+<p><code>c(c(1, 2), c(3, 4))</code> and <code>c(1, c(2, c(3, 4)))</code> both produce <code>c(1, 2, 3, 4)</code>; the grouping does not matter, so <code>c()</code> is <em>associative</em>. And <code>c(x, NULL)</code> returns <code>x</code> unchanged, so <code>NULL</code> is an <em>identity element</em> for it: combining with <code>NULL</code> does nothing. An operation that is associative and has an identity element is called a <em>monoid</em>. Addition with 0 is one, string concatenation with <code>""</code> is one, and <code>c()</code> with <code>NULL</code> is one. The same structure is what makes <code>Reduce()</code> work (<a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a>).</p>
+</div>
 </div>
 </div>
 <p>A few shortcuts for common patterns:</p>
@@ -725,7 +729,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "hello" "hello" "hello"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>1:5</code> generates integers from 1 to 5, <code>seq()</code> generates a sequence with a specified step size, and <code>rep()</code> repeats a value.</p>
-<p>R has four atomic types you will use constantly, and every one of them follows a pecking order that R enforces behind your back. Two more exist but rarely matter:</p>
+<p>Ask R what type each value is:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(<span class="fl">3.14</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "double"</span></span>
@@ -736,8 +740,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(<span class="cn">TRUE</span>)</span>
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "logical"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>double</code> is a decimal number (even <code>42</code> is stored as a double by default), while <code>integer</code> needs an <code>L</code> suffix: <code>42L</code>. <code>character</code> is text, <code>logical</code> is <code>TRUE</code> or <code>FALSE</code>. The other two types, <code>complex</code> and <code>raw</code>, exist for specialized work; you can ignore them.</p>
-<p>Every element in a vector must be the same type. But what happens when you try to break that same-type rule?</p>
+<p>These are the four atomic types you will use constantly. <code>double</code> is a decimal number (even <code>42</code> is stored as a double by default), while <code>integer</code> needs an <code>L</code> suffix: <code>42L</code>. <code>character</code> is text, <code>logical</code> is <code>TRUE</code> or <code>FALSE</code>. Two more types, <code>complex</code> and <code>raw</code>, exist for specialized work; you can ignore them.</p>
+<p>Every element in a vector must be the same type. But what happens when you try to break that rule?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -825,23 +829,7 @@ Figure&nbsp;4.1: R’s coercion hierarchy: mixing types promotes everything to t
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">9</span>, <span class="dv">16</span>, <span class="dv">25</span>))</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1 2 3 4 5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>In lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>), <code>sqrt</code> is a function <code>f = λx. √x</code>. Even <code>√</code> itself is not a primitive; it can be computed by repeated function application. You start with a rough guess and improve it over and over until it’s close enough:</p>
-<pre><code>√x = iterate(λguess. (guess + x / guess) / 2, x)</code></pre>
-<p>Start with a guess, apply the refinement function <code>λguess. (guess + x / guess) / 2</code> repeatedly, and the result converges to <code>√x</code>. Square root reduces to division, addition, and repeated application of a lambda, which are themselves reducible further. At every level, the building blocks are functions applied to arguments.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Under the hood
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>In practice, R calls C’s <code>sqrt()</code>, which on modern CPUs maps to a hardware instruction. The chip uses a lookup table for a rough estimate, then refines it with the same <code>(guess + x / guess) / 2</code> step, finishing in 10-20 clock cycles. The abstraction and the silicon converge on the same algorithm.</p>
-</div>
-</div>
-<p>For our purposes, <code>f = λx. √x</code> is enough. R applies <code>f</code> to each element by term replacement:</p>
+<p>Written as term replacement, with <code>f</code> standing for <code>sqrt</code>, the call unfolds like this:</p>
 <pre><code>f = λx. √x
 
 f(c(1, 4, 9, 16, 25))
@@ -851,19 +839,41 @@ f(c(1, 4, 9, 16, 25))
 = c(1, 2, 3, 4, 5)</code></pre>
 <p>R distributes the function over the vector automatically; you write one application, R performs five. This is Church’s model extended to collections: a function applied to a vector produces a vector of results. <code>sqrt(c(1, 4, 9, 16, 25))</code> is a single function applied to a single argument, and the fact that the argument contains five numbers is R’s business, not yours.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>For the curious
+<span class="screen-reader-only">Note</span>Where <code>√</code> comes from
 </div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>This pattern has a name: a <em>functor</em>. A functor maps a function over a structure while preserving the structure’s shape. <code>sqrt</code> applied to a five-element vector returns a five-element vector; the function changes the contents, but the container stays intact. Vectors are functors, lists are functors (via <code>lapply</code>), and data frame columns are functors (via <code>mutate</code>). The word comes from category theory, but the idea is concrete: apply inside, preserve outside. You will see it everywhere in this book, and by the end it will feel as natural as vectorization itself.</p>
+<p>Even <code>√</code> is not a primitive. Start with a rough guess and improve it over and over until it is close enough:</p>
+<pre><code>√x = iterate(λguess. (guess + x / guess) / 2, x)</code></pre>
+<p>Apply the refinement function <code>λguess. (guess + x / guess) / 2</code> repeatedly and the result converges to <code>√x</code>. Square root reduces to division, addition, and repeated application of a lambda, which are themselves reducible further. At every level, the building blocks are functions applied to arguments.</p>
+<p>In practice, R calls C’s <code>sqrt()</code>, which on modern CPUs maps to a hardware instruction. The chip uses a lookup table for a rough estimate, then refines it with the same <code>(guess + x / guess) / 2</code> step, finishing in 10-20 clock cycles. The abstraction and the silicon converge on the same algorithm.</p>
 </div>
 </div>
-<p>When you wrote <code>c(morning, afternoon)</code>, the names were substituted for their values and the expression reduced to a single vector. That is <em>beta reduction</em>: replacing a name with its value and simplifying (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a> covers the formal version). The theoretical machinery from Chapter 1 has been running under every line of code in this chapter, not as background context but as the engine. By the time you typed <code>42</code> into the console and got <code>42</code> back, you were already doing functional programming — you just did not have a name for it yet.</p>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Apply inside, preserve outside
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><code>sqrt</code> applied to a five-element vector returns a five-element vector; the function changes the contents, but the container keeps its shape. A structure that lets a function be mapped over it this way is called a <em>functor</em>. Vectors are functors, lists are functors (via <code>lapply</code>), and data frame columns are functors (via <code>mutate</code>). The word comes from category theory, but the idea is concrete: apply inside, preserve outside.</p>
+</div>
+</div>
+</div>
+<p>Every line of code in this chapter has run on the same substitution: names replaced by their values in <code>c(morning, afternoon)</code>, one function replaced by five applications in <code>sqrt(c(1, 4, 9, 16, 25))</code>, and in both cases an expression reduced to a value.</p>
 <section id="sec-recycling" class="level3" data-number="4.4.1">
 <h3 data-number="4.4.1" class="anchored" data-anchor-id="sec-recycling"><span class="header-section-number">4.4.1</span> Recycling</h3>
 <p>What happens when you operate on two vectors of different lengths?</p>
@@ -904,8 +914,7 @@ f(c(1, 4, 9, 16, 25))
 </section>
 <section id="sec-indexing" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="sec-indexing"><span class="header-section-number">4.5</span> Indexing</h2>
-<p>You often need specific elements from a vector, and the <code>[</code> operator extracts them. There are four ways to use it.</p>
-<p><strong>By position:</strong></p>
+<p>You often need specific elements from a vector, and the <code>[</code> operator extracts them. The simplest way is by position:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>temperatures <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">61</span>, <span class="dv">90</span>, <span class="dv">78</span>)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>temperatures[<span class="dv">1</span>]</span>
@@ -913,13 +922,12 @@ f(c(1, 4, 9, 16, 25))
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>temperatures[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>)]</span>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 72 61 78</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>By exclusion</strong> (negative indices):</p>
+<p>A negative index excludes instead:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>temperatures[<span class="sc">-</span><span class="dv">2</span>]</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 72 61 90 78</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Everything except the second element.</p>
-<p><strong>By logical vector:</strong></p>
+<p>Everything except the second element. You can also index with a logical vector:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>temperatures[temperatures <span class="sc">&gt;</span> <span class="dv">75</span>]</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 85 90 78</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -930,7 +938,7 @@ f(c(1, 4, 9, 16, 25))
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>temperatures[hot]</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 85 90 78</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>By name:</strong></p>
+<p>And if the elements have names, you can index by name:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>scores <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">alice =</span> <span class="dv">92</span>, <span class="at">bob =</span> <span class="dv">78</span>, <span class="at">carol =</span> <span class="dv">85</span>)</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>scores[<span class="st">"bob"</span>]</span>
@@ -996,11 +1004,26 @@ f(c(1, 4, 9, 16, 25))
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This returns <code>NA</code>, not <code>TRUE</code>. Think about it: if you don’t know what <code>x</code> is and you don’t know what <code>y</code> is, you can’t know whether they’re equal. Always use <code>is.na()</code>.</p>
-<p>This contagious behavior is not arbitrary; R is implementing a discipline where a value is either present or absent, and any operation on an absent value produces absence. The principle is older than R.</p>
-<p>Haskell takes the strictest possible position: no variable can ever change its value, and no function can have a side effect. The compiler enforces these rules, which means the type system carries more information than in most languages. (The language is named after Haskell Curry, a logician who worked on combinatory logic in the 1930s and 1940s; he will reappear in <a href="ch05-first-function.html#sec-programs-and-proofs" class="quarto-xref"><span>Section 5.8</span></a>.)</p>
-<p>One consequence: in Haskell, the possibility of absence is built into the type system as <code>Maybe</code>. A value is either <code>Just 42</code> or <code>Nothing</code>, and any operation on <code>Nothing</code> propagates <code>Nothing</code> forward. <code>1 + NA</code> returning <code>NA</code> in R is the same logic as Haskell’s <code>Nothing &gt;&gt;= f</code> returning <code>Nothing</code>.</p>
+<p>Behind every one of these results is a single rule: a value is either present or absent, and any operation on an absent value produces absence. R threads that rule through every arithmetic and comparison operation automatically, which is why <code>NA</code> feels contagious. It is. That’s the point.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The same rule in Haskell and Rust
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In Haskell, the possibility of absence is built into the type system as <code>Maybe</code>. A value is either <code>Just 42</code> or <code>Nothing</code>, and any operation on <code>Nothing</code> propagates <code>Nothing</code> forward. <code>1 + NA</code> returning <code>NA</code> in R is the same logic as Haskell’s <code>Nothing &gt;&gt;= f</code> returning <code>Nothing</code>.</p>
 <p>Rust adopted the same idea. Its equivalent of <code>Maybe</code> is called <code>Option</code>: a value is <code>Some(42)</code> or <code>None</code>, and <code>None.map(f)</code> returns <code>None</code>. The compiler rejects any code that forgets to check whether a value is present.</p>
-<p>R’s approach is looser: nothing stops you from ignoring <code>NA</code>, and you will not find out until your results look wrong, but the underlying rule is the same. R threads this uncertainty through every arithmetic and comparison operation automatically, which is why <code>NA</code> feels contagious. It is. That’s the point. The question is what this contagion looks like when you have 344 measurements and a handful of gaps.</p>
+<p>R’s approach is looser: nothing stops you from ignoring <code>NA</code>, and you will not find out until your results look wrong. The underlying rule is the same.</p>
+</div>
+</div>
+</div>
+<p>The question is what this contagion looks like when you have 344 measurements and a handful of gaps.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1036,7 +1059,7 @@ f(c(1, 4, 9, 16, 25))
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>long_bills <span class="ot">&lt;-</span> bill[bill <span class="sc">&gt;</span> <span class="dv">50</span> <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(bill)]</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(long_bills)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>How many penguins have a bill longer than 50 mm? Logical indexing filters the values, <code>is.na()</code> handles missing data, and <code>length()</code> counts the result. One line each, no loops. You wrote five operations in this chapter that would each require explicit iteration in most languages; in R, the vector carried the iteration for you. Data frames, which we turn to next, are built from exactly these vectors, stacked side by side like columns in a spreadsheet. The machinery you just learned doesn’t go away; it becomes the engine underneath everything else.</p>
+<p>How many penguins have a bill longer than 50 mm? Logical indexing filters the values, <code>is.na()</code> handles missing data, and <code>length()</code> counts the result. One line each, no loops. You wrote five operations in this chapter that would each require explicit iteration in most languages; in R, the vector carried the iteration for you. Data frames (<a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>) are built from exactly these vectors, stacked side by side like columns in a spreadsheet.</p>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
@@ -1139,53 +1162,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

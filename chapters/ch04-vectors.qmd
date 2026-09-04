@@ -16,7 +16,7 @@ That `[1]` has been there since Chapter 1, quietly announcing something you prob
 
 ## There are no scalars {#sec-no-scalars}
 
-In C or Python, a single number and a collection of numbers are fundamentally different types: one is a scalar, the other is an array or list. R erases that distinction. Every value in R is a vector: `42` is a numeric vector\index{vector!numeric} of length 1, `"hello"` is a character vector\index{vector!character} of length 1, and `TRUE` is a logical vector\index{vector!logical} of length 1.
+Ask R how long a number is:
 
 ```{r}
 length(42)
@@ -24,9 +24,11 @@ length("hello")
 length(TRUE)
 ```
 
-Why would a language erase the distinction between "one thing" and "many things"? Because S (@sec-s-language), the language R descends from, was built for people who work with columns of data, not individual numbers. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale, which means every operation you write, from arithmetic to comparison, has to reckon with that choice.
+Each one has a length, and the length is 1. `42` is a numeric vector\index{vector!numeric} with one element, `"hello"` a character vector\index{vector!character} with one element, `TRUE` a logical vector\index{vector!logical} with one element. Most languages keep a single number and a collection of numbers as two different kinds of thing, a scalar and an array. R has only the collection.
 
-`x * 2` works the same whether `x` has one element or a million, because `x` is always a vector and R doesn't need a special case for scalars; it just operates on vectors. But how do you build them?
+Why would a language erase the distinction between "one thing" and "many things"? Because S (@sec-s-language), the language R descends from, was built for people who work with columns of data. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale, which means every operation you write, from arithmetic to comparison, has to reckon with that choice.
+
+`x * 2` works the same whether `x` has one element or a million, because `x` is always a vector and R needs no special case for scalars. But how do you build them?
 
 
 ## Atomic vectors {#sec-atomic-vectors}
@@ -56,13 +58,13 @@ c(morning, afternoon)
 = [58, 62, 55, 75, 80, 71]
 ```
 
-Each step replaces a name or function call with its value. `morning` becomes `c(58, 62, 55)`, the nested `c()` calls flatten into one, and the last step is where term replacement ends and the computer takes over: R allocates a contiguous block of memory, stores six numbers side by side, and the expression has been reduced to a value that lives in memory.
+Each step replaces a name or function call with its value. `morning` becomes `c(58, 62, 55)`, the nested `c()` calls flatten into one, and at the last step the computer takes over: R allocates a contiguous block of memory and stores six numbers side by side.
 
-This is term replacement, the logic at the heart of Church's lambda calculus (@sec-church). In Chapter 1, `add(3, add(5, 10))` reduced step by step until only `18` remained. Here, `c(morning, afternoon)` reduces to a six-element vector. Even building a data structure is a function call that reduces to a value.
+This is the same term replacement that folded `add(3, add(5, 10))` down to `18` in @sec-church. Here, `c(morning, afternoon)` reduces to a six-element vector. Even building a data structure is a function call that reduces to a value.
 
-::: callout-note
-## For the curious
-`c()` has two properties worth noticing. First, it is *associative*: `c(c(1, 2), c(3, 4))` and `c(1, c(2, c(3, 4)))` both produce `c(1, 2, 3, 4)`. Grouping doesn't matter. Second, `c(x, NULL)` returns `x` unchanged, so `NULL`\index{NULL} acts as an *identity element*: combining with it does nothing. An operation that is associative and has an identity element is called a *monoid*. Addition with 0 is a monoid. String concatenation with `""` is a monoid. `c()` with `NULL` is a monoid. The pattern keeps showing up: dplyr pipelines (@sec-data-transformation), function composition (@sec-pipes-and-composition), and `Reduce()` (@sec-reduce-and-accumulate) all rely on it.
+::: {.callout-note collapse="true"}
+## Grouping and `NULL`
+`c(c(1, 2), c(3, 4))` and `c(1, c(2, c(3, 4)))` both produce `c(1, 2, 3, 4)`; the grouping does not matter, so `c()` is *associative*. And `c(x, NULL)` returns `x` unchanged, so `NULL`\index{NULL} is an *identity element* for it: combining with `NULL` does nothing. An operation that is associative and has an identity element is called a *monoid*. Addition with 0 is one, string concatenation with `""` is one, and `c()` with `NULL` is one. The same structure is what makes `Reduce()` work (@sec-reduce-and-accumulate).
 :::
 
 A few shortcuts for common patterns:
@@ -81,7 +83,7 @@ rep("hello", 3)
 
 `1:5` generates integers from 1 to 5, `seq()` generates a sequence with a specified step size, and `rep()` repeats a value.
 
-R has four atomic types you will use constantly, and every one of them follows a pecking order that R enforces behind your back. Two more exist but rarely matter:
+Ask R what type each value is:
 
 ```{r}
 typeof(3.14)
@@ -90,9 +92,9 @@ typeof("hello")
 typeof(TRUE)
 ```
 
-`double`\index{double} is a decimal number (even `42` is stored as a double by default), while `integer`\index{integer} needs an `L` suffix: `42L`. `character` is text, `logical` is `TRUE` or `FALSE`. The other two types, `complex` and `raw`, exist for specialized work; you can ignore them.
+These are the four atomic types you will use constantly. `double`\index{double} is a decimal number (even `42` is stored as a double by default), while `integer`\index{integer} needs an `L` suffix: `42L`. `character` is text, `logical` is `TRUE` or `FALSE`. Two more types, `complex` and `raw`, exist for specialized work; you can ignore them.
 
-Every element in a vector must be the same type. But what happens when you try to break that same-type rule?
+Every element in a vector must be the same type. But what happens when you try to break that rule?
 
 
 ### Exercises {.unnumbered}
@@ -172,20 +174,7 @@ Arithmetic, comparisons, and most built-in functions all work this way, returnin
 sqrt(c(1, 4, 9, 16, 25))
 ```
 
-In lambda calculus (@sec-church), `sqrt` is a function `f = λx. √x`. Even `√` itself is not a primitive; it can be computed by repeated function application. You start with a rough guess and improve it over and over until it's close enough:
-
-```
-√x = iterate(λguess. (guess + x / guess) / 2, x)
-```
-
-Start with a guess, apply the refinement function `λguess. (guess + x / guess) / 2` repeatedly, and the result converges to `√x`. Square root reduces to division, addition, and repeated application of a lambda, which are themselves reducible further. At every level, the building blocks are functions applied to arguments.
-
-::: callout-note
-## Under the hood
-In practice, R calls C's `sqrt()`, which on modern CPUs maps to a hardware instruction. The chip uses a lookup table for a rough estimate, then refines it with the same `(guess + x / guess) / 2` step, finishing in 10-20 clock cycles. The abstraction and the silicon converge on the same algorithm.
-:::
-
-For our purposes, `f = λx. √x` is enough. R applies `f` to each element by term replacement:
+Written as term replacement, with `f` standing for `sqrt`, the call unfolds like this:
 
 ```
 f = λx. √x
@@ -199,12 +188,25 @@ f(c(1, 4, 9, 16, 25))
 
 R distributes the function over the vector automatically; you write one application, R performs five. This is Church's model extended to collections: a function applied to a vector produces a vector of results. `sqrt(c(1, 4, 9, 16, 25))` is a single function applied to a single argument, and the fact that the argument contains five numbers is R's business, not yours.
 
-::: callout-note
-## For the curious
-This pattern has a name: a *functor*. A functor maps a function over a structure while preserving the structure's shape. `sqrt` applied to a five-element vector returns a five-element vector; the function changes the contents, but the container stays intact. Vectors are functors, lists are functors (via `lapply`), and data frame columns are functors (via `mutate`). The word comes from category theory, but the idea is concrete: apply inside, preserve outside. You will see it everywhere in this book, and by the end it will feel as natural as vectorization itself.
+::: {.callout-note collapse="true"}
+## Where `√` comes from
+Even `√` is not a primitive. Start with a rough guess and improve it over and over until it is close enough:
+
+```
+√x = iterate(λguess. (guess + x / guess) / 2, x)
+```
+
+Apply the refinement function `λguess. (guess + x / guess) / 2` repeatedly and the result converges to `√x`. Square root reduces to division, addition, and repeated application of a lambda, which are themselves reducible further. At every level, the building blocks are functions applied to arguments.
+
+In practice, R calls C's `sqrt()`, which on modern CPUs maps to a hardware instruction. The chip uses a lookup table for a rough estimate, then refines it with the same `(guess + x / guess) / 2` step, finishing in 10-20 clock cycles. The abstraction and the silicon converge on the same algorithm.
 :::
 
-When you wrote `c(morning, afternoon)`, the names were substituted for their values and the expression reduced to a single vector. That is *beta reduction*: replacing a name with its value and simplifying (@sec-church covers the formal version). The theoretical machinery from Chapter 1 has been running under every line of code in this chapter, not as background context but as the engine. By the time you typed `42` into the console and got `42` back, you were already doing functional programming — you just did not have a name for it yet.
+::: {.callout-note collapse="true"}
+## Apply inside, preserve outside
+`sqrt` applied to a five-element vector returns a five-element vector; the function changes the contents, but the container keeps its shape. A structure that lets a function be mapped over it this way is called a *functor*. Vectors are functors, lists are functors (via `lapply`), and data frame columns are functors (via `mutate`). The word comes from category theory, but the idea is concrete: apply inside, preserve outside.
+:::
+
+Every line of code in this chapter has run on the same substitution: names replaced by their values in `c(morning, afternoon)`, one function replaced by five applications in `sqrt(c(1, 4, 9, 16, 25))`, and in both cases an expression reduced to a value.
 
 
 ### Recycling {#sec-recycling}
@@ -238,9 +240,7 @@ Recycling is useful when the shorter vector has length 1 (e.g., `x * 2`, `x > 0`
 
 ## Indexing {#sec-indexing}
 
-You often need specific elements from a vector, and the `[` operator\index{subsetting} extracts them. There are four ways to use it.
-
-**By position:**
+You often need specific elements from a vector, and the `[` operator\index{subsetting} extracts them. The simplest way is by position:
 
 ```{r}
 temperatures <- c(72, 85, 61, 90, 78)
@@ -248,15 +248,13 @@ temperatures[1]
 temperatures[c(1, 3, 5)]
 ```
 
-**By exclusion** (negative indices):
+A negative index excludes instead:
 
 ```{r}
 temperatures[-2]
 ```
 
-Everything except the second element.
-
-**By logical vector:**
+Everything except the second element. You can also index with a logical vector:
 
 ```{r}
 temperatures[temperatures > 75]
@@ -269,7 +267,7 @@ hot <- temperatures > 75
 temperatures[hot]
 ```
 
-**By name:**
+And if the elements have names, you can index by name:
 
 ```{r}
 scores <- c(alice = 92, bob = 78, carol = 85)
@@ -340,15 +338,18 @@ NA == NA
 
 This returns `NA`, not `TRUE`. Think about it: if you don't know what `x` is and you don't know what `y` is, you can't know whether they're equal. Always use `is.na()`.
 
-This contagious behavior is not arbitrary; R is implementing a discipline where a value is either present or absent, and any operation on an absent value produces absence. The principle is older than R.
+Behind every one of these results is a single rule: a value is either present or absent, and any operation on an absent value produces absence. R threads that rule through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point.
 
-Haskell takes the strictest possible position: no variable can ever change its value, and no function can have a side effect. The compiler enforces these rules, which means the type system carries more information than in most languages. (The language is named after Haskell Curry, a logician who worked on combinatory logic in the 1930s and 1940s; he will reappear in @sec-programs-and-proofs.)
-
-One consequence: in Haskell, the possibility of absence is built into the type system as `Maybe`. A value is either `Just 42` or `Nothing`, and any operation on `Nothing` propagates `Nothing` forward. `1 + NA` returning `NA` in R is the same logic as Haskell's `Nothing >>= f` returning `Nothing`.
+::: {.callout-note collapse="true"}
+## The same rule in Haskell and Rust
+In Haskell, the possibility of absence is built into the type system as `Maybe`. A value is either `Just 42` or `Nothing`, and any operation on `Nothing` propagates `Nothing` forward. `1 + NA` returning `NA` in R is the same logic as Haskell's `Nothing >>= f` returning `Nothing`.
 
 Rust adopted the same idea. Its equivalent of `Maybe` is called `Option`: a value is `Some(42)` or `None`, and `None.map(f)` returns `None`. The compiler rejects any code that forgets to check whether a value is present.
 
-R's approach is looser: nothing stops you from ignoring `NA`, and you will not find out until your results look wrong, but the underlying rule is the same. R threads this uncertainty through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point. The question is what this contagion looks like when you have 344 measurements and a handful of gaps.
+R's approach is looser: nothing stops you from ignoring `NA`, and you will not find out until your results look wrong. The underlying rule is the same.
+:::
+
+The question is what this contagion looks like when you have 344 measurements and a handful of gaps.
 
 
 ### Exercises {.unnumbered}
@@ -399,7 +400,7 @@ long_bills <- bill[bill > 50 & !is.na(bill)]
 length(long_bills)
 ```
 
-How many penguins have a bill longer than 50 mm? Logical indexing filters the values, `is.na()` handles missing data, and `length()` counts the result. One line each, no loops. You wrote five operations in this chapter that would each require explicit iteration in most languages; in R, the vector carried the iteration for you. Data frames, which we turn to next, are built from exactly these vectors, stacked side by side like columns in a spreadsheet. The machinery you just learned doesn't go away; it becomes the engine underneath everything else.
+How many penguins have a bill longer than 50 mm? Logical indexing filters the values, `is.na()` handles missing data, and `length()` counts the result. One line each, no loops. You wrote five operations in this chapter that would each require explicit iteration in most languages; in R, the vector carried the iteration for you. Data frames (@sec-data-frames) are built from exactly these vectors, stacked side by side like columns in a spreadsheet.
 
 
 ### Exercises {.unnumbered}

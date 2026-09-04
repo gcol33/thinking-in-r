@@ -661,11 +661,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>sqrt(9)</code>, <code>c(1, 2, 3)</code>, <code>sum(x &gt; 70)</code>: every piece of R code so far has relied on functions that someone else wrote. This chapter shows you how to write your own.</p>
 <section id="sec-anatomy-function" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="sec-anatomy-function"><span class="header-section-number">5.1</span> Anatomy of a function</h2>
-<p>A function in R has three parts: a name, arguments, and a body.</p>
+<p>Here is a function that doubles its input:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>double <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">*</span> <span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>function(x)</code> declares one parameter called <code>x</code>. The body, <code>x * 2</code>, is the expression R evaluates when you call the function, and <code>double</code> is the name you are binding this function to (the same way <code>x &lt;- 3</code> binds a name to a number).</p>
+<p>Three parts. <code>function(x)</code> declares one parameter called <code>x</code>; the body, <code>x * 2</code>, is the expression R evaluates when you call the function; and <code>double</code> is the name you are binding this function to, the same way <code>x &lt;- 3</code> binds a name to a number. What you pass in when you call it is the argument.</p>
 <p>Call it:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">double</span>(<span class="dv">5</span>)</span>
@@ -730,10 +730,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">shout</span>(<span class="st">"hello"</span>, <span class="st">"world"</span>)</span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "HELLO WORLD"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>...</code> collects every argument you pass, however many there are, and <code>c(...)</code> combines them into a vector. This is a surprisingly deep idea. In Church’s lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>), a function takes exactly one argument; if you want two, you write a function that returns another function:</p>
+<p><code>...</code> collects every argument you pass, however many there are, and <code>c(...)</code> combines them into a vector. <code>c()</code>, <code>paste()</code>, and <code>sum()</code> all use <code>...</code>, which is why <code>c(1, 2, 3)</code> and <code>c(1, 2, 3, 4, 5, 6, 7)</code> both work. More on <code>...</code> in <a href="ch23-lazy-evaluation.html" class="quarto-xref"><span>Chapter 23</span></a>.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>One argument at a time
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In the lambda calculus, a function takes exactly one argument. If you want two, you write a function that returns another function:</p>
 <pre><code>λx. λy. x + y</code></pre>
-<p>This reads: “a function that takes <code>x</code> and returns <em>another function</em> that takes <code>y</code> and returns <code>x + y</code>.” To add 3 and 5, you apply it twice: <code>(λx. λy. x + y)(3)(5)</code> = <code>(λy. 3 + y)(5)</code> = <code>3 + 5</code> = <code>8</code>. Each application replaces one argument, one step at a time.</p>
-<p>This is called <em>currying</em>, and R can do it too (<a href="ch20-function-factories.html" class="quarto-xref"><span>Chapter 20</span></a>). <code>...</code> is R’s practical alternative: instead of nesting functions, you let a single function accept any number of arguments and decide what to do with them inside. <code>c()</code>, <code>paste()</code>, <code>sum()</code>: they all use <code>...</code>, which is why <code>c(1, 2, 3)</code> and <code>c(1, 2, 3, 4, 5, 6, 7)</code> both work. More on <code>...</code> in <a href="ch23-lazy-evaluation.html" class="quarto-xref"><span>Chapter 23</span></a>.</p>
+<p>This reads: “a function that takes <code>x</code> and returns <em>another function</em> that takes <code>y</code> and returns <code>x + y</code>.” To add 3 and 5, you apply it twice: <code>(λx. λy. x + y)(3)(5)</code> = <code>(λy. 3 + y)(5)</code> = <code>3 + 5</code> = <code>8</code>. Each application replaces one argument, one step at a time. This is called <em>currying</em>, and R can do it too (<a href="ch20-function-factories.html" class="quarto-xref"><span>Chapter 20</span></a>). <code>...</code> is the practical alternative: a single function accepts any number of arguments and decides what to do with them inside.</p>
+</div>
+</div>
+</div>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -751,8 +766,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">add_one</span>(<span class="dv">10</span>)</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The body is <code>x + 1</code>. R evaluates it and returns the result. In Python or Java you would need to write <code>return</code> explicitly. A function is an expression that evaluates to a value, the same idea from the lambda calculus in <a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>.</p>
-<p>When you call <code>add_one(10)</code>, R substitutes <code>10</code> for <code>x</code> in the body, turning <code>x + 1</code> into <code>10 + 1</code>, then evaluates it. Lambda calculus calls this <em>beta reduction</em>: <code>(λx. x + 1)(10)</code> reduces to <code>10 + 1</code>. Every function call in R is a beta reduction.</p>
+<p>The body is <code>x + 1</code>. R evaluates it and returns the result. A function call is an expression that evaluates to a value, like every other expression in R (<a href="ch03-expressions-names.html#sec-expressions-all-the-way" class="quarto-xref"><span>Section 3.3</span></a>).</p>
+<p>When you call <code>add_one(10)</code>, R substitutes <code>10</code> for <code>x</code> in the body, turning <code>x + 1</code> into <code>10 + 1</code>, then evaluates it. The lambda calculus calls this <em>beta reduction</em>: <code>(λx. x + 1)(10)</code> reduces to <code>10 + 1</code>. Every function call in R is a beta reduction.</p>
 <p>R does have a <code>return()</code> function, and it is useful for early exits:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>safe_log <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
@@ -841,7 +856,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>(<span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span>)(<span class="dv">10</span>)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>function(x) x + 1</code> creates a function; the parentheses around it and <code>(10)</code> immediately call it with the argument <code>10</code>. This is an <em>anonymous function</em>: <code>λx. x + 1</code> applied to <code>10</code> (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>). <a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a> uses them heavily.</p>
+<p><code>function(x) x + 1</code> creates a function; the parentheses around it and <code>(10)</code> immediately call it with the argument <code>10</code>. This is an <em>anonymous function</em>, <code>λx. x + 1</code> applied to <code>10</code>, and <a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a> uses them heavily.</p>
 <p>You can do anything with a function that you can do with a number: store it in a variable, pass it to another function, return it as a result. This is what McCarthy built into Lisp in 1958 (<a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>), and R inherits it directly. So functions are values, and values live somewhere. Where do the variables inside a function live?</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
@@ -987,19 +1002,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <img src="../images/factorial_stack.png" class="img-fluid figure-img" style="width:100.0%">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-factorial-stack-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;5.1: Recursive call stack for <code>factorial(5)</code>: each frame waits for the one below it. No variable changes — each frame holds its own <code>n</code>.
+Figure&nbsp;5.1: Recursive call stack for <code>factorial(5)</code>: each frame waits for the one below it. No variable changes; each frame holds its own <code>n</code>.
 </figcaption>
 </figure>
 </div>
+<p>This is how the lambda calculus handles repetition. There is no loop counter; the function calls itself with a smaller argument until it stops.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Factorial in lambda calculus
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <p>In lambda calculus notation, factorial looks like this:</p>
 <pre><code>fact = λn. if n = 0 then 1 else n * fact(n - 1)</code></pre>
-<p>(This self-reference is informal shorthand; pure lambda calculus has no names, so <code>fact</code> cannot refer to itself directly. <a href="ch30-r-as-mathematics.html#sec-z-combinator" class="quarto-xref"><span>Section 30.5</span></a> shows how recursion works without them.)</p>
-<p>Wait. In <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>, the lambda calculus had only three things: variables, functions, and application. Where did <code>if/then/else</code> come from? Church showed that you can encode true, false, and conditional branching as pure lambda functions:</p>
+<p>The self-reference is informal shorthand; pure lambda calculus has no names, so <code>fact</code> cannot refer to itself directly, and <a href="ch30-r-as-mathematics.html#sec-z-combinator" class="quarto-xref"><span>Section 30.5</span></a> shows how recursion works without them. The <code>if/then/else</code> is shorthand too. The lambda calculus has only variables, functions, and application, but Church showed that true, false, and branching can be encoded as functions that choose between their arguments:</p>
 <pre><code>TRUE  = λx. λy. x      # a function that takes two arguments and returns the first
 FALSE = λx. λy. y      # a function that takes two arguments and returns the second
 IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
-<p><code>TRUE</code> is a function that picks its first argument; <code>FALSE</code> picks its second. <code>IF</code> just hands both options to the condition and lets it choose. So <code>IF(TRUE)(1)(2)</code> becomes <code>TRUE(1)(2)</code> becomes <code>(λx. λy. x)(1)(2)</code> becomes <code>1</code>. The entire conditional is built from functions choosing between arguments, and the <code>if n = 0 then 1 else ...</code> notation above is shorthand for this encoding.</p>
-<p>The reduction works as before, one substitution at a time:</p>
+<p><code>IF</code> hands both options to the condition and lets it choose, so <code>IF(TRUE)(1)(2)</code> becomes <code>TRUE(1)(2)</code> becomes <code>(λx. λy. x)(1)(2)</code> becomes <code>1</code>. <a href="ch30-r-as-mathematics.html#sec-church-booleans" class="quarto-xref"><span>Section 30.2</span></a> builds these in R.</p>
+<p>With the shorthand in place, the reduction works as before, one substitution at a time:</p>
 <pre><code>fact(3)                                     # apply fact with n = 3
 = (λn. if n=0 then 1 else n * fact(n-1))(3) # replace fact with its definition
 = if 3=0 then 1 else 3 * fact(3-1)          # substitute n = 3
@@ -1008,7 +1035,10 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 = 3 * 2 * 1 * fact(0)                       # n=1
 = 3 * 2 * 1 * 1                             # n=0, take the then branch: 1
 = 6</code></pre>
-<p>R’s <code>function(n)</code> is the same as <code>λn</code>. The reduction above is what R does when you call <code>factorial(3)</code>: substitute <code>3</code> for <code>n</code>, evaluate the body, hit <code>factorial(2)</code>, substitute again, keep going until the base case. Recursion is how Church’s lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>) handles repetition. There is no loop counter; the function calls itself with a smaller argument until it stops.</p>
+<p>R’s <code>function(n)</code> is the same as <code>λn</code>, and this reduction is what R does when you call <code>factorial(3)</code>: substitute <code>3</code> for <code>n</code>, evaluate the body, hit <code>factorial(2)</code>, substitute again, keep going until the base case.</p>
+</div>
+</div>
+</div>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>fibonacci <span class="ot">&lt;-</span> <span class="cf">function</span>(n) {</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">&lt;=</span> <span class="dv">1</span>) <span class="fu">return</span>(n)</span>
@@ -1018,7 +1048,7 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="fu">fibonacci</span>(<span class="dv">10</span>)</span>
 <span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 55</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Recursion is elegant but not always practical. <code>fibonacci(30)</code> is already slow because it recomputes the same values over and over: <code>fibonacci(10)</code> calls <code>fibonacci(9)</code> and <code>fibonacci(8)</code>, but <code>fibonacci(9)</code> also calls <code>fibonacci(8)</code>, so that subtree gets computed twice. Further down, <code>fibonacci(7)</code> gets computed three times, <code>fibonacci(6)</code> five times, and the work grows exponentially. Is there a way to keep the recursive structure without paying the exponential cost?</p>
+<p><code>fibonacci(30)</code> is already slow, because the function recomputes the same values over and over: <code>fibonacci(10)</code> calls <code>fibonacci(9)</code> and <code>fibonacci(8)</code>, but <code>fibonacci(9)</code> also calls <code>fibonacci(8)</code>, so that subtree gets computed twice. Further down, <code>fibonacci(7)</code> gets computed three times, <code>fibonacci(6)</code> five times, and the work grows exponentially. Is there a way to keep the recursive structure without paying the exponential cost?</p>
 <p>A smarter version avoids this by carrying the last two values forward as arguments:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>fibonacci_fast <span class="ot">&lt;-</span> <span class="cf">function</span>(n, <span class="at">a =</span> <span class="dv">0</span>, <span class="at">b =</span> <span class="dv">1</span>) {</span>
@@ -1061,26 +1091,42 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 <span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Two parts: a base case (when <code>n = 0</code>, return 1) and an inductive step (assume <code>factorial(n - 1)</code> gives the right answer, and use it to compute <code>factorial(n)</code>). If you have seen mathematical induction, you recognize the shape immediately. A proof by induction has a base case and an inductive step too. The resemblance is not a coincidence.</p>
-<p>In the 1930s and 1940s, the logician Haskell Curry (after whom the Haskell programming language is named, and from whom the term “currying” above comes) noticed something strange: the rules for combining types in a programming language looked identical to the rules for combining propositions in formal logic. A function that takes an <code>A</code> and returns a <code>B</code> had the same structure as a logical proof that “if A, then B.” In 1969, William Howard made this precise: every type corresponds to a logical proposition, and every program of that type corresponds to a proof of that proposition. A recursive function that terminates is a proof by induction. This result is called the <em>Curry-Howard correspondence</em>.</p>
+<p>In the 1930s, a logician working on how functions combine noticed something strange: the rules for combining types looked identical to the rules for combining propositions in formal logic. A function that takes an <code>A</code> and returns a <code>B</code> had the same structure as a proof that “if A, then B.” His name was Haskell Curry, and the Haskell programming language is named after him. Three decades later William Howard made the observation precise: every type corresponds to a logical proposition, and every program of that type corresponds to a proof of that proposition. A recursive function that terminates is a proof by induction. The result is called the <em>Curry-Howard correspondence</em>.</p>
 <p>Writing <code>factorial</code> constructs a proof by induction that the product <code>1 * 2 * ... * n</code> exists for every non-negative integer. The transformation from double-recursive <code>fibonacci</code> to tail-recursive <code>fibonacci_fast</code> is the same move a logician makes when they strengthen an inductive hypothesis to make a proof go through: the extra arguments (<code>a</code> and <code>b</code>) <em>are</em> the stronger hypothesis. Double induction reduces to simple induction with stronger invariants, which is why the same trick turns a slow recursive function into a fast one.</p>
-<p>This was the landscape of the 1930s: Church, Godel, Curry, and Turing were all studying what could be <em>proved</em>, before computers existed, and they found that the answer was identical to what could be <em>computed</em>.</p>
-<p>Today, the Curry-Howard correspondence is the foundation of <em>formal verification</em>: software that proves other software is correct. The first practical tool to exploit it was Coq, developed at INRIA in the late 1980s. In Coq, every program must come with a machine-checkable proof that it does what its type signature claims; if the proof has a gap, the code does not compile. This makes Coq painful for ordinary programming but powerful for building software where correctness matters more than convenience.</p>
-<p>In 2013, Leonardo de Moura at Microsoft Research started Lean, a newer <em>proof assistant</em> with a more accessible syntax and a growing library of formalized mathematics called Mathlib. Coq grew out of theoretical computer science; Lean has attracted a broader community of mathematicians who are formalizing results from analysis, algebra, and number theory. In Lean, a proof that adding zero to any natural number gives back the same number looks like this:</p>
-<pre><code>theorem add_zero (n : Nat) : n + 0 = n := by
-  induction n with
-  | zero =&gt; rfl
-  | succ n ih =&gt; simp [Nat.add_succ, ih]</code></pre>
-<p>The structure is identical to <code>factorial</code>: a base case (<code>zero</code>), an inductive step (<code>succ n</code>), and the result from the smaller case (<code>ih</code>, the induction hypothesis). If the proof is wrong, the code does not compile. The proof <em>is</em> a program, and the program <em>is</em> a proof.</p>
-<p>The definition of <code>factorial</code> says that <code>factorial(n)</code> and <code>n * factorial(n - 1)</code> are the same expression for arbitrary <code>n</code>, an equivalence that holds by term replacement alone, without evaluating either side. It is true by definition. The base case says <code>factorial(0)</code> is <code>1</code>, also by definition. Those two statements are the entire proof: you show that the program in state <code>n</code> and the program in state <code>n - 1</code> are the same program up to one substitution, and that the chain has a starting point. That is a proof by induction, and it covers every natural number at once. In lambda calculus notation:</p>
+<p>Church, Curry, and Turing were all asking, before any computer existed, what could be <em>proved</em>, and the answer turned out to be identical to what could be <em>computed</em>.</p>
+<p>Look at where the proof lives in <code>factorial</code>. The definition says that <code>factorial(n)</code> and <code>n * factorial(n - 1)</code> are the same expression for arbitrary <code>n</code>, an equivalence that holds by term replacement alone, without evaluating either side. It is true by definition. The base case says <code>factorial(0)</code> is <code>1</code>, also by definition. Those two statements are the entire proof: you show that the program in state <code>n</code> and the program in state <code>n - 1</code> are the same program up to one substitution, and that the chain has a starting point. That is a proof by induction, and it covers every natural number at once. In lambda calculus notation:</p>
 <pre><code>fact = λn. if n = 0 then 1 else n * fact(n - 1)</code></pre>
 <p><code>fact</code> is the function. <code>fact(n)</code> is the function applied to some <code>n</code>. Replacing the name <code>fact</code> with its definition gives:</p>
 <pre><code>fact(n)
 = (λn. if n = 0 then 1 else n * fact(n - 1))(n)   # replace fact with its definition
 = if n = 0 then 1 else n * fact(n - 1)              # substitute n</code></pre>
-<p>You might think: of course they are the same, we just wrote the definition. But <code>fact</code> and <code>fact(n)</code> are not the same thing. <code>fact</code> is a definition, a rule that says what to do with an argument; <code>fact(n)</code> is that rule applied to a specific (but arbitrary) <code>n</code>. The reduction above shows what happens when you apply the rule: you get a term that contains <code>fact(n - 1)</code>, the same program applied to a smaller argument. That relationship between <code>fact(n)</code> and <code>fact(n - 1)</code> is not something we assumed or proved; it fell out of one substitution. A tautology. And yet that tautology, together with the base case, constitutes a proof by induction that <code>fact</code> produces the right answer for every natural number. When <code>n = 0</code>, the expression reduces to <code>1</code>. The substitution gives you the step from <code>n - 1</code> to <code>n</code>.</p>
-<p>This is what Curry-Howard means in practice: both the Lean proof and <code>factorial</code> work because the equivalence of two program states is a tautology that requires only substitution.</p>
+<p>You might think: of course they are the same, we just wrote the definition. But <code>fact</code> and <code>fact(n)</code> are not the same thing. <code>fact</code> is a definition, a rule that says what to do with an argument; <code>fact(n)</code> is that rule applied to a specific (but arbitrary) <code>n</code>.</p>
+<p>The reduction above shows what happens when you apply the rule: you get a term that contains <code>fact(n - 1)</code>, the same program applied to a smaller argument. That relationship between <code>fact(n)</code> and <code>fact(n - 1)</code> is not something we assumed or proved; it fell out of one substitution. A tautology. And yet that tautology, together with the base case, constitutes a proof by induction that <code>fact</code> produces the right answer for every natural number. When <code>n = 0</code>, the expression reduces to <code>1</code>. The substitution gives you the step from <code>n - 1</code> to <code>n</code>.</p>
+<p>This is what the Curry-Howard correspondence means in practice: the equivalence of two program states is a tautology that requires only substitution, and a chain of such tautologies with a starting point is a proof.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Proof assistants
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The correspondence is the foundation of <em>formal verification</em>: software that proves other software is correct. The first practical tool built on it was Coq, developed at INRIA in the late 1980s. In Coq, every program must come with a machine-checkable proof that it does what its type signature claims; if the proof has a gap, the code does not compile. This makes Coq painful for ordinary programming but powerful for building software where correctness matters more than convenience.</p>
+<p>In 2013, Leonardo de Moura at Microsoft Research started Lean, a newer proof assistant with a more accessible syntax and a growing library of formalized mathematics called Mathlib. In Lean, a proof that adding zero to any natural number gives back the same number looks like this:</p>
+<pre><code>theorem add_zero (n : Nat) : n + 0 = n := by
+  induction n with
+  | zero =&gt; rfl
+  | succ n ih =&gt; simp [Nat.add_succ, ih]</code></pre>
+<p>The structure is identical to <code>factorial</code>: a base case (<code>zero</code>), an inductive step (<code>succ n</code>), and the result from the smaller case (<code>ih</code>, the induction hypothesis). If the proof is wrong, the code does not compile. The proof <em>is</em> a program, and the program <em>is</em> a proof.</p>
 <p>The seL4 microkernel (used in military helicopters and autonomous vehicles) has a machine-checked proof that certain classes of errors in its code cannot occur, for any input. Not “we haven’t found a bug yet”: a mathematical guarantee, verified by a computer. The CompCert C compiler has a similar proof that it will never miscompile your code. Both proofs were written as programs in Coq. Traditional testing covers a finite set of inputs; a proof by induction, because it operates on the structure of the program rather than on specific values, covers all of them.</p>
-<p>R does not enforce this connection the way Coq or Lean do. But the structure is there underneath, in every recursive function you write, with its base case and its inductive step, carrying the same shape as a proof that holds for all natural numbers. You have been writing proofs this whole chapter. You just did not need to call them that.</p>
+</div>
+</div>
+</div>
+<p>R checks none of this; nothing stops you from writing a recursive function with no base case. But the structure is there in every recursive function you write, base case and inductive step, the same shape as a proof that holds for all natural numbers.</p>
 
 
 </section>
@@ -1175,53 +1221,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

@@ -11,12 +11,25 @@ Type `0.1 + 0.2 == 0.3` in R. It returns `FALSE`.
 0.1 + 0.2 == 0.3
 ```
 
-This is not a bug. Every number you type into R is an approximation, and operations on those approximations do not always behave the way real arithmetic does. Most of the time the approximation is so good that you never notice it. This chapter shows you the cases where it matters, how to recognize the traps, and how to work with R's matrix algebra tools. The first four sections (storage, traps, cancellation, integers) are for every R user. The rest covers numerical stability and matrix algebra; a callout box marks where you can skip ahead if you are new to R.
+This is not a bug. Every number you type into R is an approximation, and operations on those approximations do not always behave the way real arithmetic does. Most of the time the approximation is so good that you never notice it. This chapter shows you the cases where it matters, how to recognize the traps, and how to work with R's matrix algebra tools. The first four sections (storage, traps, cancellation, integers) are for every R user. The rest covers numerical stability and matrix algebra; a reading guide marks where you can skip ahead if you are new to R.
 
 
 ## How R stores numbers {#sec-how-r-stores-numbers}
 
-R uses IEEE 754\index{IEEE 754} double-precision floating point\index{floating-point} for all numeric values by default, packing each number into 64 bits: 1 for the sign, 11 for the exponent, 52 for the significand (the significant digits). That buys you roughly 15 to 16 significant decimal digits and a range from about 5e-324 to 1.8e308.
+Ask R to print `0.1` with twenty decimal places:
+
+```{r}
+sprintf("%.20f", 0.1)
+sprintf("%.20f", 0.2)
+sprintf("%.20f", 0.3)
+```
+
+None of these are the decimal values you typed; they are the closest numbers R can store. By default R keeps every number as a 64-bit double-precision floating-point\index{floating-point} value, following the IEEE 754\index{IEEE 754} standard: 1 bit for the sign, 11 for the exponent, 52 for the significand (the significant digits). That buys you roughly 15 to 16 significant decimal digits and a range from about 5e-324 to 1.8e308, and it leaves a sliver of space between what you write and what R stores. Every trap in this chapter traces back to that sliver.
+
+::: {.callout-note collapse="true"}
+## The lambda calculus connection
+Lambda calculus and mathematical logic operate on exact symbolic terms. Physical computers operate on finite approximations. The gap between `0.1` (the mathematical real number) and `0.1` (the closest IEEE 754 double) is where the two diverge.
+:::
 
 Two machine constants are worth knowing:
 
@@ -42,23 +55,6 @@ R also has three special floating-point values:
 
 `Inf` and `-Inf` result from overflow and division by zero, while `NaN` ("Not a Number") results from undefined operations like `log(-1)`. These values propagate: any arithmetic involving `NaN` returns `NaN`, and any comparison with `NaN` returns `NA`.
 
-So R's numbers are approximations, and for most work the approximation is excellent. But "excellent" is not "exact."
-
-::: {.callout-note collapse="true"}
-## The lambda calculus connection
-Lambda calculus and mathematical logic operate on exact symbolic terms. Physical computers operate on finite approximations. The gap between `0.1` (the mathematical real number) and `0.1` (the closest IEEE 754 double) is where the two diverge.
-:::
-
-How big is that gap? You can see the stored representation with `sprintf()`:
-
-```{r}
-sprintf("%.20f", 0.1)
-sprintf("%.20f", 0.2)
-sprintf("%.20f", 0.3)
-```
-
-None of these are the decimal values you typed; they are the closest 64-bit floating-point numbers. Every trap in this chapter traces back to that sliver of space between what you write and what R stores.
-
 
 ## Floating-point traps {#sec-floating-point-traps}
 
@@ -68,7 +64,9 @@ The classic:
 0.1 + 0.2 == 0.3
 ```
 
-Neither 0.1 nor 0.2 nor 0.3 can be represented exactly in binary floating point, so the sum of the stored representations of 0.1 and 0.2 differs from the stored representation of 0.3 by a tiny amount (about 5.6e-17). Because `==` checks for exact equality, it returns `FALSE`. This is a specific instance of a deeper fact: floating-point operations do not obey real arithmetic\index{rounding error}. Addition is not even associative; `(a + b) + c` may differ from `a + (b + c)` because each intermediate result gets rounded independently. For the full map of these traps, David Goldberg's 1991 paper "What Every Computer Scientist Should Know About Floating-Point Arithmetic" remains the definitive reference.
+Neither 0.1 nor 0.2 nor 0.3 can be represented exactly in binary floating point, so the sum of the stored representations of 0.1 and 0.2 differs from the stored representation of 0.3 by a tiny amount (about 5.6e-17). Because `==` checks for exact equality, it returns `FALSE`.
+
+This is one instance of a general fact: floating-point operations do not obey real arithmetic\index{rounding error}. Addition is not even associative; `(a + b) + c` may differ from `a + (b + c)` because each intermediate result gets rounded independently. For the full map of these traps, David Goldberg's 1991 paper "What Every Computer Scientist Should Know About Floating-Point Arithmetic" remains the definitive reference.
 
 The fix is `all.equal()`\index{all.equal()}, which compares with a tolerance:
 
@@ -93,7 +91,12 @@ Accumulation is subtler. Adding a small number to a large number can lose the sm
 1e16 + 1 - 1e16
 ```
 
-The result should be 1. It is 0, because `1e16 + 1` cannot be distinguished from `1e16` in 64-bit floating point; the 1 simply vanishes. When you call `sum()` on a million numbers, these rounding errors accumulate with each addition. R's `sum()` uses pairwise summation (splitting the vector in half and summing each half recursively) to reduce this drift. For extreme precision, compensated summation algorithms like Kahan's (1965) track the accumulated error in a separate variable and correct for it at each step.
+The result should be 1. It is 0, because `1e16 + 1` cannot be distinguished from `1e16` in 64-bit floating point; the 1 simply vanishes. When you call `sum()` on a million numbers, these rounding errors accumulate with each addition.
+
+::: {.callout-note collapse="true"}
+## How `sum()` limits the drift
+R's `sum()` uses pairwise summation, splitting the vector in half and summing each half recursively, so that no single running total absorbs a million rounding errors in sequence. For extreme precision, compensated summation algorithms like Kahan's (1965) track the accumulated error in a separate variable and correct for it at each step.
+:::
 
 Sequences suffer the same problem:
 
@@ -152,7 +155,7 @@ var(y) * (length(y) - 1) / length(y)
 
 The naive formula returns a wildly wrong answer (possibly negative, depending on the data), because `mean(y^2)` and `mean(y)^2` are both enormous and nearly equal; their difference is noise.
 
-R's built-in `var()` uses a numerically stable\index{numerical stability} one-pass algorithm that avoids this trap. The lesson: mathematically equivalent expressions are not numerically equivalent. Prefer formulations that avoid subtracting nearly equal quantities. When you see unexpected negative values for something that should be positive (a variance, a squared distance), suspect cancellation.
+R's built-in `var()` uses a numerically stable\index{numerical stability} one-pass algorithm that avoids this trap. Mathematically equivalent expressions are not numerically equivalent. Prefer formulations that avoid subtracting nearly equal quantities, and when you see unexpected negative values for something that should be positive (a variance, a squared distance), suspect cancellation.
 
 The same problem appears when computing `sqrt(x^2 + 1) - 1` for small `x`. As `x` approaches zero, `sqrt(x^2 + 1)` rounds to `1`, and the subtraction gives `0`, even though the true answer is a small positive number. The algebraically equivalent form `x^2 / (sqrt(x^2 + 1) + 1)` avoids the cancellation:
 
@@ -197,7 +200,7 @@ Integer arithmetic is exact within its range, with no rounding and no floating-p
 .Machine$integer.max + 1L
 ```
 
-Overflow produces `NA` with a warning. R does not silently wrap around to negative numbers the way C does.
+Overflow produces `NA` with a warning. (C wraps around to a negative number instead.)
 
 When should you use integers? For counts, indices, anything naturally discrete: use `as.integer()` or the `L` suffix. For most data analysis, doubles are fine. Integer precision matters in package code, algorithms, and large-scale computation where the 15-digit limit of doubles becomes a concern for exact counting.
 
@@ -220,24 +223,23 @@ Usually harmless, but it means you cannot always predict the type of an arithmet
 
 ::: callout-note
 ## Reading guide
-The sections above (storage, floating-point traps, cancellation, integers) are knowledge every R user needs. The sections below (condition numbers, matrix algebra, log-space) are more specialized. If you are working through the book sequentially, you can skip ahead to @sec-functions-are-values-chapter and return here when you encounter these topics in practice, for instance when reading @sec-performance or @sec-connecting-languages.
+The sections above (storage, floating-point traps, cancellation, integers) are knowledge every R user needs. The sections below (condition numbers, matrix algebra, log-space) are more specialized. If you are working through the book sequentially, you can skip ahead to @sec-functions-are-values-chapter and return here when you meet these topics in practice.
 :::
 
 Individual floating-point traps lose a few digits. But when traps compound across a chain of operations, the entire result can become meaningless. How do you tell in advance?
 
 ### Condition numbers
 
-The *condition number*\index{condition number} of a matrix measures how sensitive the solution of a linear system is to small perturbations in the input. R computes it with `kappa()`:
+Ask R how much a matrix amplifies small errors:
 
 ```{r}
-# A well-conditioned matrix
 A_good <- matrix(c(2, 1, 1, 3), nrow = 2)
 kappa(A_good)
 ```
 
-A condition number near 1 means the system is well-behaved: small changes in the input produce small changes in the output. Large condition numbers mean trouble.
+`kappa()` returns the matrix's *condition number*\index{condition number}, a measure of how sensitive the solution of a linear system is to small perturbations in the input. A value near 1, as here, means the system is well-behaved: small changes in the input produce small changes in the output. Large values mean trouble.
 
-The Hilbert matrix\index{Hilbert matrix} is the classic example of an ill-conditioned\index{ill-conditioned} matrix, with entries $H_{ij} = 1/(i + j - 1)$:
+Now build a matrix with entries $H_{ij} = 1/(i + j - 1)$ and watch what happens as it grows:
 
 ```{r}
 hilbert <- function(n) {
@@ -250,7 +252,7 @@ kappa(hilbert(10))
 kappa(hilbert(15))
 ```
 
-The condition number grows exponentially. For a 15x15 Hilbert matrix it is astronomical, meaning that solving $Hx = b$ with 64-bit floats produces answers that are essentially noise. You can verify:
+This is the Hilbert matrix\index{Hilbert matrix}, the classic example of an ill-conditioned\index{ill-conditioned} matrix. Its condition number grows exponentially, and for a 15x15 matrix it is astronomical, meaning that solving $Hx = b$ with 64-bit floats produces answers that are essentially noise. You can verify:
 
 ```{r}
 H <- hilbert(8)
@@ -317,24 +319,24 @@ A <- matrix(1:6, nrow = 2, ncol = 3)
 A
 ```
 
-Every matrix operation in R eventually calls LAPACK or BLAS — Fortran libraries that have been tested, tuned, and argued over for decades. When you write `solve(A, b)`, you are asking those routines to find the vector *x* that satisfies *Ax = b* exactly, using numbers that are not exact. LAPACK is backward-stable, in the sense of @sec-numerical-stability: the *x* it hands back solves a slightly perturbed version of your problem, *A + δA*. For well-conditioned matrices, *δA* is negligible — a few ulps, invisible in any application. The Hilbert matrix from the previous section is a different story; there, *δA* is large enough to drown the answer in noise, because the matrix itself amplifies every perturbation and no amount of algorithmic care can undo that. The condition number you computed is the magnification factor, and it is the single number that determines whether `solve()` gives you a trustworthy answer or an expensive random number.
+Every matrix operation in R eventually calls LAPACK or BLAS, Fortran libraries that have been tested, tuned, and argued over for decades. When you write `solve(A, b)`, you are asking those routines to find the vector *x* that satisfies *Ax = b* exactly, using numbers that are not exact. LAPACK is backward-stable, in the sense of @sec-numerical-stability: the *x* it hands back solves a slightly perturbed version of your problem, *A + δA*.
 
-The key operations:
+For well-conditioned matrices, *δA* is a few units in the last decimal place, invisible in any application. The Hilbert matrix from the previous section is a different story; there, *δA* is large enough to drown the answer in noise, because the matrix itself amplifies every perturbation and no amount of algorithmic care can undo that. The condition number you computed is the magnification factor, and it is the single number that determines whether `solve()` gives you a trustworthy answer or an expensive random number.
 
-**Matrix multiplication** uses `%*%`, not `*` (which is element-wise):
+Matrix multiplication uses `%*%`; plain `*` is element-wise:
 
 ```{r}
 B <- matrix(c(1, 0, 0, 1, 1, 0), nrow = 3, ncol = 2)
 A %*% B
 ```
 
-**Transpose** with `t()`:
+`t()` transposes:
 
 ```{r}
 t(A)
 ```
 
-**Cross products** are faster than explicit transpose-multiply:
+For the product of a matrix with its own transpose, `crossprod()` is faster than writing the transpose out:
 
 ```{r}
 X <- matrix(rnorm(6), nrow = 3, ncol = 2)
@@ -342,7 +344,7 @@ crossprod(X)     # t(X) %*% X, but faster
 tcrossprod(X)    # X %*% t(X)
 ```
 
-**Solving linear systems**: `solve(A, b)` solves $Ax = b$ for $x$:
+`solve(A, b)` solves $Ax = b$ for $x$:
 
 ```{r}
 A <- matrix(c(2, 1, 1, 3), nrow = 2)
@@ -357,7 +359,7 @@ A %*% x  # verify: should equal b
 Use `solve(A, b)` to solve systems, not `solve(A) %*% b`. Computing the inverse is slower and less numerically stable. The only reason to compute `solve(A)` explicitly is if you need the inverse itself, which is rare.
 :::
 
-**Decompositions**: R provides `eigen()` for eigenvalues, `svd()` for singular value decomposition, `qr()` for QR decomposition, and `chol()` for the Cholesky decomposition of symmetric positive-definite matrices, all backed by LAPACK and BLAS. R's matrix operations are fast for moderate sizes, up to thousands of rows and columns.
+The standard decompositions are all built in, and all backed by LAPACK: `eigen()` for eigenvalues, `svd()` for singular values, `qr()` for QR, and `chol()` for the Cholesky decomposition of symmetric positive-definite matrices. They are fast for moderate sizes, up to thousands of rows and columns.
 
 ```{r}
 eigen(A)$values
@@ -382,15 +384,17 @@ The `byrow = TRUE` argument changes the fill order. Forgetting this is a common 
 
 ## When R lies and when it is precise {#sec-precision}
 
-A short guide to where you can trust R's numbers and where you should be cautious:
+Integer arithmetic, logical operations, string operations, and counting are exact. Any computation involving doubles is approximate: sums, means, variances, regression coefficients. The approximation is excellent, about 15 digits, but it is still an approximation, and it fails in four recognizable places: comparing doubles for equality, subtracting nearly equal values, summing many numbers of very different magnitudes, and working near overflow or underflow.
 
-**Precise**: integer arithmetic, logical operations, string operations, counting. These are exact.
+The last of these has a standard workaround. When numbers get very small (probabilities in statistical models, likelihoods), work in log-space: compute `log(a) + log(b)` instead of `a * b`. Adding two such numbers means computing `log(exp(a) + exp(b))`, and the obvious way overflows:
 
-**Approximate**: any computation involving doubles. Sums, means, variances, regression coefficients. The approximation is excellent (15 digits), but it is still an approximation.
+```{r}
+a <- 1000
+b <- 1001
+exp(a) + exp(b)
+```
 
-**Dangerous spots**: comparing doubles for equality, subtracting nearly equal values, summing many numbers of very different magnitudes, numbers near overflow or underflow.
-
-**Log-space arithmetic**: when numbers get very small (probabilities in statistical models, likelihoods), work in log-space. Compute `log(a) + log(b)` instead of `a * b`. For `log(exp(a) + exp(b))`, use a `logSumExp`\index{log-sum-exp} function that avoids the overflow of `exp(a)`:
+Subtracting the larger value before exponentiating keeps everything in range:
 
 ```{r}
 log_sum_exp <- function(a, b) {
@@ -398,16 +402,14 @@ log_sum_exp <- function(a, b) {
   m + log(exp(a - m) + exp(b - m))
 }
 
-# Direct computation overflows
-a <- 1000
-b <- 1001
-# exp(a) + exp(b) would be Inf
 log_sum_exp(a, b)
 ```
 
-Most data analysis is safe. The traps bite in numerical algorithms, simulation, and optimization. Be aware of them, but don't be paranoid. One principled approach to tracking error is interval arithmetic: instead of storing a single float, you track `[lower, upper]` bounds, and every operation propagates the interval so that the result is a proof that the true answer lies within the bounds. R has no built-in interval arithmetic, but the idea is worth knowing about when precision is critical.
+This is the *log-sum-exp*\index{log-sum-exp} trick, and it appears wherever likelihoods are multiplied.
+
+Most data analysis is safe. The traps bite in numerical algorithms, simulation, and optimization. Be aware of them, but don't be paranoid.
 
 ::: {.callout-note collapse="true"}
-## The lambda calculus connection
-Interval arithmetic connects to dependent types in type theory, where a value is annotated with its error bound, turning "how wrong could this be?" from a question into a quantity the computation tracks automatically.
+## Interval arithmetic
+One principled approach to tracking error is interval arithmetic: instead of storing a single float, you track `[lower, upper]` bounds, and every operation propagates the interval so that the result is a proof that the true answer lies within the bounds. R has no built-in interval arithmetic, but the idea is worth knowing about when precision is critical. It connects to dependent types in type theory, where a value is annotated with its error bound, turning "how wrong could this be?" from a question into a quantity the computation tracks automatically.
 :::

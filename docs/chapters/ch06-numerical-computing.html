@@ -688,32 +688,19 @@ window.Quarto = {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">==</span> <span class="fl">0.3</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This is not a bug. Every number you type into R is an approximation, and operations on those approximations do not always behave the way real arithmetic does. Most of the time the approximation is so good that you never notice it. This chapter shows you the cases where it matters, how to recognize the traps, and how to work with R’s matrix algebra tools. The first four sections (storage, traps, cancellation, integers) are for every R user. The rest covers numerical stability and matrix algebra; a callout box marks where you can skip ahead if you are new to R.</p>
+<p>This is not a bug. Every number you type into R is an approximation, and operations on those approximations do not always behave the way real arithmetic does. Most of the time the approximation is so good that you never notice it. This chapter shows you the cases where it matters, how to recognize the traps, and how to work with R’s matrix algebra tools. The first four sections (storage, traps, cancellation, integers) are for every R user. The rest covers numerical stability and matrix algebra; a reading guide marks where you can skip ahead if you are new to R.</p>
 <section id="sec-how-r-stores-numbers" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="sec-how-r-stores-numbers"><span class="header-section-number">6.1</span> How R stores numbers</h2>
-<p>R uses IEEE 754 double-precision floating point for all numeric values by default, packing each number into 64 bits: 1 for the sign, 11 for the exponent, 52 for the significand (the significant digits). That buys you roughly 15 to 16 significant decimal digits and a range from about 5e-324 to 1.8e308.</p>
-<p>Two machine constants are worth knowing:</p>
+<p>Ask R to print <code>0.1</code> with twenty decimal places:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>double.eps</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2.220446e-16</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.20f"</span>, <span class="fl">0.1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0.10000000000000000555"</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.20f"</span>, <span class="fl">0.2</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0.20000000000000001110"</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.20f"</span>, <span class="fl">0.3</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0.29999999999999998890"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This is <em>machine epsilon</em>: the smallest number such that <code>1 + eps</code> is not equal to <code>1</code>. It defines the granularity of floating point near 1; any difference smaller than this disappears.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>integer.max</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2147483647</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>The largest integer R can represent with the integer type. Beyond this, integer arithmetic produces <code>NA</code> with a warning.</p>
-<p>R also has three special floating-point values:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> <span class="sc">/</span> <span class="dv">0</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] Inf</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">1</span> <span class="sc">/</span> <span class="dv">0</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -Inf</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="dv">0</span> <span class="sc">/</span> <span class="dv">0</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NaN</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><code>Inf</code> and <code>-Inf</code> result from overflow and division by zero, while <code>NaN</code> (“Not a Number”) results from undefined operations like <code>log(-1)</code>. These values propagate: any arithmetic involving <code>NaN</code> returns <code>NaN</code>, and any comparison with <code>NaN</code> returns <code>NA</code>.</p>
-<p>So R’s numbers are approximations, and for most work the approximation is excellent. But “excellent” is not “exact.”</p>
+<p>None of these are the decimal values you typed; they are the closest numbers R can store. By default R keeps every number as a 64-bit double-precision floating-point value, following the IEEE 754 standard: 1 bit for the sign, 11 for the exponent, 52 for the significand (the significant digits). That buys you roughly 15 to 16 significant decimal digits and a range from about 5e-324 to 1.8e308, and it leaves a sliver of space between what you write and what R stores. Every trap in this chapter traces back to that sliver.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -730,16 +717,27 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>How big is that gap? You can see the stored representation with <code>sprintf()</code>:</p>
+<p>Two machine constants are worth knowing:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.20f"</span>, <span class="fl">0.1</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0.10000000000000000555"</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.20f"</span>, <span class="fl">0.2</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0.20000000000000001110"</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sprintf</span>(<span class="st">"%.20f"</span>, <span class="fl">0.3</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "0.29999999999999998890"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>double.eps</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2.220446e-16</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>None of these are the decimal values you typed; they are the closest 64-bit floating-point numbers. Every trap in this chapter traces back to that sliver of space between what you write and what R stores.</p>
+<p>This is <em>machine epsilon</em>: the smallest number such that <code>1 + eps</code> is not equal to <code>1</code>. It defines the granularity of floating point near 1; any difference smaller than this disappears.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>.Machine<span class="sc">$</span>integer.max</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2147483647</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The largest integer R can represent with the integer type. Beyond this, integer arithmetic produces <code>NA</code> with a warning.</p>
+<p>R also has three special floating-point values:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> <span class="sc">/</span> <span class="dv">0</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] Inf</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="sc">-</span><span class="dv">1</span> <span class="sc">/</span> <span class="dv">0</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -Inf</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="dv">0</span> <span class="sc">/</span> <span class="dv">0</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NaN</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>Inf</code> and <code>-Inf</code> result from overflow and division by zero, while <code>NaN</code> (“Not a Number”) results from undefined operations like <code>log(-1)</code>. These values propagate: any arithmetic involving <code>NaN</code> returns <code>NaN</code>, and any comparison with <code>NaN</code> returns <code>NA</code>.</p>
 </section>
 <section id="sec-floating-point-traps" class="level2" data-number="6.2">
 <h2 data-number="6.2" class="anchored" data-anchor-id="sec-floating-point-traps"><span class="header-section-number">6.2</span> Floating-point traps</h2>
@@ -748,7 +746,8 @@ window.Quarto = {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">==</span> <span class="fl">0.3</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Neither 0.1 nor 0.2 nor 0.3 can be represented exactly in binary floating point, so the sum of the stored representations of 0.1 and 0.2 differs from the stored representation of 0.3 by a tiny amount (about 5.6e-17). Because <code>==</code> checks for exact equality, it returns <code>FALSE</code>. This is a specific instance of a deeper fact: floating-point operations do not obey real arithmetic. Addition is not even associative; <code>(a + b) + c</code> may differ from <code>a + (b + c)</code> because each intermediate result gets rounded independently. For the full map of these traps, David Goldberg’s 1991 paper “What Every Computer Scientist Should Know About Floating-Point Arithmetic” remains the definitive reference.</p>
+<p>Neither 0.1 nor 0.2 nor 0.3 can be represented exactly in binary floating point, so the sum of the stored representations of 0.1 and 0.2 differs from the stored representation of 0.3 by a tiny amount (about 5.6e-17). Because <code>==</code> checks for exact equality, it returns <code>FALSE</code>.</p>
+<p>This is one instance of a general fact: floating-point operations do not obey real arithmetic. Addition is not even associative; <code>(a + b) + c</code> may differ from <code>a + (b + c)</code> because each intermediate result gets rounded independently. For the full map of these traps, David Goldberg’s 1991 paper “What Every Computer Scientist Should Know About Floating-Point Arithmetic” remains the definitive reference.</p>
 <p>The fix is <code>all.equal()</code>, which compares with a tolerance:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fl">0.1</span> <span class="sc">+</span> <span class="fl">0.2</span>, <span class="fl">0.3</span>)</span>
@@ -777,7 +776,23 @@ window.Quarto = {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fl">1e16</span> <span class="sc">+</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fl">1e16</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The result should be 1. It is 0, because <code>1e16 + 1</code> cannot be distinguished from <code>1e16</code> in 64-bit floating point; the 1 simply vanishes. When you call <code>sum()</code> on a million numbers, these rounding errors accumulate with each addition. R’s <code>sum()</code> uses pairwise summation (splitting the vector in half and summing each half recursively) to reduce this drift. For extreme precision, compensated summation algorithms like Kahan’s (1965) track the accumulated error in a separate variable and correct for it at each step.</p>
+<p>The result should be 1. It is 0, because <code>1e16 + 1</code> cannot be distinguished from <code>1e16</code> in 64-bit floating point; the 1 simply vanishes. When you call <code>sum()</code> on a million numbers, these rounding errors accumulate with each addition.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>How <code>sum()</code> limits the drift
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>R’s <code>sum()</code> uses pairwise summation, splitting the vector in half and summing each half recursively, so that no single running total absorbs a million rounding errors in sequence. For extreme precision, compensated summation algorithms like Kahan’s (1965) track the accumulated error in a separate variable and correct for it at each step.</p>
+</div>
+</div>
+</div>
 <p>Sequences suffer the same problem:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">by =</span> <span class="fl">0.1</span>)</span>
@@ -827,7 +842,7 @@ window.Quarto = {
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The naive formula returns a wildly wrong answer (possibly negative, depending on the data), because <code>mean(y^2)</code> and <code>mean(y)^2</code> are both enormous and nearly equal; their difference is noise.</p>
-<p>R’s built-in <code>var()</code> uses a numerically stable one-pass algorithm that avoids this trap. The lesson: mathematically equivalent expressions are not numerically equivalent. Prefer formulations that avoid subtracting nearly equal quantities. When you see unexpected negative values for something that should be positive (a variance, a squared distance), suspect cancellation.</p>
+<p>R’s built-in <code>var()</code> uses a numerically stable one-pass algorithm that avoids this trap. Mathematically equivalent expressions are not numerically equivalent. Prefer formulations that avoid subtracting nearly equal quantities, and when you see unexpected negative values for something that should be positive (a variance, a squared distance), suspect cancellation.</p>
 <p>The same problem appears when computing <code>sqrt(x^2 + 1) - 1</code> for small <code>x</code>. As <code>x</code> approaches zero, <code>sqrt(x^2 + 1)</code> rounds to <code>1</code>, and the subtraction gives <code>0</code>, even though the true answer is a small positive number. The algebraically equivalent form <code>x^2 / (sqrt(x^2 + 1) + 1)</code> avoids the cancellation:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fl">1e-8</span></span>
@@ -873,7 +888,7 @@ window.Quarto = {
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in .Machine$integer.max + 1L: NAs produced by integer overflow</span></span>
 <span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Overflow produces <code>NA</code> with a warning. R does not silently wrap around to negative numbers the way C does.</p>
+<p>Overflow produces <code>NA</code> with a warning. (C wraps around to a negative number instead.)</p>
 <p>When should you use integers? For counts, indices, anything naturally discrete: use <code>as.integer()</code> or the <code>L</code> suffix. For most data analysis, doubles are fine. Integer precision matters in package code, algorithms, and large-scale computation where the 15-digit limit of doubles becomes a concern for exact counting.</p>
 <p>One subtlety: mixing integers and doubles promotes the result to double:</p>
 <div class="cell">
@@ -903,21 +918,20 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The sections above (storage, floating-point traps, cancellation, integers) are knowledge every R user needs. The sections below (condition numbers, matrix algebra, log-space) are more specialized. If you are working through the book sequentially, you can skip ahead to <a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a> and return here when you encounter these topics in practice, for instance when reading <a href="ch28-performance.html" class="quarto-xref"><span>Chapter 28</span></a> or <a href="ch31-connecting-to-other-languages.html" class="quarto-xref"><span>Chapter 31</span></a>.</p>
+<p>The sections above (storage, floating-point traps, cancellation, integers) are knowledge every R user needs. The sections below (condition numbers, matrix algebra, log-space) are more specialized. If you are working through the book sequentially, you can skip ahead to <a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a> and return here when you meet these topics in practice.</p>
 </div>
 </div>
 <p>Individual floating-point traps lose a few digits. But when traps compound across a chain of operations, the entire result can become meaningless. How do you tell in advance?</p>
 <section id="condition-numbers" class="level3" data-number="6.5.1">
 <h3 data-number="6.5.1" class="anchored" data-anchor-id="condition-numbers"><span class="header-section-number">6.5.1</span> Condition numbers</h3>
-<p>The <em>condition number</em> of a matrix measures how sensitive the solution of a linear system is to small perturbations in the input. R computes it with <code>kappa()</code>:</p>
+<p>Ask R how much a matrix amplifies small errors:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A well-conditioned matrix</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>A_good <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">3</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">kappa</span>(A_good)</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3.333333</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>A_good <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">3</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">kappa</span>(A_good)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3.333333</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>A condition number near 1 means the system is well-behaved: small changes in the input produce small changes in the output. Large condition numbers mean trouble.</p>
-<p>The Hilbert matrix is the classic example of an ill-conditioned matrix, with entries <span class="math inline">\(H_{ij} = 1/(i + j - 1)\)</span>:</p>
+<p><code>kappa()</code> returns the matrix’s <em>condition number</em>, a measure of how sensitive the solution of a linear system is to small perturbations in the input. A value near 1, as here, means the system is well-behaved: small changes in the input produce small changes in the output. Large values mean trouble.</p>
+<p>Now build a matrix with entries <span class="math inline">\(H_{ij} = 1/(i + j - 1)\)</span> and watch what happens as it grows:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>hilbert <span class="ot">&lt;-</span> <span class="cf">function</span>(n) {</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>n</span>
@@ -931,7 +945,7 @@ window.Quarto = {
 <span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="fu">kappa</span>(<span class="fu">hilbert</span>(<span class="dv">15</span>))</span>
 <span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2.185423e+17</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The condition number grows exponentially. For a 15x15 Hilbert matrix it is astronomical, meaning that solving <span class="math inline">\(Hx = b\)</span> with 64-bit floats produces answers that are essentially noise. You can verify:</p>
+<p>This is the Hilbert matrix, the classic example of an ill-conditioned matrix. Its condition number grows exponentially, and for a 15x15 matrix it is astronomical, meaning that solving <span class="math inline">\(Hx = b\)</span> with 64-bit floats produces answers that are essentially noise. You can verify:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>H <span class="ot">&lt;-</span> <span class="fu">hilbert</span>(<span class="dv">8</span>)</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>x_true <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">8</span>)</span>
@@ -998,9 +1012,9 @@ window.Quarto = {
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]    1    3    5</span></span>
 <span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]    2    4    6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Every matrix operation in R eventually calls LAPACK or BLAS — Fortran libraries that have been tested, tuned, and argued over for decades. When you write <code>solve(A, b)</code>, you are asking those routines to find the vector <em>x</em> that satisfies <em>Ax = b</em> exactly, using numbers that are not exact. LAPACK is backward-stable, in the sense of <a href="#sec-numerical-stability" class="quarto-xref"><span>Section 6.5</span></a>: the <em>x</em> it hands back solves a slightly perturbed version of your problem, <em>A + δA</em>. For well-conditioned matrices, <em>δA</em> is negligible — a few ulps, invisible in any application. The Hilbert matrix from the previous section is a different story; there, <em>δA</em> is large enough to drown the answer in noise, because the matrix itself amplifies every perturbation and no amount of algorithmic care can undo that. The condition number you computed is the magnification factor, and it is the single number that determines whether <code>solve()</code> gives you a trustworthy answer or an expensive random number.</p>
-<p>The key operations:</p>
-<p><strong>Matrix multiplication</strong> uses <code>%*%</code>, not <code>*</code> (which is element-wise):</p>
+<p>Every matrix operation in R eventually calls LAPACK or BLAS, Fortran libraries that have been tested, tuned, and argued over for decades. When you write <code>solve(A, b)</code>, you are asking those routines to find the vector <em>x</em> that satisfies <em>Ax = b</em> exactly, using numbers that are not exact. LAPACK is backward-stable, in the sense of <a href="#sec-numerical-stability" class="quarto-xref"><span>Section 6.5</span></a>: the <em>x</em> it hands back solves a slightly perturbed version of your problem, <em>A + δA</em>.</p>
+<p>For well-conditioned matrices, <em>δA</em> is a few units in the last decimal place, invisible in any application. The Hilbert matrix from the previous section is a different story; there, <em>δA</em> is large enough to drown the answer in noise, because the matrix itself amplifies every perturbation and no amount of algorithmic care can undo that. The condition number you computed is the magnification factor, and it is the single number that determines whether <code>solve()</code> gives you a trustworthy answer or an expensive random number.</p>
+<p>Matrix multiplication uses <code>%*%</code>; plain <code>*</code> is element-wise:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>), <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">2</span>)</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>A <span class="sc">%*%</span> B</span>
@@ -1008,7 +1022,7 @@ window.Quarto = {
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]    1    4</span></span>
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]    2    6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Transpose</strong> with <code>t()</code>:</p>
+<p><code>t()</code> transposes:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">t</span>(A)</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
@@ -1016,7 +1030,7 @@ window.Quarto = {
 <span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,]    3    4</span></span>
 <span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [3,]    5    6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Cross products</strong> are faster than explicit transpose-multiply:</p>
+<p>For the product of a matrix with its own transpose, <code>crossprod()</code> is faster than writing the transpose out:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">6</span>), <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">ncol =</span> <span class="dv">2</span>)</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">crossprod</span>(X)     <span class="co"># t(X) %*% X, but faster</span></span>
@@ -1029,7 +1043,7 @@ window.Quarto = {
 <span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2,] -0.1946305  0.6224605 -1.2102932</span></span>
 <span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [3,]  0.6850608 -1.2102932  2.5593975</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Solving linear systems</strong>: <code>solve(A, b)</code> solves <span class="math inline">\(Ax = b\)</span> for <span class="math inline">\(x\)</span>:</p>
+<p><code>solve(A, b)</code> solves <span class="math inline">\(Ax = b\)</span> for <span class="math inline">\(x\)</span>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>A <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">3</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">7</span>)</span>
@@ -1054,7 +1068,7 @@ window.Quarto = {
 <p>Use <code>solve(A, b)</code> to solve systems, not <code>solve(A) %*% b</code>. Computing the inverse is slower and less numerically stable. The only reason to compute <code>solve(A)</code> explicitly is if you need the inverse itself, which is rare.</p>
 </div>
 </div>
-<p><strong>Decompositions</strong>: R provides <code>eigen()</code> for eigenvalues, <code>svd()</code> for singular value decomposition, <code>qr()</code> for QR decomposition, and <code>chol()</code> for the Cholesky decomposition of symmetric positive-definite matrices, all backed by LAPACK and BLAS. R’s matrix operations are fast for moderate sizes, up to thousands of rows and columns.</p>
+<p>The standard decompositions are all built in, and all backed by LAPACK: <code>eigen()</code> for eigenvalues, <code>svd()</code> for singular values, <code>qr()</code> for QR, and <code>chol()</code> for the Cholesky decomposition of symmetric positive-definite matrices. They are fast for moderate sizes, up to thousands of rows and columns.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">eigen</span>(A)<span class="sc">$</span>values</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3.618034 1.381966</span></span>
@@ -1084,38 +1098,39 @@ window.Quarto = {
 </section>
 <section id="sec-precision" class="level2" data-number="6.7">
 <h2 data-number="6.7" class="anchored" data-anchor-id="sec-precision"><span class="header-section-number">6.7</span> When R lies and when it is precise</h2>
-<p>A short guide to where you can trust R’s numbers and where you should be cautious:</p>
-<p><strong>Precise</strong>: integer arithmetic, logical operations, string operations, counting. These are exact.</p>
-<p><strong>Approximate</strong>: any computation involving doubles. Sums, means, variances, regression coefficients. The approximation is excellent (15 digits), but it is still an approximation.</p>
-<p><strong>Dangerous spots</strong>: comparing doubles for equality, subtracting nearly equal values, summing many numbers of very different magnitudes, numbers near overflow or underflow.</p>
-<p><strong>Log-space arithmetic</strong>: when numbers get very small (probabilities in statistical models, likelihoods), work in log-space. Compute <code>log(a) + log(b)</code> instead of <code>a * b</code>. For <code>log(exp(a) + exp(b))</code>, use a <code>logSumExp</code> function that avoids the overflow of <code>exp(a)</code>:</p>
+<p>Integer arithmetic, logical operations, string operations, and counting are exact. Any computation involving doubles is approximate: sums, means, variances, regression coefficients. The approximation is excellent, about 15 digits, but it is still an approximation, and it fails in four recognizable places: comparing doubles for equality, subtracting nearly equal values, summing many numbers of very different magnitudes, and working near overflow or underflow.</p>
+<p>The last of these has a standard workaround. When numbers get very small (probabilities in statistical models, likelihoods), work in log-space: compute <code>log(a) + log(b)</code> instead of <code>a * b</code>. Adding two such numbers means computing <code>log(exp(a) + exp(b))</code>, and the obvious way overflows:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>log_sum_exp <span class="ot">&lt;-</span> <span class="cf">function</span>(a, b) {</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">pmax</span>(a, b)</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  m <span class="sc">+</span> <span class="fu">log</span>(<span class="fu">exp</span>(a <span class="sc">-</span> m) <span class="sc">+</span> <span class="fu">exp</span>(b <span class="sc">-</span> m))</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Direct computation overflows</span></span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">1001</span></span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="co"># exp(a) + exp(b) would be Inf</span></span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a><span class="fu">log_sum_exp</span>(a, b)</span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1001.313</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">1001</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(a) <span class="sc">+</span> <span class="fu">exp</span>(b)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] Inf</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Most data analysis is safe. The traps bite in numerical algorithms, simulation, and optimization. Be aware of them, but don’t be paranoid. One principled approach to tracking error is interval arithmetic: instead of storing a single float, you track <code>[lower, upper]</code> bounds, and every operation propagates the interval so that the result is a proof that the true answer lies within the bounds. R has no built-in interval arithmetic, but the idea is worth knowing about when precision is critical.</p>
+<p>Subtracting the larger value before exponentiating keeps everything in range:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>log_sum_exp <span class="ot">&lt;-</span> <span class="cf">function</span>(a, b) {</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">pmax</span>(a, b)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  m <span class="sc">+</span> <span class="fu">log</span>(<span class="fu">exp</span>(a <span class="sc">-</span> m) <span class="sc">+</span> <span class="fu">exp</span>(b <span class="sc">-</span> m))</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="fu">log_sum_exp</span>(a, b)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1001.313</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>This is the <em>log-sum-exp</em> trick, and it appears wherever likelihoods are multiplied.</p>
+<p>Most data analysis is safe. The traps bite in numerical algorithms, simulation, and optimization. Be aware of them, but don’t be paranoid.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>The lambda calculus connection
+<span class="screen-reader-only">Note</span>Interval arithmetic
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Interval arithmetic connects to dependent types in type theory, where a value is annotated with its error bound, turning “how wrong could this be?” from a question into a quantity the computation tracks automatically.</p>
+<p>One principled approach to tracking error is interval arithmetic: instead of storing a single float, you track <code>[lower, upper]</code> bounds, and every operation propagates the interval so that the result is a proof that the true answer lies within the bounds. R has no built-in interval arithmetic, but the idea is worth knowing about when precision is critical. It connects to dependent types in type theory, where a value is annotated with its error bound, turning “how wrong could this be?” from a question into a quantity the computation tracks automatically.</p>
 </div>
 </div>
 </div>
@@ -1213,53 +1228,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
