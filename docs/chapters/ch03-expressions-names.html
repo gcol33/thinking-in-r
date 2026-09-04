@@ -663,8 +663,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>R <strong>loops</strong> back to step 1 and waits again.</li>
 </ol>
 <p>This is called a REPL (Read-Eval-Print Loop). There is no “compile” step, no “run” button; you type an expression, you see its value immediately.</p>
-<p>In compiled languages (C, Java, Go), you write the whole program first, then a compiler translates it into machine code before anything runs. R is <em>interpreted</em>: it reads and evaluates one expression at a time, immediately. Python and JavaScript work the same way. The tradeoff is speed: a compiler can optimize the whole program in advance, so compiled code runs faster. But interpreted languages let you experiment and see results as you go, which is why they dominate in data analysis.</p>
-<p>In practice, the line between compiled and interpreted is blurry. R itself is written in C, and many R functions are thin wrappers around compiled C or Fortran code. When you type <code>sum(x)</code>, the actual arithmetic happens in compiled machine code underneath. You get the interactive interface; the heavy computation still runs at full speed.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Interpreted or compiled?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In compiled languages such as C, Java, or Go, you write the whole program first and a compiler translates it into machine code before anything runs. R, like Python and JavaScript, is <em>interpreted</em>: it reads and evaluates one expression at a time. A compiler can optimize the whole program in advance, so compiled code usually runs faster, but an interpreter lets you see results as you go, which is why interpreted languages dominate data analysis.</p>
+<p>The line is blurry in practice. R itself is written in C, and many R functions are thin wrappers around compiled C or Fortran code. When you type <code>sum(x)</code>, the arithmetic happens in compiled machine code underneath. You get the interactive interface; the heavy computation still runs at full speed.</p>
+</div>
+</div>
+</div>
 <p>Try a few:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dv">42</span></span>
@@ -683,7 +698,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each of these is an expression. <code>42</code> is an expression whose value is 42; <code>"hello"</code> evaluates to the text string “hello”; <code>sqrt(9)</code> calls the function <code>sqrt</code> with the argument <code>9</code> and returns 3. The <code>[1]</code> you see before each result is R telling you “this is the first element of the output.” You can ignore it for now; it becomes useful when results have many elements (<a href="ch04-vectors.html" class="quarto-xref"><span>Chapter 4</span></a>).</p>
-<p>Notice the pattern: R evaluates expressions and prints their values, exactly the way the calculator in Chapter 1 evaluated <code>3 + 5 + 2 + 8</code>. This is Church’s model of computation (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>), made interactive through the REPL loop. But evaluating expressions and forgetting them immediately is like a calculator with no memory. What if you want to keep a result?</p>
+<p>R evaluates expressions and prints their values, the way Mr.&nbsp;Fold folded <code>3, 5, 2, 8</code> down to <code>18</code> in <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>. This is Church’s model of computation, made interactive. But evaluating expressions and forgetting them immediately is like a calculator with no memory. What if you want to keep a result?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -713,7 +728,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>x <span class="sc">*</span> x</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 9</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>It is tempting to think of <code>x</code> as a box that contains 3, and if you have used C or Python, that is exactly the model you carry around: the variable is a container, and assignment puts a value into it. R works differently. <code>x &lt;- 3</code> does not put 3 into a box; it attaches the label <code>x</code> to a value that already exists. The value 3 is out there. <code>x</code> is just a name for it.</p>
+<p>It is tempting to think of <code>x</code> as a box that contains 3, and if you have used C or Python, that is exactly the model you carry around: the variable is a container, and assignment puts a value into it. In R, <code>x &lt;- 3</code> does not put 3 into a box; it attaches the label <code>x</code> to a value that already exists. The value 3 is out there. <code>x</code> is just a name for it.</p>
 <p>Why does that distinction matter?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -726,8 +741,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>y</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This “names are labels, not containers” model is a consequence of R’s functional design. Values in R are immutable; when you “change” something, R creates a new value and moves the name to point at it. The old value stays untouched, and gets cleaned up automatically when nothing points to it anymore. R’s <em>garbage collector</em> periodically scans memory and reclaims anything that no name points to, a mechanism R inherited from Lisp (<a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>); <a href="ch29-r-internals.html#sec-stack-and-heap" class="quarto-xref"><span>Section 29.1</span></a> covers how this works at the implementation level. If names were containers, you would need to worry about two containers sharing the same contents and one of them mutating behind your back. With labels and immutable values, that problem vanishes.</p>
-<p>Think about what vanishes with it. In C, you learn to watch for <em>aliasing</em>: two pointers to the same block of memory, one of them writing while the other reads stale data. In Python, you learn that <code>a = b</code> for a list means both names see the same mutable object, and modifying through one surprises anyone holding the other. Entire chapters of software engineering textbooks are devoted to defensive copying, synchronization, and ownership protocols — machinery whose sole purpose is to keep shared mutable state from corrupting your program. R sidesteps all of it by removing the condition that makes the checks necessary. Values do not change, so there is nothing to corrupt, no mutable state for two references to fight over. That category of bugs — aliasing, stale reads, defensive-copy failures — is structurally absent, which frees you to think about the problem you sat down to solve instead of the bookkeeping.</p>
+<p><code>x &lt;- 7</code> did not change the 3. R made a new value, 7, and moved the label <code>x</code> onto it; the 3 is still there, because <code>y</code> still points at it. Values in R never change once they exist. When you “change” something, R creates a new value and moves the name, and a value that no name points to any more is reclaimed by R’s garbage collector, the mechanism inherited from Lisp (<a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>).</p>
+<p>This is why two names can never surprise each other in R. If names were containers, <code>y &lt;- x</code> might make two containers share the same contents, and a change through one would show up in the other. With labels on values that never change, there is nothing to share and nothing to corrupt.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>What this rules out
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In C, you learn to watch for <em>aliasing</em>: two pointers to the same block of memory, one of them writing while the other reads stale data. In Python, <code>a = b</code> for a list means both names see the same mutable object, and modifying through one surprises anyone holding the other. Entire chapters of software engineering textbooks are devoted to defensive copying, synchronization, and ownership protocols, machinery whose sole purpose is to keep shared mutable state from corrupting a program. R removes the condition that makes the checks necessary: values do not change, so that category of bugs is absent by construction. <a href="ch29-r-internals.html#sec-stack-and-heap" class="quarto-xref"><span>Section 29.1</span></a> covers how R manages this at the implementation level.</p>
+</div>
+</div>
+</div>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -783,7 +814,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 42</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Without the parentheses, R assigns 42 to <code>z</code> and prints nothing. With them, R prints the value that the assignment expression returned.</p>
-<p>This “everything is an expression” rule comes directly from Church’s lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>), where there are only expressions: no instructions, no statements, no side-channel commands. R followed that design faithfully, and the payoff is that you can compose pieces of R code in ways that would be impossible in a language built around statements. If every piece of code produces a value, every piece of code can be nested inside every other piece of code. What happens when you apply that principle to the thing that does the most work in R: functions?</p>
+<p>The rule comes from Church’s lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>), which has only expressions. Because every piece of R code produces a value, every piece can be nested inside any other. What happens when you apply that rule to the thing that does the most work in R: functions?</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
@@ -806,7 +837,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sqrt</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (x)  .Primitive("sqrt")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>R prints the function itself. <code>sqrt</code> is a value, just like <code>3</code> or <code>"hello"</code>, and the parentheses are what make R actually run it. This distinction between the function <em>itself</em> and <em>calling</em> the function may seem academic right now, but it will matter enormously when you start passing functions to other functions in later chapters.</p>
+<p>R prints the function itself. <code>sqrt</code> is a value, just like <code>3</code> or <code>"hello"</code>, and the parentheses are what make R run it. Keep the difference between the function and the call in mind; <a href="ch05-first-function.html#sec-functions-are-values" class="quarto-xref"><span>Section 5.4</span></a> is built on it.</p>
 <p>Functions can take multiple arguments. <code>log</code> computes a logarithm, and you can specify the base:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">log</span>(<span class="dv">8</span>, <span class="at">base =</span> <span class="dv">2</span>)</span>
@@ -822,7 +853,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>?log</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This opens the help page for <code>log</code>, which lists its arguments, explains what they do, and gives examples.</p>
-<p>Here is where things get interesting. <code>+</code> is a function:</p>
+<p><code>+</code> is a function too:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="st">`</span><span class="at">+</span><span class="st">`</span>(<span class="dv">3</span>, <span class="dv">5</span>)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 8</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -967,53 +998,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

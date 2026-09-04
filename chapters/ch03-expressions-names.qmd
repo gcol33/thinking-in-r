@@ -27,9 +27,12 @@ When you open R, you see a prompt: `>`. R is waiting. When you type something an
 
 This is called a REPL\index{REPL} (Read-Eval-Print Loop). There is no "compile" step, no "run" button; you type an expression, you see its value immediately.
 
-In compiled languages (C, Java, Go), you write the whole program first, then a compiler translates it into machine code before anything runs. R is *interpreted*: it reads and evaluates one expression at a time, immediately. Python and JavaScript work the same way. The tradeoff is speed: a compiler can optimize the whole program in advance, so compiled code runs faster. But interpreted languages let you experiment and see results as you go, which is why they dominate in data analysis.
+::: {.callout-note collapse="true"}
+## Interpreted or compiled?
+In compiled languages such as C, Java, or Go, you write the whole program first and a compiler translates it into machine code before anything runs. R, like Python and JavaScript, is *interpreted*: it reads and evaluates one expression at a time. A compiler can optimize the whole program in advance, so compiled code usually runs faster, but an interpreter lets you see results as you go, which is why interpreted languages dominate data analysis.
 
-In practice, the line between compiled and interpreted is blurry. R itself is written in C, and many R functions are thin wrappers around compiled C or Fortran code. When you type `sum(x)`, the actual arithmetic happens in compiled machine code underneath. You get the interactive interface; the heavy computation still runs at full speed.
+The line is blurry in practice. R itself is written in C, and many R functions are thin wrappers around compiled C or Fortran code. When you type `sum(x)`, the arithmetic happens in compiled machine code underneath. You get the interactive interface; the heavy computation still runs at full speed.
+:::
 
 Try a few:
 
@@ -51,7 +54,7 @@ sqrt(9)
 
 Each of these is an expression. `42` is an expression whose value is 42; `"hello"` evaluates to the text string "hello"; `sqrt(9)` calls the function `sqrt` with the argument `9` and returns 3. The `[1]` you see before each result is R telling you "this is the first element of the output." You can ignore it for now; it becomes useful when results have many elements (@sec-vectors).
 
-Notice the pattern: R evaluates expressions and prints their values, exactly the way the calculator in Chapter 1 evaluated `3 + 5 + 2 + 8`. This is Church's model of computation (@sec-church), made interactive through the REPL loop. But evaluating expressions and forgetting them immediately is like a calculator with no memory. What if you want to keep a result?
+R evaluates expressions and prints their values, the way Mr. Fold folded `3, 5, 2, 8` down to `18` in @sec-church. This is Church's model of computation, made interactive. But evaluating expressions and forgetting them immediately is like a calculator with no memory. What if you want to keep a result?
 
 
 ### Exercises {.unnumbered}
@@ -85,7 +88,7 @@ x + 10
 x * x
 ```
 
-It is tempting to think of `x` as a box that contains 3, and if you have used C or Python, that is exactly the model you carry around: the variable is a container, and assignment puts a value into it. R works differently. `x <- 3` does not put 3 into a box; it attaches the label `x` to a value that already exists. The value 3 is out there. `x` is just a name for it.
+It is tempting to think of `x` as a box that contains 3, and if you have used C or Python, that is exactly the model you carry around: the variable is a container, and assignment puts a value into it. In R, `x <- 3` does not put 3 into a box; it attaches the label `x` to a value that already exists. The value 3 is out there. `x` is just a name for it.
 
 Why does that distinction matter?
 
@@ -101,9 +104,14 @@ x
 y
 ```
 
-This "names are labels, not containers" model is a consequence of R's functional design. Values in R are immutable\index{referential transparency}; when you "change" something, R creates a new value and moves the name to point at it. The old value stays untouched, and gets cleaned up automatically when nothing points to it anymore. R's *garbage collector*\index{garbage collection} periodically scans memory and reclaims anything that no name points to, a mechanism R inherited from Lisp (@sec-lisp); @sec-stack-and-heap covers how this works at the implementation level. If names were containers, you would need to worry about two containers sharing the same contents and one of them mutating behind your back. With labels and immutable values, that problem vanishes.
+`x <- 7` did not change the 3. R made a new value, 7, and moved the label `x` onto it; the 3 is still there, because `y` still points at it. Values in R never change once they exist\index{referential transparency}. When you "change" something, R creates a new value and moves the name, and a value that no name points to any more is reclaimed by R's garbage collector\index{garbage collection}, the mechanism inherited from Lisp (@sec-lisp).
 
-Think about what vanishes with it. In C, you learn to watch for *aliasing*: two pointers to the same block of memory, one of them writing while the other reads stale data. In Python, you learn that `a = b` for a list means both names see the same mutable object, and modifying through one surprises anyone holding the other. Entire chapters of software engineering textbooks are devoted to defensive copying, synchronization, and ownership protocols — machinery whose sole purpose is to keep shared mutable state from corrupting your program. R sidesteps all of it by removing the condition that makes the checks necessary. Values do not change, so there is nothing to corrupt, no mutable state for two references to fight over. That category of bugs\index{side effect} — aliasing, stale reads, defensive-copy failures — is structurally absent, which frees you to think about the problem you sat down to solve instead of the bookkeeping.
+This is why two names can never surprise each other in R. If names were containers, `y <- x` might make two containers share the same contents, and a change through one would show up in the other. With labels on values that never change, there is nothing to share and nothing to corrupt.
+
+::: {.callout-note collapse="true"}
+## What this rules out
+In C, you learn to watch for *aliasing*: two pointers to the same block of memory, one of them writing while the other reads stale data. In Python, `a = b` for a list means both names see the same mutable object, and modifying through one surprises anyone holding the other. Entire chapters of software engineering textbooks are devoted to defensive copying, synchronization, and ownership protocols, machinery whose sole purpose is to keep shared mutable state from corrupting a program. R removes the condition that makes the checks necessary: values do not change, so that category of bugs\index{side effect} is absent by construction. @sec-stack-and-heap covers how R manages this at the implementation level.
+:::
 
 ::: callout-tip
 ## Opinion
@@ -163,7 +171,7 @@ Even assignment returns a value (though R hides it). You can reveal it with pare
 
 Without the parentheses, R assigns 42 to `z` and prints nothing. With them, R prints the value that the assignment expression returned.
 
-This "everything is an expression" rule comes directly from Church's lambda calculus (@sec-church), where there are only expressions: no instructions, no statements, no side-channel commands. R followed that design faithfully, and the payoff is that you can compose pieces of R code in ways that would be impossible in a language built around statements. If every piece of code produces a value, every piece of code can be nested inside every other piece of code. What happens when you apply that principle to the thing that does the most work in R: functions?
+The rule comes from Church's lambda calculus (@sec-church), which has only expressions. Because every piece of R code produces a value, every piece can be nested inside any other. What happens when you apply that rule to the thing that does the most work in R: functions?
 
 
 ### Exercises {.unnumbered}
@@ -189,7 +197,7 @@ What happens if you type `sqrt` without parentheses?
 sqrt
 ```
 
-R prints the function itself. `sqrt` is a value, just like `3` or `"hello"`, and the parentheses are what make R actually run it. This distinction between the function *itself* and *calling* the function may seem academic right now, but it will matter enormously when you start passing functions to other functions in later chapters.
+R prints the function itself. `sqrt` is a value, just like `3` or `"hello"`, and the parentheses are what make R run it. Keep the difference between the function and the call in mind; @sec-functions-are-values is built on it.
 
 Functions can take multiple arguments. `log` computes a logarithm, and you can specify the base:
 
@@ -212,7 +220,7 @@ To learn what arguments a function takes, use `?`:
 
 This opens the help page for `log`, which lists its arguments, explains what they do, and gives examples.
 
-Here is where things get interesting. `+` is a function:
+`+` is a function too:
 
 ```{r}
 `+`(3, 5)

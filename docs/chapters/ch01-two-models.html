@@ -686,12 +686,7 @@ Figure&nbsp;1.1: Two models of computation: a Turing machine mutates state step 
 </section>
 <section id="sec-church" class="level2" data-number="1.2">
 <h2 data-number="1.2" class="anchored" data-anchor-id="sec-church"><span class="header-section-number">1.2</span> Expressions and functions</h2>
-<p>Mr.&nbsp;Fold used no tape and kept no state. He pressed numbers together, pair by pair, each pair replaced by its sum and the originals destroyed, until one remained. Replacement instead of memory, and yet the same answer as Mr.&nbsp;Tape and Mr.&nbsp;State. Can Mr.&nbsp;Fold match their infinite reading and rewriting power?</p>
-<p>Alonzo Church, who happened to be Turing’s doctoral advisor at Princeton, was working on the same problem from a completely different angle. His notation had no tape and no memory. You wrote down an expression, something like <code>(λx. x + 1)(5)</code>, and you simplified it. The <code>5</code> slid into the <code>x</code>. What was left was <code>6</code>. Nothing had been stored anywhere. Nothing had been overwritten. The arithmetic had simply <em>unfolded</em>, the way Mr.&nbsp;Fold had folded.</p>
-<p>He called it the <em>lambda calculus</em>, and it has only three pieces: variables (<code>x</code>), functions (<code>λx. x + 1</code>, meaning <em>take <code>x</code>, return <code>x + 1</code></em>), and application (writing one next to the other). That is the entire grammar. You write an expression and simplify it by applying functions to arguments until you reach a value that can’t be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing’s machine.</p>
-<p>Memory and instructions were never necessary for computation in the first place.</p>
-<p>The result is known as the Church-Turing thesis. Everything a Turing machine can do, pure expression can do without a single mutable cell.</p>
-<p>What does the same sum look like in this world?</p>
+<p>Mr.&nbsp;Fold used no tape and kept no state. He pressed numbers together, pair by pair, each pair replaced by its sum and the originals destroyed, until one remained. Written out, his method looks like this:</p>
 <pre><code>sum([3, 5, 2, 8])
 = add(3, sum([5, 2, 8]))
 = add(3, add(5, sum([2, 8])))
@@ -699,7 +694,10 @@ Figure&nbsp;1.1: Two models of computation: a Turing machine mutates state step 
 = add(3, add(5, 10))
 = add(3, 15)
 = 18</code></pre>
-<p>The expression unfolds, each <code>add</code> consuming its arguments, until only 18 remains. This was Mr.&nbsp;Fold’s method — no running total, no memory, just pairs collapsing until one number was left. Nothing was overwritten.</p>
+<p>Each line is the previous line with one <code>add</code> carried out. Nothing is stored and nothing is overwritten; the expression shrinks until only 18 is left. Replacement instead of memory, and yet the same answer as Mr.&nbsp;Tape and Mr.&nbsp;State. Can replacement alone match their infinite reading and rewriting power?</p>
+<p>The second of the two 1936 answers came from Princeton, from a logician who would become Turing’s doctoral advisor later that year. His notation had no tape and no memory. You wrote down an expression, something like <code>(λx. x + 1)(5)</code>, and you simplified it: the <code>5</code> slid into the <code>x</code>, and what was left was <code>6</code>. That is all the notation can do. It has variables, it has functions (<code>λx. x + 1</code> means <em>take <code>x</code>, return <code>x + 1</code></em>), and it has the act of writing one next to the other to apply it. Alonzo Church called it the <em>lambda calculus</em>, and he proved that this three-piece grammar, with no concept of memory or instructions, can compute exactly the same class of functions as Turing’s machine.</p>
+<p>Memory and instructions were never necessary for computation in the first place.</p>
+<p>The result is known as the Church-Turing thesis. Everything a Turing machine can do, pure expression can do without a single mutable cell.</p>
 </section>
 <section id="sec-where-r-fits" class="level2" data-number="1.3">
 <h2 data-number="1.3" class="anchored" data-anchor-id="sec-where-r-fits"><span class="header-section-number">1.3</span> What this has to do with R</h2>
@@ -724,11 +722,13 @@ Figure&nbsp;1.1: Two models of computation: a Turing machine mutates state step 
 </div>
 <p>One line. <code>scores &gt; 70</code> produces a vector of <code>TRUE</code> and <code>FALSE</code> values; <code>sum()</code> counts the <code>TRUE</code>s. The expression describes the answer, and R evaluates it.</p>
 <p>Both give the answer 4. The second one is a piece of mathematics from 1936, written before electronic computers existed, and in 2026 it still outruns the loop. The loop works against the grain. The expression works with it.</p>
-<p>The same shape runs through the rest of the language. In R, <code>if/else</code> is an expression: it produces a value, so you can assign its result directly (<a href="ch03-expressions-names.html" class="quarto-xref"><span>Chapter 3</span></a>).</p>
+<p>The same shape runs through the rest of the language. <code>if/else</code> produces a value, so you can assign its result directly:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="cf">if</span> (x <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="st">"positive"</span> <span class="cf">else</span> <span class="st">"negative"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Functions are ordinary values. You can store one in a variable, pass it to another function, or create one on the fly without ever giving it a name (<a href="ch05-first-function.html#sec-functions-are-values" class="quarto-xref"><span>Section 5.4</span></a>). Operations on data work the same way: <code>x * 2</code> multiplies every element of <code>x</code> at once, with no loop and no index variable; the expression takes the whole vector as input, not one piece at a time (<a href="ch04-vectors.html" class="quarto-xref"><span>Chapter 4</span></a>). Pipe chains compose functions left to right, each one receiving what the last produced; this is exactly what Church meant by composition, with a syntax wrapped around it (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>).</p>
+<p><code>x * 2</code> multiplies every element of <code>x</code> at once, with no loop and no index variable. The expression takes the whole vector as its input.</p>
+<p>A function is an ordinary value. <code>sqrt</code> on its own, without parentheses, is something you can store in a variable or hand to another function.</p>
+<p>Pipe chains pass each result into the next function, left to right:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data <span class="sc">|&gt;</span> <span class="fu">filter</span>(x <span class="sc">&gt;</span> <span class="dv">5</span>) <span class="sc">|&gt;</span> <span class="fu">summarize</span>(<span class="fu">mean</span>(y))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>All four come from a single decision: build the language out of expressions, and let functions be values like anything else. The shape is Mr.&nbsp;Fold’s.</p>
+<p>Each of these gets its own chapter (<a href="ch03-expressions-names.html" class="quarto-xref"><span>Chapter 3</span></a>, <a href="ch04-vectors.html" class="quarto-xref"><span>Chapter 4</span></a>, <a href="ch05-first-function.html#sec-functions-are-values" class="quarto-xref"><span>Section 5.4</span></a>, <a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>). All four come from a single decision: build the language out of expressions, and let functions be values like anything else. The shape is Mr.&nbsp;Fold’s.</p>
 <p>But how did Church’s 1936 notation, written decades before computers existed, end up inside a language used by statisticians? <a href="ch02-family-tree.html" class="quarto-xref"><span>Chapter 2</span></a> follows the chain: Church to Lisp to Scheme to S to R, and what each step added along the way.</p>
 
 
@@ -824,53 +824,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

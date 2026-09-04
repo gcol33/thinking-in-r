@@ -89,17 +89,7 @@ So is that what computation *is*?
 
 ## Expressions and functions {#sec-church}
 
-Mr. Fold used no tape and kept no state. He pressed numbers together, pair by pair, each pair replaced by its sum and the originals destroyed, until one remained. Replacement instead of memory, and yet the same answer as Mr. Tape and Mr. State. Can Mr. Fold match their infinite reading and rewriting power?
-
-Alonzo Church\index{Church, Alonzo}, who happened to be Turing's doctoral advisor at Princeton, was working on the same problem from a completely different angle. His notation had no tape and no memory. You wrote down an expression, something like `(λx. x + 1)(5)`, and you simplified it. The `5` slid into the `x`. What was left was `6`. Nothing had been stored anywhere. Nothing had been overwritten. The arithmetic had simply *unfolded*, the way Mr. Fold had folded.
-
-He called it the *lambda calculus*\index{lambda calculus}, and it has only three pieces: variables (`x`), functions (`λx. x + 1`, meaning *take `x`, return `x + 1`*), and application (writing one next to the other). That is the entire grammar. You write an expression\index{expression} and simplify it by applying functions to arguments until you reach a value that can't be simplified further. Church proved that this system, despite having no concept of memory or instructions, can compute exactly the same class of functions as Turing's machine.
-
-Memory and instructions were never necessary for computation in the first place.
-
-The result is known as the Church-Turing thesis\index{Church-Turing thesis}. Everything a Turing machine can do, pure expression can do without a single mutable cell.
-
-What does the same sum look like in this world?
+Mr. Fold used no tape and kept no state. He pressed numbers together, pair by pair, each pair replaced by its sum and the originals destroyed, until one remained. Written out, his method looks like this:
 
 ```
 sum([3, 5, 2, 8])
@@ -111,7 +101,13 @@ sum([3, 5, 2, 8])
 = 18
 ```
 
-The expression unfolds, each `add` consuming its arguments, until only 18 remains. This was Mr. Fold's method — no running total, no memory, just pairs collapsing until one number was left. Nothing was overwritten.
+Each line is the previous line with one `add` carried out. Nothing is stored and nothing is overwritten; the expression\index{expression} shrinks until only 18 is left. Replacement instead of memory, and yet the same answer as Mr. Tape and Mr. State. Can replacement alone match their infinite reading and rewriting power?
+
+The second of the two 1936 answers came from Princeton, from a logician who would become Turing's doctoral advisor later that year. His notation had no tape and no memory. You wrote down an expression, something like `(λx. x + 1)(5)`, and you simplified it: the `5` slid into the `x`, and what was left was `6`. That is all the notation can do. It has variables, it has functions (`λx. x + 1` means *take `x`, return `x + 1`*), and it has the act of writing one next to the other to apply it. Alonzo Church\index{Church, Alonzo} called it the *lambda calculus*\index{lambda calculus}, and he proved that this three-piece grammar, with no concept of memory or instructions, can compute exactly the same class of functions as Turing's machine.
+
+Memory and instructions were never necessary for computation in the first place.
+
+The result is known as the Church-Turing thesis\index{Church-Turing thesis}. Everything a Turing machine can do, pure expression can do without a single mutable cell.
 
 
 ## What this has to do with R {#sec-where-r-fits}
@@ -146,18 +142,22 @@ One line. `scores > 70` produces a vector of `TRUE` and `FALSE` values; `sum()` 
 
 Both give the answer 4. The second one is a piece of mathematics from 1936, written before electronic computers existed, and in 2026 it still outruns the loop. The loop works against the grain. The expression works with it.
 
-The same shape runs through the rest of the language. In R, `if/else` is an expression: it produces a value, so you can assign its result directly (@sec-expressions-names).
+The same shape runs through the rest of the language. `if/else` produces a value, so you can assign its result directly:
 
 ```r
 y <- if (x > 0) "positive" else "negative"
 ```
 
-Functions are ordinary values. You can store one in a variable, pass it to another function, or create one on the fly without ever giving it a name (@sec-functions-are-values). Operations on data work the same way: `x * 2` multiplies every element of `x` at once, with no loop and no index variable; the expression takes the whole vector as input, not one piece at a time (@sec-vectors). Pipe chains compose functions left to right, each one receiving what the last produced; this is exactly what Church meant by composition, with a syntax wrapped around it (@sec-pipes-and-composition).
+`x * 2` multiplies every element of `x` at once, with no loop and no index variable. The expression takes the whole vector as its input.
+
+A function is an ordinary value. `sqrt` on its own, without parentheses, is something you can store in a variable or hand to another function.
+
+Pipe chains pass each result into the next function, left to right:
 
 ```r
 data |> filter(x > 5) |> summarize(mean(y))
 ```
 
-All four come from a single decision: build the language out of expressions, and let functions be values like anything else. The shape is Mr. Fold's.
+Each of these gets its own chapter (@sec-expressions-names, @sec-vectors, @sec-functions-are-values, @sec-pipes-and-composition). All four come from a single decision: build the language out of expressions, and let functions be values like anything else. The shape is Mr. Fold's.
 
 But how did Church's 1936 notation, written decades before computers existed, end up inside a language used by statisticians? @sec-family-tree follows the chain: Church to Lisp to Scheme to S to R, and what each step added along the way.

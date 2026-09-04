@@ -642,7 +642,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>with_tax <span class="ot">&lt;-</span> <span class="fu">sapply</span>(prices, add_tax, <span class="at">rate =</span> <span class="fl">0.2</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>with_tax</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>That code used four ideas R did not invent: first-class functions, vectorized operations, higher-order functions, and lexical scope. They arrived from different languages and different decades.</p>
+<p>Four ideas carry those five lines, and every one of them arrived in R from another language and another decade. By the end of this chapter you will be able to say which line came from where. You don’t need to be able to read the code yet.</p>
 <div id="fig-family-tree" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-family-tree-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -657,14 +657,9 @@ Figure&nbsp;2.1: R’s lineage: each language passed a core idea to the next.
 <h2 data-number="2.1" class="anchored" data-anchor-id="sec-lisp"><span class="header-section-number">2.1</span> Church’s lambda calculus becomes a programming language</h2>
 <p>By 1958, the only real option for writing programs was Fortran, which John Backus and his team at IBM had released the year before. Before Fortran, programming meant writing instructions in the machine’s own notation: numbers and abbreviations that corresponded directly to hardware operations. Backus wanted scientists to write something closer to mathematical formulas, and Fortran (short for “Formula Translation”) was the result, the first high-level programming language, fast at arithmetic and accessible to people who were not hardware specialists.</p>
 <p>But a researcher at MIT wanted to write programs for artificial intelligence research, and he needed something Fortran could not do: a language that could manipulate symbols, build up complex structures, and treat its own programs as data.</p>
-<p>He found his answer in Church’s lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>). McCarthy took the idea (functions that take arguments and return values, nothing else) and turned it into a programming language called Lisp, short for “list processing.”</p>
-<p>Lisp introduced ideas that had never existed in a programming language before:</p>
-<ul>
-<li><strong>Functions as data.</strong> A Lisp program could create a function, store it in a variable, pass it to another function, or return it as a result. No other language did this in 1958.</li>
-<li><strong>Code as data.</strong> Every Lisp program is itself a list, the same data structure the language manipulates. Programs can inspect, rewrite, and generate other programs, which is why Lisp macros remain unmatched in most languages sixty years later.</li>
-<li><strong>Garbage collection.</strong> The language manages memory automatically. The programmer never has to say “I’m done with this piece of data; free the memory.”</li>
-</ul>
-<p>McCarthy had written a mathematical description of how Lisp should evaluate expressions (a function called <code>eval</code>), intending it purely as a theoretical exercise. His graduate student Steve Russell read the paper and realized he could translate <code>eval</code> directly into machine code for the IBM 704. McCarthy later recalled: “Steve Russell said, look, why don’t I program this eval… and I said to him, ho, ho, you’re confusing theory with practice, this eval is intended for reading, not for computing. But he went ahead and did it.” The result was a working Lisp interpreter, born from the same insight that underpins this whole book: the boundary between mathematical notation and executable code is thinner than it looks.</p>
+<p>He found his answer in Church’s lambda calculus (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>). John McCarthy took the idea (functions that take arguments and return values, nothing else) and turned it into a programming language called Lisp, short for “list processing.”</p>
+<p>In Lisp, a function was a piece of data like any other. A program could build one, store it in a variable, pass it to another function, or return it as a result, and no other language in 1958 allowed any of that. A Lisp program was itself a list, the same structure the language manipulated, so a program could read and rewrite other programs (<a href="ch26-metaprogramming.html" class="quarto-xref"><span>Chapter 26</span></a> does this in R). And Lisp managed memory on its own: the programmer never had to say “I’m done with this value, free it,” because the language noticed when nothing referred to a value any more and reclaimed the space. That mechanism, garbage collection, runs in every R session you have ever started.</p>
+<p>McCarthy had written a mathematical description of how Lisp should evaluate expressions (a function called <code>eval</code>), intending it purely as a theoretical exercise. His graduate student Steve Russell read the paper and realized he could translate <code>eval</code> directly into machine code for the IBM 704. McCarthy later recalled: “Steve Russell said, look, why don’t I program this eval… and I said to him, ho, ho, you’re confusing theory with practice, this eval is intended for reading, not for computing. But he went ahead and did it.” The result was the first working Lisp interpreter.</p>
 <p>What does this look like in R?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>my_function <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span></span>
@@ -675,11 +670,8 @@ Figure&nbsp;2.1: R’s lineage: each language passed a core idea to the next.
 </section>
 <section id="sec-scheme" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="sec-scheme"><span class="header-section-number">2.2</span> Scheme strips it down</h2>
-<p>Gerald Jay Sussman was a professor at MIT’s AI Lab; Guy Lewis Steele Jr. was his graduate student. They had been studying Carl Hewitt’s Actor model, a theory of concurrent computation where independent “actors” send messages to each other, and to understand it better they decided to implement a small version in Lisp. So they built their own tiny dialect, stripped down to the essentials. Along the way, the distinction between actors and lambda calculus functions dissolved: an actor that receives a message and responds is a function that takes an argument and returns a value.</p>
-<p>Out of that realization came Scheme, first described in a 1975 AI Memo at MIT. Between 1975 and 1980, Sussman and Steele published a series of papers now known as “the Lambda Papers,” working out the consequences of taking the lambda calculus seriously as a foundation for programming.</p>
-<p><strong>Lexical scoping.</strong> When a function refers to a variable, where does it look? Older Lisps used <em>dynamic scoping</em>, where the meaning of a variable depends on whatever happens to be in scope at the moment the function is called. The same function could behave differently depending on who called it. Scheme chose <em>lexical scoping</em>: a variable means what it meant where the function was <em>defined</em>, regardless of where it runs. This sounds like a technicality, but it determines whether you can use functions as building blocks at all. R uses lexical scoping, inherited through S from Scheme. <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a> uses this to build function factories and closures.</p>
-<p><strong>Minimalism.</strong> Scheme showed that you don’t need a big language. A small set of well-chosen primitives, all consistent with the lambda calculus, is enough to build anything. This philosophy shaped S and through it R: R’s core is surprisingly small, and most of what feels “built in” is actually implemented as ordinary R functions. Even <code>+</code> is a function you can call as <code>`+`(1, 2)</code>, override, or pass to <code>Reduce</code>. That uniformity comes from Scheme.</p>
-<p>Here is lexical scoping in R. Don’t worry about the details yet; just notice that it works:</p>
+<p>Gerald Jay Sussman was a professor at MIT’s AI Lab; Guy Lewis Steele Jr. was his graduate student. In 1975 they set out to understand Carl Hewitt’s Actor model, a theory of computation built on independent “actors” sending each other messages, and to test it they wrote a tiny Lisp of their own with everything inessential removed. Along the way the theory they were studying collapsed into the one they already had: an actor that receives a message and responds is a function that takes an argument and returns a value. The tiny Lisp was worth keeping. They called it Scheme.</p>
+<p>Scheme settled a question older Lisps had left open. When a function refers to a variable, where does it look? Try this in R, and don’t worry about the details yet; just notice that it works:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>make_adder <span class="ot">&lt;-</span> <span class="cf">function</span>(n) {</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) x <span class="sc">+</span> n</span>
@@ -689,34 +681,30 @@ Figure&nbsp;2.1: R’s lineage: each language passed a core idea to the next.
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">add_ten</span>(<span class="dv">3</span>)</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 13</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>add_ten</code> remembers that <code>n</code> was 10 when it was created, even though <code>make_adder</code> has already finished running. The function looks for <code>n</code> where it was <em>defined</em> (inside <code>make_adder</code>), not where it’s <em>called</em>. That’s lexical scoping. <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a> builds on this to create functions that remember things.</p>
+<p><code>add_ten</code> remembers that <code>n</code> was 10 when it was created, even though <code>make_adder</code> has already finished running. The function found <code>n</code> where it was <em>defined</em>, inside <code>make_adder</code>, and that rule is called lexical scoping. Older Lisps used the other rule, dynamic scoping, where a variable means whatever happens to be in scope at the moment the function is <em>called</em>, so the same function could behave differently depending on who called it. Scheme chose lexical scoping, S copied it, and R inherited it; <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a> builds on it to make functions that remember things.</p>
+<p>Scheme also showed that a language can be small. A handful of well-chosen pieces, all consistent with the lambda calculus, is enough to build everything else, and R’s core follows that pattern: most of what feels “built in” is an ordinary R function, and even <code>+</code> can be called as <code>`+`(1, 2)</code>. That uniformity comes from Scheme.</p>
 <p>Lisp and Scheme were built by computer scientists for computer scientists. Neither had anything to say about data: about columns of measurements and rows of observations, about the daily work of someone trying to understand an experiment. That gap was waiting for someone who did statistics for a living.</p>
 </section>
 <section id="sec-s-language" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="sec-s-language"><span class="header-section-number">2.3</span> S makes it practical</h2>
-<p>In 1976 at Bell Labs, the computer center had a Honeywell 645 mainframe running an operating system called GCOS. If you wanted to do statistics, you used a Fortran library called SCS (Statistical Computing Subroutines): write a Fortran program, call the library functions, compile it, submit it to the batch queue, wait.</p>
+<p>In 1976, doing statistics at Bell Labs meant writing a Fortran program that called a library of statistical subroutines, compiling it, submitting it to the mainframe’s batch queue, and waiting. Every question about the data cost another round trip.</p>
 <p>Rick Becker, John Chambers, Doug Dunn, and Allan Wilks held a series of meetings in the spring of that year, and the question they asked was simple: could they build something interactive, where a statistician types a command and gets an answer back immediately?</p>
-<p>They could. The first working version of S ran on the Honeywell 645 that same year. The early system was essentially an interactive front end to the Fortran library, but it grew quickly; by 1988 S had been rewritten in C (version 3), and by 1998 it had become a full programming language (version 4, described in Chambers’ book <em>Programming with Data</em>). In 1998, S won the ACM Software System Award, the same award given to Unix, TeX, and the World Wide Web.</p>
-<p>S made design decisions that R carries to this day:</p>
-<ul>
-<li><strong>Vectorized operations.</strong> In S, <code>x * 2</code> multiplies every element of <code>x</code>. There is no loop, no index variable. The operation applies to the whole vector at once because S was built for people who think about columns of data, not individual numbers.</li>
-<li><strong>The assignment arrow <code>&lt;-</code>.</strong> On the terminals available at Bell Labs in the 1970s, there was a key that typed a left arrow as a single character. Chambers used it for assignment. The <code>=</code> sign was reserved for named arguments in function calls. R kept both conventions.</li>
-<li><strong>Copy-on-modify.</strong> When you “modify” a value in S (and later R), the language quietly makes a copy. Your original data is never destroyed. This is a functional programming idea (values don’t change), made practical for interactive data analysis: you can always go back.</li>
-<li><strong>Functions from Scheme.</strong> When Chambers needed to decide how functions should work in S, he looked at Scheme. Functions in S are first-class values with lexical scoping, exactly as in Scheme.</li>
-</ul>
+<p>They could. The first working version of S ran that same year, as an interactive front end to the Fortran library, and over the next two decades it grew into a full programming language. In 1998 S won the ACM Software System Award, the same award given to Unix, TeX, and the World Wide Web.</p>
 <p>Try this:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>temperatures <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">61</span>, <span class="dv">90</span>, <span class="dv">78</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>temperatures <span class="sc">-</span> <span class="dv">32</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 40 53 29 58 46</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>No loop. You subtracted 32 from five numbers in one expression. In Fortran or C you would write a loop, manage an index, and store the result somewhere; S (and R after it) made this the default way of working with data.</p>
-<p>S was eventually commercialized as S-PLUS, sold first by StatSci, then by Insightful Corporation, and finally by TIBCO, which acquired Insightful for $25 million in 2008. By then, S had a free competitor that had already overtaken it, one that started with a corridor conversation in New Zealand.</p>
+<p>You subtracted 32 from five numbers in one expression, with no loop and no index variable. In Fortran or C you would write the loop yourself and store each result somewhere. S made whole-vector operations the default because it was built for people who think about columns of data, and R kept that default; it is what the book calls vectorization from <a href="ch04-vectors.html" class="quarto-xref"><span>Chapter 4</span></a> onward.</p>
+<p>Two smaller decisions from S are visible in every R script. The assignment arrow <code>&lt;-</code> exists because the terminals at Bell Labs had a key that typed a left arrow as a single character, and Chambers used it for assignment, reserving <code>=</code> for named arguments in function calls. And when you “modify” a value in S, the language quietly makes a copy, so your original data is never destroyed. R does the same (<a href="ch03-expressions-names.html#sec-names-binding" class="quarto-xref"><span>Section 3.2</span></a>), which is why you can always go back.</p>
+<p>For functions, Chambers looked at Scheme. Functions in S are first-class values with lexical scoping, exactly as in the <code>make_adder</code> example above.</p>
+<p>S was eventually sold as a commercial product called S-PLUS. But by then a free competitor was already growing, one that started with a corridor conversation in New Zealand.</p>
 </section>
 <section id="sec-r-auckland" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="sec-r-auckland"><span class="header-section-number">2.4</span> R starts in Auckland</h2>
-<p>By 1991, S-PLUS was the only way to use the S language, and it was commercial software — expensive for a university department that needed every student to have a copy. In the Department of Statistics at the University of Auckland, students were stuck with clunky programs that made data analysis feel like filing taxes. Two lecturers in that department had a corridor conversation about the problem, and decided to solve it themselves by writing a new implementation of S from scratch.</p>
-<p>The language was not a port of S; it was a new implementation with a different memory model and eventually a different package system, though it followed S’s design decisions closely (and through S, Scheme’s and Church’s). They named it R, a play on their first initials and a nod to S. Ross Ihaka had studied at Berkeley and knew the S language inside out; Robert Gentleman brought computational statistics.</p>
+<p>By 1991, S-PLUS was the only way to use the S language, and it was commercial software, expensive for a university department that needed every student to have a copy. In the Department of Statistics at the University of Auckland, students were stuck with clunky programs that made data analysis feel like filing taxes. Two lecturers in that department had a corridor conversation about the problem, and decided to solve it themselves by writing a new implementation of S from scratch.</p>
+<p>They kept S’s design and rebuilt everything underneath it, with a different memory model and, eventually, a different package system. They named it R, a play on their first initials and a nod to S. Ross Ihaka had studied at Berkeley and knew the S language inside out; Robert Gentleman brought computational statistics.</p>
 <p>Two years after release, Martin Mächler at ETH Zurich convinced them to license it under the GNU General Public License. That decision made R free and open-source, which mattered more than anyone realized at the time: a core development group formed, CRAN started collecting contributed packages, and by the mid-2000s R had become the standard tool for statistical computing in academia.</p>
 <p>R looks almost identical to S on the surface, but under the hood it is semantically closer to Scheme. So which pieces came from where?</p>
 </section>
@@ -868,53 +856,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
