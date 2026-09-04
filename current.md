@@ -4,7 +4,7 @@ Last updated 2026-09-04.
 
 ## Status
 
-Chapters 1 to 9 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in the commit after it). Chapters 10 onward have not. Next session: ch10, ch11, ch12.
+Chapters 1 to 12 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in the commit after it). Chapters 13 onward have not. Next session: ch13, ch14, ch15.
 
 ## The problem
 
@@ -62,8 +62,18 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Callouts added: ch07 none new (two reworded); ch08 lambda connection for `if/else`, gates and half adder merged into one; ch09 sorting lower bound, amortized doubling, lambda-calculus halting proof, Kolmogorov complexity.
 - Bold-lead-in complexity classes (ch09) became prose paragraphs, R example first, class named at the end.
 
+## Notes from ch10-12
+
+- Three factual fixes found by running the code against the prose: ch12 said `factor(c("male", "female", "female"))` stores `1, 2, 2` (it stores `2, 1, 1`; female is level 1); ch12 said lubridate's `ymd("2026-01-31") + months(1)` gives February 28 (it gives `NA`; `%m+%` gives February 28, and the section now shows both); ch11 said a tibble "refuses" `tbl$sp` (it warns and returns `NULL`). Run every claim about an output, not just chunks with `error: true`.
+- Stale reference: ch11 closing said lists were taught in "Chapter 8". Lists are @sec-lists (ch10). Both literal "Chapter N" mentions in ch11 became @sec-lists.
+- Bullet-to-prose: ch10 train-analogy accessors (code now precedes the picture), ch11 tibble differences, ch12 factor use cases, ch12 date classes, ch12 duration/period/interval (now demonstrated with `days(1)` vs `ddays(1)` across the 2026-03-28 Vienna DST change).
+- Callouts added: ch11 relational model (Codd, SQL, pandas, Arrow moved out of the guarantee paragraph), ch11 column stores vs row stores; ch12 sum types (was main text). ch10's cons-cell callout absorbed the IBM 704 register fact.
+- ch10 linked lists now build the structure first and name it after `str(ll)`; the @sec-stack-and-heap forward reference and the VECSXP/BLAS detail are gone from the main text.
+- ch12 regex: the two `str_detect()` examples and `str_view()` now come before the building-block table.
+- Code chunks added: ch11 `str(list(a = 1:5, b = 1:3))` and the failing `data.frame(a = 1:5, b = 1:3)`; ch12 `%m+%`, `days(1)`/`ddays(1)`, and the DST example. Adding a chunk before a figure renumbers `unnamed-chunk-N-1.png` in `_freeze/` and `docs/`; delete the orphaned old one.
+
 ## Files for the next session
 
-- `chapters/ch10-lists.qmd`
-- `chapters/ch11-data-frames.qmd`
-- `chapters/ch12-strings-factors-dates.qmd`
+- `chapters/ch13-reading-writing-data.qmd`
+- `chapters/ch14-data-transformation.qmd`
+- `chapters/ch15-pipes-and-composition.qmd`

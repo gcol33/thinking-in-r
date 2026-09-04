@@ -10,7 +10,7 @@ You have a penguin. It has a species (character), a body mass (double), and a ve
 
 ## Why lists exist {#sec-why-lists}
 
-Where a vector is homogeneous, a list is heterogeneous\index{heterogeneous}: each element can be a number, a string, a vector of arbitrary length, a function, or even another list, and all of them coexist without interference.
+Put the three pieces in a list and each one keeps its type:
 
 ```{r}
 penguin <- list(
@@ -21,15 +21,17 @@ penguin <- list(
 penguin
 ```
 
-`species` is a character scalar, `mass` is a numeric scalar, `measurements` is a numeric vector of length 3.
+`species` is still a character scalar, `mass` a numeric scalar, `measurements` a numeric vector of length 3. Nothing was coerced. This is what makes a list heterogeneous\index{heterogeneous}: each element can be a number, a string, a vector of any length, a function, or another list, and none of them interferes with the others.
 
-Technically, a list is a *recursive vector*\index{recursive data structure}, where "recursive" means its elements can themselves be lists, allowing arbitrary nesting. R's documentation calls lists "generic vectors" to distinguish them from atomic vectors (@sec-atomic-vectors), and `typeof()` confirms:
+`typeof()` puts a name on the container:
 
 ```{r}
 typeof(penguin)
 ```
 
-You already used a list in @sec-functions-in-lists when you stored functions as named elements. Lists are the same structure whether they hold numbers, strings, or functions, but accessing the right element requires care.
+R's documentation calls this a *generic vector*, to set it apart from the atomic vectors of @sec-atomic-vectors.
+
+You already used one in @sec-functions-in-lists when you stored functions as named elements. A list is the same structure whether it holds numbers, strings, or functions; getting the right element back out is where the care is needed.
 
 
 ### Exercises {.unnumbered}
@@ -54,37 +56,31 @@ Named elements are easier to work with because you can refer to them by meaning 
 
 ### The train analogy
 
-Think of a list as a train where each carriage holds its own cargo, and your choice of accessor determines whether you detach the carriage or reach inside it:
-
-- `x[1]`\index{[ (single bracket)} returns the first carriage still attached to the train. The result is a list of length 1.
-- `x[[1]]`\index{[[ (double bracket)} opens the first carriage and pulls out what's inside. The result is the element itself.
-- `x$name`\index{\$ (dollar sign)} is shorthand for `x[["name"]]`.
-
-![`x[1]` returns the carriage (still a list); `x[[1]]` pulls out the cargo (the element itself).](../images/list_train.png){#fig-list-train width=100%}
-
 ```{r}
 x <- list(a = 10, b = c(1, 2, 3), c = "hello")
 ```
 
-`[` returns a sub-list:
+Ask for the first element with one bracket:
 
 ```{r}
 x[1]
 typeof(x[1])
 ```
 
-Still a list, just a shorter one.
-
-`[[` extracts the element:
+Still a list, just a shorter one. Now with two:
 
 ```{r}
 x[[1]]
 typeof(x[[1]])
 ```
 
-Now it's the number 10, not a list containing 10. This distinction is the single most common source of confusion with lists: `[` keeps the container, `[[` removes it.
+Now it is the number 10, with no list around it. Think of the list as a train where each carriage holds its own cargo. `x[1]`\index{[ (single bracket)} returns the first carriage still attached to the train, and `x[[1]]`\index{[[ (double bracket)} opens the carriage and pulls out what is inside.
 
-`$` works with names:
+![`x[1]` returns the carriage (still a list); `x[[1]]` pulls out the cargo (the element itself).](../images/list_train.png){#fig-list-train width=100%}
+
+`[` keeps the container and `[[` removes it, and mixing the two up is the most common source of confusion with lists.
+
+`$`\index{\$ (dollar sign)} is shorthand for `[[` with a name:
 
 ```{r}
 x$b
@@ -151,7 +147,7 @@ str(study)
 
 `str()` is the single most useful function for lists. It works on any R object, but with lists it shows you the nesting, the types, and the lengths in one compact summary. Get in the habit of calling it on anything you did not build yourself.
 
-Every nested list is a tree: sub-lists are branches, atomic values are leaves. File systems, the DOM, and JSON\index{JSON} are all trees too, which is why R's lists map onto them so naturally.
+This is why R's documentation also calls lists *recursive vectors*\index{recursive data structure}: an element can itself be a list, so one list can grow into a tree of any depth.
 
 Inspecting is only half the problem. How do you reach into the tree and pull out what you need? Chain `[[` or `$`:
 
@@ -160,7 +156,7 @@ study$species[[1]]$name
 study[["species"]][[2]][["count"]]
 ```
 
-Each `[[` or `$` steps one level deeper: `study$species` is a list of three lists, `study$species[[1]]` is the first of those, and `study$species[[1]]$name` is the string `"Adelie"`. JSON from a web API, the output of `lm()`, and configuration files are all nested lists or objects built on them.
+Each `[[` or `$` steps one level deeper: `study$species` is a list of three lists, `study$species[[1]]` is the first of those, and `study$species[[1]]$name` is the string `"Adelie"`. Sub-lists are branches and atomic values are leaves, which is also the shape of a file system, of a JSON\index{JSON} document from a web API, and of the object `lm()` returns. All of them read into R as nested lists because all of them are trees.
 
 
 
@@ -173,8 +169,6 @@ Each `[[` or `$` steps one level deeper: `study$species` is a list of three list
 
 
 ## Lists as the backbone of R {#sec-lists-backbone}
-
-You might think of lists as a container you reach for occasionally, but in truth they are the foundation that most of R's familiar structures are built on.
 
 A data frame is a list:
 
@@ -194,7 +188,7 @@ typeof(fit)
 names(fit)
 ```
 
-`fit$coefficients`, `fit$residuals`, `fit$fitted.values` — these are ordinary `$` extractions on a list. The `"lm"` class attribute changes how R prints and summarizes the object, not how you get data out of it.
+`fit$coefficients`, `fit$residuals`, and `fit$fitted.values` are ordinary `$` extractions on a list. The `"lm"` class attribute changes how R prints and summarizes the object, not how you get data out of it.
 
 Data frames (@sec-data-frames), model objects, and environments are all lists (or list-like structures) with different rules about what they can contain. The most interesting rule is also the simplest: what happens when every element is a vector of the same length?
 
@@ -254,7 +248,7 @@ R uses copy-on-modify for lists, the same semantics as for vectors (@sec-space-c
 
 ## Linked lists {#sec-linked-lists}
 
-A linked list is a chain of nodes, each holding a value and a pointer to the next. Prepending is O(1); reaching element *k* means following *k* pointers. You build one in R with nested lists:
+Three one-line functions are enough to build a data structure R does not ship with:
 
 ```{r}
 cons <- function(head, tail) list(head = head, tail = tail)
@@ -262,16 +256,14 @@ car  <- function(lst) lst$head
 cdr  <- function(lst) lst$tail
 ```
 
-`cons` constructs a node, `car` extracts the first element, and `cdr` extracts the rest. These names come from Lisp (1958), where `car` and `cdr` referred to hardware registers on the IBM 704.
-
-Build a linked list of three elements:
+`cons` builds a node holding a value and whatever comes after it, `car` returns the value, and `cdr` returns the rest. Chain three nodes:
 
 ```{r}
 ll <- cons(1, cons(2, cons(3, NULL)))
 str(ll)
 ```
 
-To traverse it, recurse until you hit `NULL`:
+Each node is a two-element list whose `tail` is the next node, and the last `tail` is `NULL`. This is a linked list\index{linked list}. To walk it, recurse until you hit `NULL`:
 
 ```{r}
 ll_to_vector <- function(lst) {
@@ -281,14 +273,14 @@ ll_to_vector <- function(lst) {
 ll_to_vector(ll)
 ```
 
-So why doesn't R use linked lists for everyday work? Because R needs contiguous memory. Functions like `sum()` and the BLAS routines behind matrix algebra expect a single block of doubles that a C function can walk with a pointer, and a linked list scatters its elements across the heap (the region of memory where R allocates objects; @sec-stack-and-heap explains the distinction). R's built-in lists (VECSXP) are arrays of pointers: O(1) random access, contiguous pointer storage. Linked lists trade that for O(1) prepend and natural recursive processing — peel off the head, recur on the tail. Lisp was built on that kind of processing; R was built on vectorized computation over contiguous arrays.
+Adding a node at the front costs one `cons` call however long the chain is, while reaching element *k* means following *k* `tail` pointers. An R vector is the reverse: element *k* is one address computation away, and putting a value in front copies everything. R does not use linked lists for everyday work because `sum()`, and the BLAS routines behind matrix algebra, expect one contiguous block of doubles that a C loop can walk with a pointer, and a linked list scatters its nodes across memory. R's own lists are contiguous arrays of pointers too, which is why `x[[k]]` on a list is O(1). Lisp made the cons cell its primary structure instead, which is where the names come from.
 
 ::: {.callout-note collapse="true"}
 ## From Church encoding to cons cells
 
-The `cons`/`car`/`cdr` structure is a direct translation of Church encoding. In lambda calculus, a pair is `λh.λt.λf. f h t`: a function that captures two values and waits for a selector. `car` passes a selector that returns the first value; `cdr` passes one that returns the second. A linked list is a chain of such pairs, terminated by a special "nil" value. Lisp was built on exactly this encoding, and `cons`/`car`/`cdr` remain the standard names for these operations across functional languages.
+The names `car` and `cdr` come from Lisp, where in 1958 they abbreviated "contents of the address register" and "contents of the decrement register", the two halves of a machine word on the IBM 704. The structure itself is older. In lambda calculus a pair is `λh.λt.λf. f h t`, a function that captures two values and waits for a selector; `car` passes a selector that returns the first value and `cdr` one that returns the second. A linked list is a chain of such pairs ending in a nil value, and `cons`, `car`, and `cdr` remain the standard names for the three operations across functional languages.
 
-Both R and Lisp descend from the same lambda calculus, but the engineering decisions diverged early. Lisp committed to recursive decomposition, building up an answer one `cons` at a time. R went the other way — contiguous arrays, vectorized operations, the C runtime walking a flat block of memory at speed. That fork propagated through every design decision that followed. R has `sapply` where Lisp has `mapcar`. R's `[` extracts by position; Lisp peels from the front. The entire language favors breadth over depth, and the linked list code above shows what depth-first design looks like from the inside.
+R and Lisp descend from the same calculus, but the engineering diverged early. Lisp built up answers one `cons` at a time, peeling the head off a list and recurring on the tail. R committed to contiguous arrays that the C runtime walks in one pass, and that choice propagated: R has `sapply` where Lisp has `mapcar`, and `[` extracts by position where Lisp peels from the front. The linked-list code above shows what the other branch of the family looks like from the inside.
 :::
 
 

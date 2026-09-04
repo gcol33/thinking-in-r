@@ -5,11 +5,9 @@
 source(here::here("_common.R"))
 ```
 
-You have a hundred measurements of penguin body mass, another hundred of bill length, and a character vector of species names. Three vectors, all the same length, all describing the same 100 birds. You could keep them as separate objects, indexing carefully, hoping that nobody reorders one without reordering the others. Or you could store them together in a structure that enforces the constraint for you: every column the same length, every row one observation, accessible with the list operations from Chapter 10.
+You have a hundred measurements of penguin body mass, another hundred of bill length, and a character vector of species names. Three vectors, all the same length, all describing the same 100 birds. You could keep them as separate objects, indexing carefully, hoping that nobody reorders one without reordering the others. Or you could store them together in a structure that enforces the constraint for you: every column the same length, every row one observation, accessible with the list operations from @sec-lists.
 
-That structure is the data frame\index{data frame}: a list where every element is a vector of the same length. Lists hold anything; a data frame constrains that freedom to equal-length columns, and once you see this, subsetting, column operations, and the entire tidyverse make sense.
-
-So what does this constraint actually buy you?
+That structure is the data frame\index{data frame}: a list in which every element is a vector of the same length. What does that one constraint buy you?
 
 
 ## A list of equal-length vectors {#sec-list-of-vectors}
@@ -41,7 +39,7 @@ You are building a list with two elements (`name` and `mass`), both of length 2.
 str(df)
 ```
 
-Two columns, two rows, and nothing more than a list wearing a label.
+Two columns, two rows, and a class attribute on top of a list.
 
 ::: {.callout-note collapse="true"}
 ## Product types
@@ -49,7 +47,26 @@ Two columns, two rows, and nothing more than a list wearing a label.
 Type theory calls this a *product type*\index{product type}. A data frame with columns `name` (character) and `mass` (double) has type `character × double`: each row pairs one character value with one double value. Add a third column and the type grows: `character × double × integer`.
 :::
 
-The equal-length constraint is doing more work than it appears. A plain list lets you pair a five-element vector with a three-element vector and says nothing about the mismatch. A data frame refuses. Why? Because the constraint *is* the guarantee: row *i* across all columns describes the same observation. Break the rectangle — one column longer than another — and that guarantee disappears, and every function that touches the data must re-verify alignment on its own. Codd's\index{Codd, Edgar} 1970 relational model\index{relational model} imposed the same rule: every tuple in a relation has the same attributes. SQL inherited it, pandas and Arrow enforce it today, and R's data frame sits in that same lineage. The trade is flexibility for a promise: if the data is rectangular, row alignment is automatic and every subsetting operation preserves it. Logical indexing, `merge()`, and `rbind()` all depend on that promise holding.
+The equal-length constraint is doing more work than it appears. A plain list lets you pair a five-element vector with a three-element vector and says nothing about the mismatch:
+
+```{r}
+str(list(a = 1:5, b = 1:3))
+```
+
+A data frame refuses:
+
+```{r}
+#| error: true
+data.frame(a = 1:5, b = 1:3)
+```
+
+The refusal is the guarantee. Row *i* across all columns describes the same observation, every subsetting operation preserves that alignment, and logical indexing, `merge()`, and `rbind()` can rely on it without checking. Allow one column to be longer than another and every function that touched the data would have to verify alignment on its own.
+
+::: {.callout-note collapse="true"}
+## The relational model
+
+The same rule appears in the relational model\index{relational model} that Edgar Codd\index{Codd, Edgar} published in 1970: every tuple in a relation has the same attributes. SQL inherited it, pandas and Arrow enforce it today, and R's data frame sits in that lineage.
+:::
 
 So what goes into those columns when you build one from scratch?
 
@@ -146,13 +163,13 @@ First row, all columns, returned as a data frame. Now try the reverse:
 penguins[, 1]
 ```
 
-All rows, first column. Here is the gotcha: by default, this returns a *vector*, not a data frame. R "drops" the data frame structure when the result has a single column.
+All rows, first column, and the result is a vector rather than a data frame:
 
 ```{r}
 class(penguins[, 1])
 ```
 
-To keep the data frame structure, use `drop = FALSE`:
+R drops the data frame structure whenever the result has a single column. To keep it, use `drop = FALSE`:
 
 ```{r}
 class(penguins[, 1, drop = FALSE])
@@ -262,9 +279,9 @@ When they fail, the error messages mention dimensions rather than the real probl
 
 ## Tibbles {#sec-tibbles}
 
-Print a large data frame in R and thousands of rows flood the console. Subset a single column: you silently get a vector instead of a data frame. Type a column name wrong and partial matching returns the wrong column.
+Print a large data frame in R and thousands of rows flood the console. Subset a single column and you get a vector instead of a data frame. Mistype a column name and partial matching hands you a different column.
 
-A tibble\index{tibble} is the tidyverse's answer to all three problems:
+A tibble\index{tibble} is the tidyverse's answer to all three:
 
 ```{r}
 library(tibble)
@@ -275,17 +292,13 @@ tbl <- tibble(
 tbl
 ```
 
-Three differences matter.
-
-**Printing.** A tibble shows the first 10 rows, column types, and fits the screen width. No more flooding the console because you forgot `head()`.
-
-**Subsetting.** `tbl[, 1]` always returns a tibble, never a vector, so the `drop` gotcha is gone:
+The print shows the dimensions and the column types, and it stops at 10 rows whether or not you remembered `head()`. Subsetting with `[, 1]` returns a tibble, never a vector, so the `drop` gotcha is gone:
 
 ```{r}
 class(tbl[, 1])
 ```
 
-**No partial matching.** With a data frame, `df$sp` might match `df$species`. A tibble refuses:
+And a name that matches no column is a warning and a `NULL`, where a data frame would have quietly matched `sp` to `species`:
 
 ```{r}
 #| error: true
@@ -365,8 +378,16 @@ summary(penguins)
 
 ## Putting it together {#sec-df-putting-together}
 
-A data frame is a list (@sec-list-of-vectors), each column is a vector (@sec-atomic-vectors), and subsetting uses the same `[`, `[[`, and `$` operators you learned for lists (Chapter 8) and vectors (@sec-indexing). Logical indexing filters rows (@sec-logical-subsetting-df) with the same mechanism from @sec-vectorized-ops, just applied to a two-dimensional structure.
+A data frame is a list of equal-length vectors, and everything in this chapter followed from that. `$`, `[[`, and `[` are the list accessors from @sec-lists; the second index and the `drop` behaviour are what the rectangle adds on top.
 
-One consequence of this design matters more than any syntax detail: R stores data frames column by column, each column a single contiguous vector in memory. Column operations like `mean(df$x)` walk sequential memory and run fast, while row operations like `apply(df, 1, sum)` jump between columns on every row and run slow. This is the same trade-off databases make: columnar stores (DuckDB, Parquet) optimize for analytical aggregation; row stores (PostgreSQL, MySQL) optimize for single-record transactions.
+R stores a data frame column by column, each column one contiguous vector in memory. `mean(df$x)` reads one block from start to finish. `apply(df, 1, sum)` first converts the whole data frame to a matrix and then visits every column for every row. When there is a choice, work by column.
 
-@sec-strings-factors-dates covers the column types you will encounter most often: strings, factors, and dates. @sec-data-transformation introduces `dplyr`, which replaces the `df[df$x > 5, ]` syntax with readable verbs like `filter()`, `mutate()`, and `summarize()`. Those verbs work because data frames are lists of vectors. You started this chapter with three loose vectors and a prayer that they stayed aligned; you end it knowing why R binds them together and what that binding makes possible.
+::: {.callout-note collapse="true"}
+## Column stores and row stores
+
+Databases make the same choice. Analytical engines such as DuckDB, and the Parquet file format, store data by column, which is fast for aggregating one field over millions of rows. Transactional databases such as PostgreSQL and MySQL store data by row, which is fast for reading or writing one record at a time.
+:::
+
+@sec-strings-factors-dates covers the column types you will meet most often: strings, factors, and dates.
+
+After that, `dplyr` (@sec-data-transformation) replaces `df[df$x > 5, ]` with verbs such as `filter()`, `mutate()`, and `summarize()`, and those verbs work because data frames are lists of vectors.

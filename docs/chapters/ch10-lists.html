@@ -659,7 +659,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>You have a penguin. It has a species (character), a body mass (double), and a vector of bill and flipper measurements (also doubles). Try cramming all of that into a single atomic vector and R will coerce everything to character, because vectors are strict: one type, no exceptions (<a href="ch04-vectors.html#sec-coercion" class="quarto-xref"><span>Section 4.3</span></a>). The species survives, the numbers become strings, and the measurements lose their identity as a group. What you need is a container that keeps each piece intact, preserving its type and its shape, without flattening or coercing anything. R calls that container a list.</p>
 <section id="sec-why-lists" class="level2" data-number="10.1">
 <h2 data-number="10.1" class="anchored" data-anchor-id="sec-why-lists"><span class="header-section-number">10.1</span> Why lists exist</h2>
-<p>Where a vector is homogeneous, a list is heterogeneous: each element can be a number, a string, a vector of arbitrary length, a function, or even another list, and all of them coexist without interference.</p>
+<p>Put the three pieces in a list and each one keeps its type:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>penguin <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">species =</span> <span class="st">"Adelie"</span>,</span>
@@ -676,13 +676,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $measurements</span></span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  39.1  18.7 181.0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>species</code> is a character scalar, <code>mass</code> is a numeric scalar, <code>measurements</code> is a numeric vector of length 3.</p>
-<p>Technically, a list is a <em>recursive vector</em>, where “recursive” means its elements can themselves be lists, allowing arbitrary nesting. R’s documentation calls lists “generic vectors” to distinguish them from atomic vectors (<a href="ch04-vectors.html#sec-atomic-vectors" class="quarto-xref"><span>Section 4.2</span></a>), and <code>typeof()</code> confirms:</p>
+<p><code>species</code> is still a character scalar, <code>mass</code> a numeric scalar, <code>measurements</code> a numeric vector of length 3. Nothing was coerced. This is what makes a list heterogeneous: each element can be a number, a string, a vector of any length, a function, or another list, and none of them interferes with the others.</p>
+<p><code>typeof()</code> puts a name on the container:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(penguin)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "list"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>You already used a list in <a href="ch07-functions-are-values.html#sec-functions-in-lists" class="quarto-xref"><span>Section 7.3</span></a> when you stored functions as named elements. Lists are the same structure whether they hold numbers, strings, or functions, but accessing the right element requires care.</p>
+<p>R’s documentation calls this a <em>generic vector</em>, to set it apart from the atomic vectors of <a href="ch04-vectors.html#sec-atomic-vectors" class="quarto-xref"><span>Section 4.2</span></a>.</p>
+<p>You already used one in <a href="ch07-functions-are-values.html#sec-functions-in-lists" class="quarto-xref"><span>Section 7.3</span></a> when you stored functions as named elements. A list is the same structure whether it holds numbers, strings, or functions; getting the right element back out is where the care is needed.</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -705,12 +706,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="the-train-analogy" class="level3" data-number="10.2.2">
 <h3 data-number="10.2.2" class="anchored" data-anchor-id="the-train-analogy"><span class="header-section-number">10.2.2</span> The train analogy</h3>
-<p>Think of a list as a train where each carriage holds its own cargo, and your choice of accessor determines whether you detach the carriage or reach inside it:</p>
-<ul>
-<li><code>x[1]</code> returns the first carriage still attached to the train. The result is a list of length 1.</li>
-<li><code>x[[1]]</code> opens the first carriage and pulls out what’s inside. The result is the element itself.</li>
-<li><code>x$name</code> is shorthand for <code>x[["name"]]</code>.</li>
-</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">10</span>, <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), <span class="at">c =</span> <span class="st">"hello"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Ask for the first element with one bracket:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>x[<span class="dv">1</span>]</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $a</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(x[<span class="dv">1</span>])</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "list"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Still a list, just a shorter one. Now with two:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x[[<span class="dv">1</span>]]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(x[[<span class="dv">1</span>]])</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "double"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Now it is the number 10, with no list around it. Think of the list as a train where each carriage holds its own cargo. <code>x[1]</code> returns the first carriage still attached to the train, and <code>x[[1]]</code> opens the carriage and pulls out what is inside.</p>
 <div id="fig-list-train" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-list-train-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -721,27 +735,8 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 </figcaption>
 </figure>
 </div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">10</span>, <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), <span class="at">c =</span> <span class="st">"hello"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><code>[</code> returns a sub-list:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>x[<span class="dv">1</span>]</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $a</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(x[<span class="dv">1</span>])</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "list"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Still a list, just a shorter one.</p>
-<p><code>[[</code> extracts the element:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x[[<span class="dv">1</span>]]</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(x[[<span class="dv">1</span>]])</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "double"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Now it’s the number 10, not a list containing 10. This distinction is the single most common source of confusion with lists: <code>[</code> keeps the container, <code>[[</code> removes it.</p>
-<p><code>$</code> works with names:</p>
+<p><code>[</code> keeps the container and <code>[[</code> removes it, and mixing the two up is the most common source of confusion with lists.</p>
+<p><code>$</code> is shorthand for <code>[[</code> with a name:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>x<span class="sc">$</span>b</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1 2 3</span></span>
@@ -830,7 +825,7 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 <span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   .. ..$ count: num 68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>str()</code> is the single most useful function for lists. It works on any R object, but with lists it shows you the nesting, the types, and the lengths in one compact summary. Get in the habit of calling it on anything you did not build yourself.</p>
-<p>Every nested list is a tree: sub-lists are branches, atomic values are leaves. File systems, the DOM, and JSON are all trees too, which is why R’s lists map onto them so naturally.</p>
+<p>This is why R’s documentation also calls lists <em>recursive vectors</em>: an element can itself be a list, so one list can grow into a tree of any depth.</p>
 <p>Inspecting is only half the problem. How do you reach into the tree and pull out what you need? Chain <code>[[</code> or <code>$</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>study<span class="sc">$</span>species[[<span class="dv">1</span>]]<span class="sc">$</span>name</span>
@@ -838,7 +833,7 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>study[[<span class="st">"species"</span>]][[<span class="dv">2</span>]][[<span class="st">"count"</span>]]</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 124</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Each <code>[[</code> or <code>$</code> steps one level deeper: <code>study$species</code> is a list of three lists, <code>study$species[[1]]</code> is the first of those, and <code>study$species[[1]]$name</code> is the string <code>"Adelie"</code>. JSON from a web API, the output of <code>lm()</code>, and configuration files are all nested lists or objects built on them.</p>
+<p>Each <code>[[</code> or <code>$</code> steps one level deeper: <code>study$species</code> is a list of three lists, <code>study$species[[1]]</code> is the first of those, and <code>study$species[[1]]$name</code> is the string <code>"Adelie"</code>. Sub-lists are branches and atomic values are leaves, which is also the shape of a file system, of a JSON document from a web API, and of the object <code>lm()</code> returns. All of them read into R as nested lists because all of them are trees.</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
@@ -850,7 +845,6 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 </section>
 <section id="sec-lists-backbone" class="level2" data-number="10.4">
 <h2 data-number="10.4" class="anchored" data-anchor-id="sec-lists-backbone"><span class="header-section-number">10.4</span> Lists as the backbone of R</h2>
-<p>You might think of lists as a container you reach for occasionally, but in truth they are the foundation that most of R’s familiar structures are built on.</p>
 <p>A data frame is a list:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">y =</span> <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>))</span>
@@ -870,7 +864,7 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [5] "fitted.values" "assign"        "qr"            "df.residual"  </span></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [9] "xlevels"       "call"          "terms"         "model"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>fit$coefficients</code>, <code>fit$residuals</code>, <code>fit$fitted.values</code> — these are ordinary <code>$</code> extractions on a list. The <code>"lm"</code> class attribute changes how R prints and summarizes the object, not how you get data out of it.</p>
+<p><code>fit$coefficients</code>, <code>fit$residuals</code>, and <code>fit$fitted.values</code> are ordinary <code>$</code> extractions on a list. The <code>"lm"</code> class attribute changes how R prints and summarizes the object, not how you get data out of it.</p>
 <p>Data frames (<a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>), model objects, and environments are all lists (or list-like structures) with different rules about what they can contain. The most interesting rule is also the simplest: what happens when every element is a vector of the same length?</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
@@ -933,14 +927,13 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 </section>
 <section id="sec-linked-lists" class="level2" data-number="10.6">
 <h2 data-number="10.6" class="anchored" data-anchor-id="sec-linked-lists"><span class="header-section-number">10.6</span> Linked lists</h2>
-<p>A linked list is a chain of nodes, each holding a value and a pointer to the next. Prepending is O(1); reaching element <em>k</em> means following <em>k</em> pointers. You build one in R with nested lists:</p>
+<p>Three one-line functions are enough to build a data structure R does not ship with:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>cons <span class="ot">&lt;-</span> <span class="cf">function</span>(head, tail) <span class="fu">list</span>(<span class="at">head =</span> head, <span class="at">tail =</span> tail)</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>car  <span class="ot">&lt;-</span> <span class="cf">function</span>(lst) lst<span class="sc">$</span>head</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>cdr  <span class="ot">&lt;-</span> <span class="cf">function</span>(lst) lst<span class="sc">$</span>tail</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>cons</code> constructs a node, <code>car</code> extracts the first element, and <code>cdr</code> extracts the rest. These names come from Lisp (1958), where <code>car</code> and <code>cdr</code> referred to hardware registers on the IBM 704.</p>
-<p>Build a linked list of three elements:</p>
+<p><code>cons</code> builds a node holding a value and whatever comes after it, <code>car</code> returns the value, and <code>cdr</code> returns the rest. Chain three nodes:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">cons</span>(<span class="dv">1</span>, <span class="fu">cons</span>(<span class="dv">2</span>, <span class="fu">cons</span>(<span class="dv">3</span>, <span class="cn">NULL</span>)))</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(ll)</span>
@@ -952,7 +945,7 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   .. ..$ head: num 3</span></span>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   .. ..$ tail: NULL</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>To traverse it, recurse until you hit <code>NULL</code>:</p>
+<p>Each node is a two-element list whose <code>tail</code> is the next node, and the last <code>tail</code> is <code>NULL</code>. This is a linked list. To walk it, recurse until you hit <code>NULL</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>ll_to_vector <span class="ot">&lt;-</span> <span class="cf">function</span>(lst) {</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(lst)) <span class="fu">return</span>(<span class="fu">c</span>())</span>
@@ -961,7 +954,7 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ll_to_vector</span>(ll)</span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1 2 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>So why doesn’t R use linked lists for everyday work? Because R needs contiguous memory. Functions like <code>sum()</code> and the BLAS routines behind matrix algebra expect a single block of doubles that a C function can walk with a pointer, and a linked list scatters its elements across the heap (the region of memory where R allocates objects; <a href="ch29-r-internals.html#sec-stack-and-heap" class="quarto-xref"><span>Section 29.1</span></a> explains the distinction). R’s built-in lists (VECSXP) are arrays of pointers: O(1) random access, contiguous pointer storage. Linked lists trade that for O(1) prepend and natural recursive processing — peel off the head, recur on the tail. Lisp was built on that kind of processing; R was built on vectorized computation over contiguous arrays.</p>
+<p>Adding a node at the front costs one <code>cons</code> call however long the chain is, while reaching element <em>k</em> means following <em>k</em> <code>tail</code> pointers. An R vector is the reverse: element <em>k</em> is one address computation away, and putting a value in front copies everything. R does not use linked lists for everyday work because <code>sum()</code>, and the BLAS routines behind matrix algebra, expect one contiguous block of doubles that a C loop can walk with a pointer, and a linked list scatters its nodes across memory. R’s own lists are contiguous arrays of pointers too, which is why <code>x[[k]]</code> on a list is O(1). Lisp made the cons cell its primary structure instead, which is where the names come from.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -974,8 +967,8 @@ Figure&nbsp;10.1: <code>x[1]</code> returns the carriage (still a list); <code>x
 </div>
 <div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The <code>cons</code>/<code>car</code>/<code>cdr</code> structure is a direct translation of Church encoding. In lambda calculus, a pair is <code>λh.λt.λf. f h t</code>: a function that captures two values and waits for a selector. <code>car</code> passes a selector that returns the first value; <code>cdr</code> passes one that returns the second. A linked list is a chain of such pairs, terminated by a special “nil” value. Lisp was built on exactly this encoding, and <code>cons</code>/<code>car</code>/<code>cdr</code> remain the standard names for these operations across functional languages.</p>
-<p>Both R and Lisp descend from the same lambda calculus, but the engineering decisions diverged early. Lisp committed to recursive decomposition, building up an answer one <code>cons</code> at a time. R went the other way — contiguous arrays, vectorized operations, the C runtime walking a flat block of memory at speed. That fork propagated through every design decision that followed. R has <code>sapply</code> where Lisp has <code>mapcar</code>. R’s <code>[</code> extracts by position; Lisp peels from the front. The entire language favors breadth over depth, and the linked list code above shows what depth-first design looks like from the inside.</p>
+<p>The names <code>car</code> and <code>cdr</code> come from Lisp, where in 1958 they abbreviated “contents of the address register” and “contents of the decrement register”, the two halves of a machine word on the IBM 704. The structure itself is older. In lambda calculus a pair is <code>λh.λt.λf. f h t</code>, a function that captures two values and waits for a selector; <code>car</code> passes a selector that returns the first value and <code>cdr</code> one that returns the second. A linked list is a chain of such pairs ending in a nil value, and <code>cons</code>, <code>car</code>, and <code>cdr</code> remain the standard names for the three operations across functional languages.</p>
+<p>R and Lisp descend from the same calculus, but the engineering diverged early. Lisp built up answers one <code>cons</code> at a time, peeling the head off a list and recurring on the tail. R committed to contiguous arrays that the C runtime walks in one pass, and that choice propagated: R has <code>sapply</code> where Lisp has <code>mapcar</code>, and <code>[</code> extracts by position where Lisp peels from the front. The linked-list code above shows what the other branch of the family looks like from the inside.</p>
 </div>
 </div>
 </div>
@@ -1085,53 +1078,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

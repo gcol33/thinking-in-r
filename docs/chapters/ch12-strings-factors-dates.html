@@ -658,28 +658,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>You have a column of dates in three different formats, a species column that plots in the wrong order, and a free-text field full of trailing whitespace and inconsistent capitalization. Numbers behave; text, categories, and time do not. This chapter covers the three types that derail an afternoon: strings, factors, and dates. Each has a dedicated tidyverse package (<code>stringr</code>, <code>forcats</code>, <code>lubridate</code>), each comes with traps that catch beginners, and none of them will feel fully tamed by the end of a single chapter. The three topics are independent; skip to whichever one is causing you trouble right now.</p>
-<p>We will use the <code>palmerpenguins</code> dataset throughout. Load it now:</p>
+<p>You have a column of dates in three different formats, a species column that plots in the wrong order, and a free-text field full of trailing whitespace and inconsistent capitalization. Strings, factors, and dates each get a section here and a tidyverse package of their own. The three sections are independent; skip to whichever one is causing you trouble right now.</p>
+<p>We will use the <code>palmerpenguins</code> dataset throughout. Load it and the three packages now:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: package 'palmerpenguins' was built under R version 4.6.1</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'lubridate'</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     date, intersect, setdiff, union</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'lubridate'</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     date, intersect, setdiff, union</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="sec-character-vectors" class="level2" data-number="12.1">
 <h2 data-number="12.1" class="anchored" data-anchor-id="sec-character-vectors"><span class="header-section-number">12.1</span> Character vectors</h2>
-<p>A string in R is a character vector of length 1. There is no special string type: <code>"hello"</code> is <code>character(1)</code>, the same kind of atomic vector you met in <a href="ch04-vectors.html#sec-atomic-vectors" class="quarto-xref"><span>Section 4.2</span></a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="st">"hello"</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(x)</span>
@@ -687,7 +685,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(x)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Double quotes and single quotes both work. Pick one and stick with it.</p>
+<p>A string in R is a character vector of length 1. There is no separate string type; <code>"hello"</code> is <code>character(1)</code>, the same kind of atomic vector you met in <a href="ch04-vectors.html#sec-atomic-vectors" class="quarto-xref"><span>Section 4.2</span></a>. Double quotes and single quotes both work. Pick one and stick with it.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -750,8 +748,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-stringr" class="level2" data-number="12.2">
 <h2 data-number="12.2" class="anchored" data-anchor-id="sec-stringr"><span class="header-section-number">12.2</span> stringr: consistent string operations</h2>
-<p>Base R has <code>grep()</code>, <code>grepl()</code>, <code>sub()</code>, and <code>gsub()</code>. stringr replaces them with a single rule: every function starts with <code>str_</code>, takes the string as the first argument, and takes the pattern second. Once you know the convention, you can guess function names before you look them up.</p>
-<p>The essentials:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str_length</span>(<span class="st">"penguin"</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span>
@@ -760,7 +756,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">"Gentoo"</span>, <span class="st">"penguin"</span>, <span class="at">sep =</span> <span class="st">" "</span>)</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Gentoo penguin"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>str_length()</code> counts characters (like <code>nchar()</code>), <code>str_sub()</code> extracts by position, and <code>str_c()</code> combines strings. But unlike <code>paste()</code>, <code>str_c()</code> propagates <code>NA</code>, which means a missing value stays missing instead of silently becoming the literal text <code>"NA"</code>:</p>
+<p><code>str_length()</code> counts characters like <code>nchar()</code>, <code>str_sub()</code> extracts by position, and <code>str_c()</code> combines strings. Every function in stringr follows the same rule: the name starts with <code>str_</code>, the string is the first argument, and the pattern, when there is one, comes second. Once you know the convention you can guess a function’s name before looking it up. Where <code>paste()</code> turns a missing value into the text <code>"NA"</code>, <code>str_c()</code> keeps it missing:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">"hello"</span>, <span class="cn">NA</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "hello NA"</span></span>
@@ -778,7 +774,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">str_squish</span>(<span class="st">"  too   many   spaces  "</span>)</span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "too many spaces"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Pattern matching is where stringr earns its place. Where base R gives you <code>grepl()</code>, stringr gives you <code>str_detect()</code>, a name that actually describes what it does:</p>
+<p><code>str_detect()</code> answers the question <code>grepl()</code> answers in base R, whether each string contains the pattern:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>species <span class="ot">&lt;-</span> penguins<span class="sc">$</span>species</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str_detect</span>(species, <span class="st">"Gentoo"</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
@@ -792,13 +788,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">str_replace</span>(islands, <span class="st">"Island"</span>, <span class="st">"Isl."</span>)</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Biscoe Isl."    "Dream Isl."     "Torgersen Isl."</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Splitting:</p>
+<p><code>str_replace()</code> changes the first match in each string and <code>str_replace_all()</code> every match, the way <code>sub()</code> and <code>gsub()</code> do in base R. Splitting:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str_split</span>(<span class="st">"one-two-three"</span>, <span class="st">"-"</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [[1]]</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "one"   "two"   "three"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>str_split()</code> returns a list because each input string could split into a different number of pieces, the same reason <code>strsplit()</code> does in base R, and a preview of why lists matter for irregular output.</p>
+<p><code>str_split()</code> returns a list because each input string could split into a different number of pieces. A list is the container for output of uneven length (<a href="ch10-lists.html" class="quarto-xref"><span>Chapter 10</span></a>), which is also why <code>strsplit()</code> returns one in base R.</p>
 <p>On the penguins data:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str_to_upper</span>(<span class="fu">levels</span>(penguins<span class="sc">$</span>island))</span>
@@ -817,9 +813,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-regex-essentials" class="level2" data-number="12.3">
 <h2 data-number="12.3" class="anchored" data-anchor-id="sec-regex-essentials"><span class="header-section-number">12.3</span> Regex essentials</h2>
-<p>You have seen <code>str_detect()</code> matching literal text. But what if you need to match “any string that starts with a capital letter and ends with a digit”? Literal matching cannot express that. Regular expressions can.</p>
-<p>Regular expressions are a mini-language for describing patterns in text. The syntax is not R-specific — the same patterns work in Python, JavaScript, and <code>grep</code> on the command line. What follows covers enough to read and write simple patterns; <code>?regex</code> has the full reference.</p>
-<p>The core building blocks:</p>
+<p><code>str_detect()</code> has so far matched literal text. Ask it for every string that starts with a capital letter and it needs a different kind of pattern:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str_detect</span>(<span class="fu">c</span>(<span class="st">"Hello"</span>, <span class="st">"world"</span>, <span class="st">"R"</span>), <span class="st">"^[A-Z]"</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  TRUE FALSE  TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>^</code> anchors the match to the start of the string and <code>[A-Z]</code> matches one capital letter. A pattern like this is a regular expression, a small language for describing text, and the same patterns work in Python, JavaScript, and <code>grep</code> on the command line. <code>str_view()</code> shows what a pattern matches, which makes it the tool to build one with:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>fruits <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"apple"</span>, <span class="st">"banana"</span>, <span class="st">"cherry"</span>, <span class="st">"date"</span>, <span class="st">"elderberry"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str_view</span>(fruits, <span class="st">"[aeiou]"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] │ &lt;a&gt;ppl&lt;e&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2] │ b&lt;a&gt;n&lt;a&gt;n&lt;a&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [3] │ ch&lt;e&gt;rry</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [4] │ d&lt;a&gt;t&lt;e&gt;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [5] │ &lt;e&gt;ld&lt;e&gt;rb&lt;e&gt;rry</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Two more that come up constantly:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Strings that end in a digit</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str_detect</span>(<span class="fu">c</span>(<span class="st">"room101"</span>, <span class="st">"lobby"</span>, <span class="st">"floor3"</span>), <span class="st">"</span><span class="sc">\\</span><span class="st">d$"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  TRUE FALSE  TRUE</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract numbers from text</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">str_extract</span>(<span class="st">"penguin weighs 5200 grams"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">d+"</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "5200"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>\\d</code> is any digit, <code>$</code> anchors to the end of the string, and <code>+</code> means one or more of whatever precedes it. The doubled backslash exists because R strings process backslashes first: to get <code>\d</code> to the regex engine, you write <code>"\\d"</code> in R. The building blocks used so far, and the handful of others you will need:</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -878,7 +897,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>The doubled backslashes (<code>\\d</code> instead of <code>\d</code>) exist because R strings process backslashes first: to get a literal <code>\d</code> to the regex engine, you write <code>"\\d"</code> in R.</p>
+<p><code>?regex</code> has the full reference.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -894,30 +913,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Regular expressions come from formal language theory, where Stephen Kleene defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and <code>grep</code> in 1973; the <code>*</code> quantifier is still called the <em>Kleene star</em>, after Kleene.</p>
 </div>
 </div>
-</div>
-<p><code>str_view()</code> lets you see what a pattern matches, making it the best tool for building and debugging:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>fruits <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"apple"</span>, <span class="st">"banana"</span>, <span class="st">"cherry"</span>, <span class="st">"date"</span>, <span class="st">"elderberry"</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str_view</span>(fruits, <span class="st">"[aeiou]"</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] │ &lt;a&gt;ppl&lt;e&gt;</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [2] │ b&lt;a&gt;n&lt;a&gt;n&lt;a&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [3] │ ch&lt;e&gt;rry</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [4] │ d&lt;a&gt;t&lt;e&gt;</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [5] │ &lt;e&gt;ld&lt;e&gt;rb&lt;e&gt;rry</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Some practical patterns:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Strings that start with a capital letter</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str_detect</span>(<span class="fu">c</span>(<span class="st">"Hello"</span>, <span class="st">"world"</span>, <span class="st">"R"</span>), <span class="st">"^[A-Z]"</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  TRUE FALSE  TRUE</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Strings that end in a digit</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">str_detect</span>(<span class="fu">c</span>(<span class="st">"room101"</span>, <span class="st">"lobby"</span>, <span class="st">"floor3"</span>), <span class="st">"</span><span class="sc">\\</span><span class="st">d$"</span>)</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  TRUE FALSE  TRUE</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract numbers from text</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="fu">str_extract</span>(<span class="st">"penguin weighs 5200 grams"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">d+"</span>)</span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "5200"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -943,32 +938,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-why-factors" class="level2" data-number="12.4">
 <h2 data-number="12.4" class="anchored" data-anchor-id="sec-why-factors"><span class="header-section-number">12.4</span> Why factors exist</h2>
-<p>Strings handle free text. But many columns are not free text: species, island, treatment group. These columns have a fixed set of values, and the order of those values matters for plots and models. That is where factors come in.</p>
-<p>Try plotting penguin species as a bar chart. The bars come out in alphabetical order: Adelie, Chinstrap, Gentoo. You want them ordered by count, or by body mass, or by some logic that makes sense for your story. Character vectors do not carry ordering information, so you cannot tell the plot “put Gentoo first” without something more.</p>
-<p>A factor is that something more: a vector of integers with labels. When R stores <code>c("male", "female", "female")</code> as a factor, it is really storing <code>c(1, 2, 2)</code> with a mapping (1 = “female”, 2 = “male”, alphabetical by default).</p>
+<p>Strings handle free text. Species, island, and treatment group are a different kind of column: a fixed set of values, and an order among them that matters for plots and models. Plot penguin species as a bar chart and the bars come out alphabetically, Adelie, Chinstrap, Gentoo. A character vector carries no ordering, so there is no way to tell the plot to put Gentoo first. R’s answer is to store such a column as integers with labels:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"male"</span>, <span class="st">"female"</span>, <span class="st">"female"</span>))</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>x</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] male   female female</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: female male</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(x)</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "integer"</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">unclass</span>(x)</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2 1 1</span></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,"levels")</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "female" "male"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"male"</span>, <span class="st">"female"</span>, <span class="st">"female"</span>))</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>x</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] male   female female</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: female male</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(x)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "integer"</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="fu">unclass</span>(x)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2 1 1</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,"levels")</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "female" "male"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>typeof()</code> returns <code>"integer"</code>. <code>unclass()</code> strips the factor shell and shows the integers underneath.</p>
-<p>In type theory, a factor is a <em>sum type</em>: the same structure as a logical value (<a href="ch08-logic-control-flow.html#sec-logical-vectors" class="quarto-xref"><span>Section 8.1</span></a>), generalized from two variants (<code>Bool = TRUE | FALSE</code>) to n (<code>Species = Adelie | Chinstrap | Gentoo</code>). Where a data frame is a product type (combine fields with AND, <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>), a factor is a sum type (choose one variant with OR).</p>
-<p>That implicit structure does real work. When you store 10,000 penguin observations with three species, a character vector holds the full string <code>"Adelie"</code> repeated thousands of times. A factor holds the integer <code>1</code> and a three-entry lookup table. The compression matters for memory, but it matters more for reasoning: the moment you write <code>factor(species, levels = c("Adelie", "Chinstrap", "Gentoo"))</code>, you are declaring a contract. These three values can appear in this column, and nothing else. That contract is what lets <code>lm()</code> generate dummy variables automatically — the full set of categories is declared up front, not discovered by scanning the data. It also means <code>fct_reorder()</code> can reorder levels without inventing ones that do not exist, and data-entry errors (<code>"Adelie"</code> vs <code>"adelie"</code>) surface at the moment of assignment rather than downstream in a model that silently treats them as two distinct categories. A character vector is an open set: anything goes. A factor is a closed set, and closed sets are easier to reason about, for you and for every function that receives them.</p>
+<p><code>typeof()</code> returns <code>"integer"</code>, and <code>unclass()</code> strips the shell to show what is stored: <code>2, 1, 1</code> with a lookup table, <code>1 = "female"</code> and <code>2 = "male"</code>, alphabetical by default. This is a factor.</p>
+<p>The lookup table saves memory, and it does something more useful than that. Ten thousand observations of three species are ten thousand integers and a three-entry table rather than ten thousand copies of the string <code>"Adelie"</code>. The declared levels are also a contract: once <code>factor(species, levels = c("Adelie", "Chinstrap", "Gentoo"))</code> has run, those three values can appear in the column and nothing else, so a typo such as <code>"adelie"</code> fails at assignment instead of turning into a fourth species inside a model. The same contract lets <code>lm()</code> build a dummy variable for every level, including one absent from the subset you happen to be fitting.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Sum types
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In type theory a factor is a <em>sum type</em>: the structure of a logical value (<a href="ch08-logic-control-flow.html#sec-logical-vectors" class="quarto-xref"><span>Section 8.1</span></a>), generalized from two variants (<code>Bool = TRUE | FALSE</code>) to <em>n</em> (<code>Species = Adelie | Chinstrap | Gentoo</code>). A data frame combines fields with AND, the product type from the previous chapter; a factor chooses one variant with OR.</p>
+</div>
+</div>
+</div>
 <p>The old <code>data.frame()</code> default converted strings to factors (<a href="ch11-data-frames.html#sec-creating-data-frames" class="quarto-xref"><span>Section 11.2</span></a>), which is why so much older code carries the <code>stringsAsFactors = FALSE</code> incantation.</p>
-<p>When do factors actually help?</p>
-<ul>
-<li>Controlling the order of levels in plots (bars, legends, facets)</li>
-<li>Statistical modeling (<code>lm()</code>, <code>glm()</code>, and friends)</li>
-<li>Any time the set of possible values matters: months, Likert scales, treatment groups</li>
-</ul>
-<p>When they do not: most data wrangling. If you are filtering and counting, character vectors are fine. But the moment you need a plot where the ordering tells a story, you will reach for factors, and at that point the question becomes how to wrangle them without pain.</p>
+<p>Factors earn their place wherever the set of values or their order matters: the order of bars, legends, and facets in a plot; the levels that <code>lm()</code> and <code>glm()</code> turn into coefficients; months, Likert scales, treatment groups. For filtering and counting, a character vector is fine. The moment a plot needs its bars in an order that tells a story, you will reach for factors, and then the question is how to rearrange the levels without pain.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -982,57 +984,57 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="12.5" class="anchored" data-anchor-id="sec-forcats"><span class="header-section-number">12.5</span> forcats: taming factors</h2>
 <p>Base R’s <code>factor()</code> lets you set levels manually:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>sizes <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"small"</span>, <span class="st">"medium"</span>, <span class="st">"large"</span>), <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"small"</span>, <span class="st">"medium"</span>, <span class="st">"large"</span>))</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>sizes</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] small  medium large </span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: small medium large</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>sizes <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"small"</span>, <span class="st">"medium"</span>, <span class="st">"large"</span>), <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"small"</span>, <span class="st">"medium"</span>, <span class="st">"large"</span>))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>sizes</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] small  medium large </span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: small medium large</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>levels</code> argument controls the allowed values and their order. Without it, R defaults to alphabetical, which is why “high” comes before “low” and plots look wrong. But manually specifying levels for every factor in every analysis gets tedious fast, and tedium breeds errors.</p>
 <p>forcats provides cleaner tools, all starting with <code>fct_</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reorder levels manually</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_relevel</span>(sizes, <span class="st">"large"</span>, <span class="st">"medium"</span>, <span class="st">"small"</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] small  medium large </span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: large medium small</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reorder levels manually</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_relevel</span>(sizes, <span class="st">"large"</span>, <span class="st">"medium"</span>, <span class="st">"small"</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] small  medium large </span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: large medium small</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Order levels by frequency in the data</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_infreq</span>(penguins<span class="sc">$</span>species) <span class="sc">|&gt;</span> <span class="fu">table</span>()</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie    Gentoo Chinstrap </span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       152       124        68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Collapse rare levels into "Other"</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_lump_n</span>(penguins<span class="sc">$</span>species, <span class="at">n =</span> <span class="dv">2</span>) <span class="sc">|&gt;</span> <span class="fu">table</span>()</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Order levels by frequency in the data</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_infreq</span>(penguins<span class="sc">$</span>species) <span class="sc">|&gt;</span> <span class="fu">table</span>()</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Adelie Gentoo  Other </span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    152    124     68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Adelie    Gentoo Chinstrap </span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       152       124        68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename levels</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_recode</span>(penguins<span class="sc">$</span>species, <span class="at">AP =</span> <span class="st">"Adelie"</span>, <span class="at">GP =</span> <span class="st">"Gentoo"</span>, <span class="at">CP =</span> <span class="st">"Chinstrap"</span>) <span class="sc">|&gt;</span> <span class="fu">head</span>()</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] AP AP AP AP AP AP</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: AP CP GP</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Collapse rare levels into "Other"</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_lump_n</span>(penguins<span class="sc">$</span>species, <span class="at">n =</span> <span class="dv">2</span>) <span class="sc">|&gt;</span> <span class="fu">table</span>()</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Adelie Gentoo  Other </span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    152    124     68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The most useful function is <code>fct_reorder()</code>, which reorders levels by a summary of another variable, and this is where factors stop being an annoyance and start being a plotting superpower:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>penguins_clean <span class="ot">&lt;-</span> penguins[<span class="sc">!</span><span class="fu">is.na</span>(penguins<span class="sc">$</span>body_mass_g), ]</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins_clean, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, median), <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species (ordered by median body mass)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename levels</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fct_recode</span>(penguins<span class="sc">$</span>species, <span class="at">AP =</span> <span class="st">"Adelie"</span>, <span class="at">GP =</span> <span class="st">"Gentoo"</span>, <span class="at">CP =</span> <span class="st">"Chinstrap"</span>) <span class="sc">|&gt;</span> <span class="fu">head</span>()</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] AP AP AP AP AP AP</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: AP CP GP</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The most useful function is <code>fct_reorder()</code>, which reorders levels by a summary of another variable:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>penguins_clean <span class="ot">&lt;-</span> penguins[<span class="sc">!</span><span class="fu">is.na</span>(penguins<span class="sc">$</span>body_mass_g), ]</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins_clean, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">fct_reorder</span>(species, body_mass_g, median), <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>() <span class="sc">+</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Species (ordered by median body mass)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="ch12-strings-factors-dates_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" style="width:5in"></p>
+<p><img src="ch12-strings-factors-dates_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" style="width:5in"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>Without <code>fct_reorder()</code>, species appear alphabetically: Adelie, Chinstrap, Gentoo. With it, they appear in order of median body mass, and suddenly the plot tells a story instead of reciting the alphabet. This is the moment factors click: the labels reflect the data, not a sorting convention that has nothing to do with penguins.</p>
+<p>Without <code>fct_reorder()</code>, species appear alphabetically: Adelie, Chinstrap, Gentoo. With it, they appear in order of median body mass, and the axis now carries information about the penguins instead of about the alphabet.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1044,26 +1046,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-dates-times" class="level2" data-number="12.6">
 <h2 data-number="12.6" class="anchored" data-anchor-id="sec-dates-times"><span class="header-section-number">12.6</span> Dates and times</h2>
-<p>Strings are irregular text; factors are constrained categories. Dates look like strings but behave like numbers, and that dual nature is the source of most of the trouble.</p>
-<p>Add one month to January 31. What do you get? February 28? February 31 (which does not exist)? An error? The answer depends on your tool, and the fact that reasonable tools disagree tells you something about why date arithmetic is harder than it looks: time zones, leap years, daylight saving transitions, and varying month lengths.</p>
-<p>R has three date-time classes:</p>
-<ul>
-<li><code>Date</code>: date only, stored as days since 1970-01-01</li>
-<li><code>POSIXct</code>: date + time, stored as seconds since 1970-01-01 (compact, use in data frames)</li>
-<li><code>POSIXlt</code>: date + time as a named list of components (rarely needed)</li>
-</ul>
+<p>Add one month to January 31. February 28? February 31, which does not exist? An error? Reasonable tools disagree, and the disagreement is a hint of what date arithmetic has to handle: months of different lengths, leap years, time zones, and daylight-saving transitions. Start with what R stores:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>today <span class="ot">&lt;-</span> <span class="fu">Sys.Date</span>()</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>today</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-07-03"</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(today)</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "double"</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">unclass</span>(today)</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 20637</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>today <span class="ot">&lt;-</span> <span class="fu">Sys.Date</span>()</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>today</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-09-04"</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(today)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "double"</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="fu">unclass</span>(today)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 20700</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The number from <code>unclass()</code> is days since the Unix epoch. Dates in R count from 1970-01-01 because Unix measured time as seconds from that date, and R, Python, JavaScript, and most databases all inherit this same epoch.</p>
+<p>A <code>Date</code> is a double counting days since 1970-01-01. The epoch comes from Unix, which measured time in seconds from that date, and R, Python, JavaScript, and most databases inherit it. For a date with a time of day, R has <code>POSIXct</code>, seconds since the same epoch and the class to use in data frames, and <code>POSIXlt</code>, the same instant stored as a named list of components, which you will rarely need.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1072,7 +1067,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>32-bit signed integers can count seconds from 1970 until January 19, 2038.</p>
 </div>
@@ -1080,20 +1075,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Date arithmetic works as you would expect:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"2026-03-07"</span>) <span class="sc">-</span> <span class="fu">as.Date</span>(<span class="st">"2026-01-01"</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Time difference of 65 days</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"2026-03-07"</span>) <span class="sc">-</span> <span class="fu">as.Date</span>(<span class="st">"2026-01-01"</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Time difference of 65 days</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>R returns a <code>difftime</code> object. Subtraction works, and so does addition with scalars:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"2026-01-01"</span>) <span class="sc">+</span> <span class="dv">30</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-01-31"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"2026-01-01"</span>) <span class="sc">+</span> <span class="dv">30</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-01-31"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The base R parsing function is <code>as.Date()</code>, which expects ISO 8601 format (<code>"YYYY-MM-DD"</code>) by default:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"2026-03-07"</span>)</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"07/03/2026"</span>, <span class="at">format =</span> <span class="st">"%d/%m/%Y"</span>)</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"2026-03-07"</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">"07/03/2026"</span>, <span class="at">format =</span> <span class="st">"%d/%m/%Y"</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>format</code> argument uses <code>%Y</code> (4-digit year), <code>%m</code> (month), <code>%d</code> (day), and similar codes. These are hard to remember and easy to get wrong, especially when your data mixes formats. Is <code>"03/07/2026"</code> March 7th or July 3rd? The format string decides, and if you pick wrong, R will not complain.</p>
 <section id="exercises-5" class="level3 unnumbered">
@@ -1109,53 +1104,69 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="12.7" class="anchored" data-anchor-id="sec-lubridate"><span class="header-section-number">12.7</span> lubridate: dates for humans</h2>
 <p>Those <code>%Y/%m/%d</code> format codes? lubridate lets you forget them. Its parsing functions are named after the order of components, so the function name <em>is</em> the format:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ymd</span>(<span class="st">"2026-03-07"</span>)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dmy</span>(<span class="st">"07/03/2026"</span>)</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mdy</span>(<span class="st">"03-07-2026"</span>)</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ymd</span>(<span class="st">"2026-03-07"</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dmy</span>(<span class="st">"07/03/2026"</span>)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mdy</span>(<span class="st">"03-07-2026"</span>)</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>All three produce the same date. No format strings to memorize, no ambiguity about which code means what.</p>
 <p>For date-times:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ymd_hms</span>(<span class="st">"2026-03-07 14:30:00"</span>)</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07 14:30:00 UTC"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ymd_hms</span>(<span class="st">"2026-03-07 14:30:00"</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-07 14:30:00 UTC"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Extracting components:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">ymd</span>(<span class="st">"2026-03-07"</span>)</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">year</span>(d)</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2026</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="fu">month</span>(d)</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="fu">day</span>(d)</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="fu">wday</span>(d, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] Sat</span></span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: Sun &lt; Mon &lt; Tue &lt; Wed &lt; Thu &lt; Fri &lt; Sat</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">ymd</span>(<span class="st">"2026-03-07"</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">year</span>(d)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2026</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="fu">month</span>(d)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="fu">day</span>(d)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="fu">wday</span>(d, <span class="at">label =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] Sat</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Levels: Sun &lt; Mon &lt; Tue &lt; Wed &lt; Thu &lt; Fri &lt; Sat</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Date arithmetic with human-readable units:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>d <span class="sc">+</span> <span class="fu">days</span>(<span class="dv">30</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-04-06"</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>d <span class="sc">+</span> <span class="fu">months</span>(<span class="dv">1</span>)</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-04-07"</span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>d <span class="sc">+</span> <span class="fu">years</span>(<span class="dv">1</span>)</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2027-03-07"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>d <span class="sc">+</span> <span class="fu">days</span>(<span class="dv">30</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-04-06"</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>d <span class="sc">+</span> <span class="fu">months</span>(<span class="dv">1</span>)</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-04-07"</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>d <span class="sc">+</span> <span class="fu">years</span>(<span class="dv">1</span>)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2027-03-07"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>lubridate handles month-length differences correctly: adding one month to January 31 gives February 28 (or 29 in a leap year), not an error. That question from the previous section now has a clear answer.</p>
-<p>lubridate distinguishes three kinds of time spans:</p>
-<ul>
-<li><strong>Duration</strong>: exact number of seconds. <code>ddays(1)</code> is always 86400 seconds.</li>
-<li><strong>Period</strong>: human units. <code>days(1)</code> is “one day,” which could be 23 or 25 hours around daylight saving transitions.</li>
-<li><strong>Interval</strong>: an anchored span with a start and end.</li>
-</ul>
-<p>For most work, periods (<code>days()</code>, <code>months()</code>, <code>years()</code>) are what you want. Durations (<code>ddays()</code>, <code>dmonths()</code>) matter when you need physical time, the kind a stopwatch measures rather than a calendar.</p>
+<p>Now back to January 31:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How old is R? (first public release: 1993-08-01)</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">interval</span>(<span class="fu">ymd</span>(<span class="st">"1993-08-01"</span>), <span class="fu">Sys.Date</span>()) <span class="sc">%/%</span> <span class="fu">years</span>(<span class="dv">1</span>)</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 32</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ymd</span>(<span class="st">"2026-01-31"</span>) <span class="sc">+</span> <span class="fu">months</span>(<span class="dv">1</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ymd</span>(<span class="st">"2026-01-31"</span>) <span class="sc">%m+%</span> <span class="fu">months</span>(<span class="dv">1</span>)</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-02-28"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>+ months(1)</code> lands on a day that does not exist and returns <code>NA</code> rather than picking a date for you. <code>%m+%</code> is the operator that rolls back to the last valid day, February 28, or 29 in a leap year. Both are defensible answers to the question that opened the previous section; lubridate makes you choose.</p>
+<p>The <code>days(30)</code> above is a period, a count of calendar days. lubridate also has durations, exact counts of seconds:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">days</span>(<span class="dv">1</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "1d 0H 0M 0S"</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ddays</span>(<span class="dv">1</span>)</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "86400s (~1 days)"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The two differ across a daylight-saving transition, where a calendar day has 23 or 25 hours:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">ymd_hms</span>(<span class="st">"2026-03-28 12:00:00"</span>, <span class="at">tz =</span> <span class="st">"Europe/Vienna"</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>x <span class="sc">+</span> <span class="fu">days</span>(<span class="dv">1</span>)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-29 12:00:00 CEST"</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>x <span class="sc">+</span> <span class="fu">ddays</span>(<span class="dv">1</span>)</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2026-03-29 13:00:00 CEST"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The period lands at noon the next day; the duration lands at one o’clock, 86,400 seconds later. For most work, periods (<code>days()</code>, <code>months()</code>, <code>years()</code>) are what you want, and durations (<code>ddays()</code>, <code>dhours()</code>) are for physical time, the kind a stopwatch measures. A third kind of span, the interval, is anchored at a start and an end:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How old is R? (first public release: 1993-08-01)</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">interval</span>(<span class="fu">ymd</span>(<span class="st">"1993-08-01"</span>), <span class="fu">Sys.Date</span>()) <span class="sc">%/%</span> <span class="fu">years</span>(<span class="dv">1</span>)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 33</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1218,8 +1229,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>The tidyverse packages give these operations a consistent interface and naming scheme. In some cases (like <code>str_detect</code> vs <code>grepl</code>) the difference is mostly cosmetic; in others (like lubridate’s timezone handling) the package catches real bugs that base R silently lets through.</p>
-<p><a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a> covered the structure; this chapter covered the three column types that cause the most trouble. But data frames need data, so <a href="ch13-reading-writing-data.html" class="quarto-xref"><span>Chapter 13</span></a> deals with getting files off disk and into R. After that, <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a> shows how these pieces combine: <code>str_detect()</code> inside <code>filter()</code>, <code>fct_reorder()</code> inside <code>ggplot()</code>, date arithmetic inside <code>mutate()</code>. That is where the column-level work starts saving you real time.</p>
+<p>The tidyverse packages give these operations a consistent interface and naming scheme. In some cases, such as <code>str_detect()</code> beside <code>grepl()</code>, the difference is cosmetic; in others, such as the <code>NA</code> handling of <code>str_c()</code> or the choice between <code>+</code> and <code>%m+%</code>, the package makes a decision that base R leaves to you.</p>
+<p>Data frames need data, so <a href="ch13-reading-writing-data.html" class="quarto-xref"><span>Chapter 13</span></a> deals with getting files off disk and into R. After that the pieces combine: <code>str_detect()</code> inside <code>filter()</code>, <code>fct_reorder()</code> inside <code>ggplot()</code>, date arithmetic inside <code>mutate()</code>.</p>
 
 
 </section>
@@ -1314,53 +1325,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

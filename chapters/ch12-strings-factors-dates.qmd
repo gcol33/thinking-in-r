@@ -5,9 +5,9 @@
 source(here::here("_common.R"))
 ```
 
-You have a column of dates in three different formats, a species column that plots in the wrong order, and a free-text field full of trailing whitespace and inconsistent capitalization. Numbers behave; text, categories, and time do not. This chapter covers the three types that derail an afternoon: strings, factors, and dates. Each has a dedicated tidyverse package (`stringr`, `forcats`, `lubridate`), each comes with traps that catch beginners, and none of them will feel fully tamed by the end of a single chapter. The three topics are independent; skip to whichever one is causing you trouble right now.
+You have a column of dates in three different formats, a species column that plots in the wrong order, and a free-text field full of trailing whitespace and inconsistent capitalization. Strings, factors, and dates each get a section here and a tidyverse package of their own. The three sections are independent; skip to whichever one is causing you trouble right now.
 
-We will use the `palmerpenguins` dataset throughout. Load it now:
+We will use the `palmerpenguins` dataset throughout. Load it and the three packages now:
 
 ```{r}
 library(palmerpenguins)
@@ -19,15 +19,13 @@ library(lubridate)
 
 ## Character vectors {#sec-character-vectors}
 
-A string\index{string}\index{character} in R is a character vector of length 1. There is no special string type: `"hello"` is `character(1)`, the same kind of atomic vector you met in @sec-atomic-vectors.
-
 ```{r}
 x <- "hello"
 typeof(x)
 length(x)
 ```
 
-Double quotes and single quotes both work. Pick one and stick with it.
+A string\index{string}\index{character} in R is a character vector of length 1. There is no separate string type; `"hello"` is `character(1)`, the same kind of atomic vector you met in @sec-atomic-vectors. Double quotes and single quotes both work. Pick one and stick with it.
 
 ::: callout-tip
 ## Opinion
@@ -72,17 +70,13 @@ sprintf("The %s weighs %d grams", "Gentoo", 5200)
 
 ## stringr: consistent string operations {#sec-stringr}
 
-Base R has `grep()`\index{grep()}, `grepl()`, `sub()`, and `gsub()`\index{gsub()}. stringr\index{stringr (package)} replaces them with a single rule: every function starts with `str_`, takes the string as the first argument, and takes the pattern second. Once you know the convention, you can guess function names before you look them up.
-
-The essentials:
-
 ```{r}
 str_length("penguin")
 str_sub("penguin", 1, 4)
 str_c("Gentoo", "penguin", sep = " ")
 ```
 
-`str_length()` counts characters (like `nchar()`), `str_sub()` extracts by position, and `str_c()` combines strings. But unlike `paste()`, `str_c()` propagates `NA`, which means a missing value stays missing instead of silently becoming the literal text `"NA"`:
+`str_length()` counts characters like `nchar()`, `str_sub()` extracts by position, and `str_c()` combines strings. Every function in stringr\index{stringr (package)} follows the same rule: the name starts with `str_`, the string is the first argument, and the pattern, when there is one, comes second. Once you know the convention you can guess a function's name before looking it up. Where `paste()` turns a missing value into the text `"NA"`, `str_c()` keeps it missing:
 
 ```{r}
 paste("hello", NA)
@@ -98,7 +92,7 @@ str_trim("  messy data  ")
 str_squish("  too   many   spaces  ")
 ```
 
-Pattern matching is where stringr earns its place. Where base R gives you `grepl()`, stringr gives you `str_detect()`, a name that actually describes what it does:
+`str_detect()` answers the question `grepl()`\index{grep()} answers in base R, whether each string contains the pattern:
 
 ```{r}
 species <- penguins$species
@@ -113,13 +107,13 @@ str_extract(islands, "^[A-Za-z]+")
 str_replace(islands, "Island", "Isl.")
 ```
 
-Splitting:
+`str_replace()` changes the first match in each string and `str_replace_all()` every match, the way `sub()` and `gsub()`\index{gsub()} do in base R. Splitting:
 
 ```{r}
 str_split("one-two-three", "-")
 ```
 
-`str_split()` returns a list because each input string could split into a different number of pieces, the same reason `strsplit()` does in base R, and a preview of why lists matter for irregular output.
+`str_split()` returns a list because each input string could split into a different number of pieces. A list is the container for output of uneven length (@sec-lists), which is also why `strsplit()` returns one in base R.
 
 On the penguins data:
 
@@ -139,11 +133,30 @@ sum(str_detect(penguins$species, "Adelie"))
 
 ## Regex essentials {#sec-regex-essentials}
 
-You have seen `str_detect()` matching literal text. But what if you need to match "any string that starts with a capital letter and ends with a digit"? Literal matching cannot express that. Regular expressions can.
+`str_detect()` has so far matched literal text. Ask it for every string that starts with a capital letter and it needs a different kind of pattern:
 
-Regular expressions\index{regular expression}\index{regex} are a mini-language for describing patterns in text\index{pattern matching}. The syntax is not R-specific — the same patterns work in Python, JavaScript, and `grep` on the command line. What follows covers enough to read and write simple patterns; `?regex` has the full reference.
+```{r}
+str_detect(c("Hello", "world", "R"), "^[A-Z]")
+```
 
-The core building blocks:
+`^` anchors the match to the start of the string and `[A-Z]` matches one capital letter. A pattern like this is a regular expression\index{regular expression}\index{regex}, a small language for describing text\index{pattern matching}, and the same patterns work in Python, JavaScript, and `grep` on the command line. `str_view()` shows what a pattern matches, which makes it the tool to build one with:
+
+```{r}
+fruits <- c("apple", "banana", "cherry", "date", "elderberry")
+str_view(fruits, "[aeiou]")
+```
+
+Two more that come up constantly:
+
+```{r}
+# Strings that end in a digit
+str_detect(c("room101", "lobby", "floor3"), "\\d$")
+
+# Extract numbers from text
+str_extract("penguin weighs 5200 grams", "\\d+")
+```
+
+`\\d` is any digit, `$` anchors to the end of the string, and `+` means one or more of whatever precedes it. The doubled backslash exists because R strings process backslashes first: to get `\d` to the regex engine, you write `"\\d"` in R. The building blocks used so far, and the handful of others you will need:
 
 | Pattern | Matches |
 |---------|---------|
@@ -160,33 +173,13 @@ The core building blocks:
 | `\\s` | Whitespace |
 | `\\w` | Word character (letter, digit, underscore) |
 
-The doubled backslashes (`\\d` instead of `\d`) exist because R strings process backslashes first: to get a literal `\d` to the regex engine, you write `"\\d"` in R.
+`?regex` has the full reference.
 
 ::: {.callout-note collapse="true"}
 ## Where regular expressions come from
 
 Regular expressions come from formal language theory, where Stephen Kleene\index{Kleene, Stephen} defined regular languages in 1956 using concatenation, alternation, and closure (repetition). Ken Thompson implemented them in the QED editor in 1968 and `grep` in 1973; the `*` quantifier is still called the *Kleene star*, after Kleene.
 :::
-
-`str_view()` lets you see what a pattern matches, making it the best tool for building and debugging:
-
-```{r}
-fruits <- c("apple", "banana", "cherry", "date", "elderberry")
-str_view(fruits, "[aeiou]")
-```
-
-Some practical patterns:
-
-```{r}
-# Strings that start with a capital letter
-str_detect(c("Hello", "world", "R"), "^[A-Z]")
-
-# Strings that end in a digit
-str_detect(c("room101", "lobby", "floor3"), "\\d$")
-
-# Extract numbers from text
-str_extract("penguin weighs 5200 grams", "\\d+")
-```
 
 ::: callout-tip
 ## Opinion
@@ -204,11 +197,7 @@ You do not need to memorize regex. Know that it exists, know the basics from the
 
 ## Why factors exist {#sec-why-factors}
 
-Strings handle free text. But many columns are not free text: species, island, treatment group. These columns have a fixed set of values, and the order of those values matters for plots and models. That is where factors\index{factor} come in.
-
-Try plotting penguin species as a bar chart. The bars come out in alphabetical order: Adelie, Chinstrap, Gentoo. You want them ordered by count, or by body mass, or by some logic that makes sense for your story. Character vectors do not carry ordering information, so you cannot tell the plot "put Gentoo first" without something more.
-
-A factor is that something more: a vector of integers with labels. When R stores `c("male", "female", "female")` as a factor, it is really storing `c(1, 2, 2)` with a mapping (1 = "female", 2 = "male", alphabetical by default).
+Strings handle free text. Species, island, and treatment group are a different kind of column: a fixed set of values, and an order among them that matters for plots and models. Plot penguin species as a bar chart and the bars come out alphabetically, Adelie, Chinstrap, Gentoo. A character vector carries no ordering, so there is no way to tell the plot to put Gentoo first. R's answer is to store such a column as integers with labels:
 
 ```{r}
 x <- factor(c("male", "female", "female"))
@@ -217,21 +206,19 @@ typeof(x)
 unclass(x)
 ```
 
-`typeof()` returns `"integer"`. `unclass()` strips the factor shell and shows the integers underneath.
+`typeof()` returns `"integer"`, and `unclass()` strips the shell to show what is stored: `2, 1, 1` with a lookup table, `1 = "female"` and `2 = "male"`, alphabetical by default. This is a factor\index{factor}.
 
-In type theory, a factor is a *sum type*: the same structure as a logical value (@sec-logical-vectors), generalized from two variants (`Bool = TRUE | FALSE`) to n (`Species = Adelie | Chinstrap | Gentoo`). Where a data frame is a product type (combine fields with AND, @sec-data-frames), a factor is a sum type (choose one variant with OR).
+The lookup table saves memory, and it does something more useful than that. Ten thousand observations of three species are ten thousand integers and a three-entry table rather than ten thousand copies of the string `"Adelie"`. The declared levels are also a contract: once `factor(species, levels = c("Adelie", "Chinstrap", "Gentoo"))` has run, those three values can appear in the column and nothing else, so a typo such as `"adelie"` fails at assignment instead of turning into a fourth species inside a model. The same contract lets `lm()` build a dummy variable for every level, including one absent from the subset you happen to be fitting.
 
-That implicit structure does real work. When you store 10,000 penguin observations with three species, a character vector holds the full string `"Adelie"` repeated thousands of times. A factor holds the integer `1` and a three-entry lookup table. The compression matters for memory, but it matters more for reasoning: the moment you write `factor(species, levels = c("Adelie", "Chinstrap", "Gentoo"))`, you are declaring a contract. These three values can appear in this column, and nothing else. That contract is what lets `lm()` generate dummy variables automatically — the full set of categories is declared up front, not discovered by scanning the data. It also means `fct_reorder()` can reorder levels without inventing ones that do not exist, and data-entry errors (`"Adelie"` vs `"adelie"`) surface at the moment of assignment rather than downstream in a model that silently treats them as two distinct categories. A character vector is an open set: anything goes. A factor is a closed set, and closed sets are easier to reason about, for you and for every function that receives them.
+::: {.callout-note collapse="true"}
+## Sum types
+
+In type theory a factor is a *sum type*: the structure of a logical value (@sec-logical-vectors), generalized from two variants (`Bool = TRUE | FALSE`) to *n* (`Species = Adelie | Chinstrap | Gentoo`). A data frame combines fields with AND, the product type from the previous chapter; a factor chooses one variant with OR.
+:::
 
 The old `data.frame()` default converted strings to factors (@sec-creating-data-frames), which is why so much older code carries the `stringsAsFactors = FALSE` incantation.
 
-When do factors actually help?
-
-- Controlling the order of levels in plots (bars, legends, facets)
-- Statistical modeling (`lm()`, `glm()`, and friends)
-- Any time the set of possible values matters: months, Likert scales, treatment groups
-
-When they do not: most data wrangling. If you are filtering and counting, character vectors are fine. But the moment you need a plot where the ordering tells a story, you will reach for factors, and at that point the question becomes how to wrangle them without pain.
+Factors earn their place wherever the set of values or their order matters: the order of bars, legends, and facets in a plot; the levels that `lm()` and `glm()` turn into coefficients; months, Likert scales, treatment groups. For filtering and counting, a character vector is fine. The moment a plot needs its bars in an order that tells a story, you will reach for factors, and then the question is how to rearrange the levels without pain.
 
 
 ### Exercises {.unnumbered}
@@ -274,7 +261,7 @@ fct_lump_n(penguins$species, n = 2) |> table()
 fct_recode(penguins$species, AP = "Adelie", GP = "Gentoo", CP = "Chinstrap") |> head()
 ```
 
-The most useful function is `fct_reorder()`, which reorders levels by a summary of another variable, and this is where factors stop being an annoyance and start being a plotting superpower:
+The most useful function is `fct_reorder()`, which reorders levels by a summary of another variable:
 
 ```{r}
 #| fig.width: 5
@@ -288,7 +275,7 @@ ggplot(penguins_clean, aes(x = fct_reorder(species, body_mass_g, median), y = bo
   labs(x = "Species (ordered by median body mass)", y = "Body mass (g)")
 ```
 
-Without `fct_reorder()`, species appear alphabetically: Adelie, Chinstrap, Gentoo. With it, they appear in order of median body mass, and suddenly the plot tells a story instead of reciting the alphabet. This is the moment factors click: the labels reflect the data, not a sorting convention that has nothing to do with penguins.
+Without `fct_reorder()`, species appear alphabetically: Adelie, Chinstrap, Gentoo. With it, they appear in order of median body mass, and the axis now carries information about the penguins instead of about the alphabet.
 
 
 ### Exercises {.unnumbered}
@@ -300,15 +287,7 @@ Without `fct_reorder()`, species appear alphabetically: Adelie, Chinstrap, Gento
 
 ## Dates and times {#sec-dates-times}
 
-Strings are irregular text; factors are constrained categories. Dates look like strings but behave like numbers, and that dual nature is the source of most of the trouble.
-
-Add one month to January 31. What do you get? February 28? February 31 (which does not exist)? An error? The answer depends on your tool, and the fact that reasonable tools disagree tells you something about why date arithmetic is harder than it looks: time zones, leap years, daylight saving transitions, and varying month lengths.
-
-R has three date-time classes:
-
-- `Date`\index{Date}: date only, stored as days since 1970-01-01
-- `POSIXct`\index{POSIXct}: date + time, stored as seconds since 1970-01-01 (compact, use in data frames)
-- `POSIXlt`: date + time as a named list of components (rarely needed)
+Add one month to January 31. February 28? February 31, which does not exist? An error? Reasonable tools disagree, and the disagreement is a hint of what date arithmetic has to handle: months of different lengths, leap years, time zones, and daylight-saving transitions. Start with what R stores:
 
 ```{r}
 today <- Sys.Date()
@@ -317,7 +296,7 @@ typeof(today)
 unclass(today)
 ```
 
-The number from `unclass()` is days since the Unix epoch. Dates in R count from 1970-01-01 because Unix measured time as seconds from that date, and R, Python, JavaScript, and most databases all inherit this same epoch.
+A `Date`\index{Date} is a double counting days since 1970-01-01. The epoch comes from Unix, which measured time in seconds from that date, and R, Python, JavaScript, and most databases inherit it. For a date with a time of day, R has `POSIXct`\index{POSIXct}, seconds since the same epoch and the class to use in data frames, and `POSIXlt`, the same instant stored as a named list of components, which you will rarely need.
 
 ::: {.callout-note collapse="true"}
 ## The Year 2038 problem
@@ -391,15 +370,31 @@ d + months(1)
 d + years(1)
 ```
 
-lubridate handles month-length differences correctly: adding one month to January 31 gives February 28 (or 29 in a leap year), not an error. That question from the previous section now has a clear answer.
+Now back to January 31:
 
-lubridate distinguishes three kinds of time spans:
+```{r}
+ymd("2026-01-31") + months(1)
+ymd("2026-01-31") %m+% months(1)
+```
 
-- **Duration**: exact number of seconds. `ddays(1)` is always 86400 seconds.
-- **Period**: human units. `days(1)` is "one day," which could be 23 or 25 hours around daylight saving transitions.
-- **Interval**: an anchored span with a start and end.
+`+ months(1)` lands on a day that does not exist and returns `NA` rather than picking a date for you. `%m+%` is the operator that rolls back to the last valid day, February 28, or 29 in a leap year. Both are defensible answers to the question that opened the previous section; lubridate makes you choose.
 
-For most work, periods (`days()`, `months()`, `years()`) are what you want. Durations (`ddays()`, `dmonths()`) matter when you need physical time, the kind a stopwatch measures rather than a calendar.
+The `days(30)` above is a period, a count of calendar days. lubridate also has durations, exact counts of seconds:
+
+```{r}
+days(1)
+ddays(1)
+```
+
+The two differ across a daylight-saving transition, where a calendar day has 23 or 25 hours:
+
+```{r}
+x <- ymd_hms("2026-03-28 12:00:00", tz = "Europe/Vienna")
+x + days(1)
+x + ddays(1)
+```
+
+The period lands at noon the next day; the duration lands at one o'clock, 86,400 seconds later. For most work, periods (`days()`, `months()`, `years()`) are what you want, and durations (`ddays()`, `dhours()`) are for physical time, the kind a stopwatch measures. A third kind of span, the interval, is anchored at a start and an end:
 
 ```{r}
 # How old is R? (first public release: 1993-08-01)
@@ -429,6 +424,6 @@ Each of these data types has a matching tidyverse package:
 | Categories | `factor()`, `levels()` | forcats | `fct_` |
 | Dates | `as.Date()`, `Sys.Date()` | lubridate | `ymd()`, `year()`, ... |
 
-The tidyverse packages give these operations a consistent interface and naming scheme. In some cases (like `str_detect` vs `grepl`) the difference is mostly cosmetic; in others (like lubridate's timezone handling) the package catches real bugs that base R silently lets through.
+The tidyverse packages give these operations a consistent interface and naming scheme. In some cases, such as `str_detect()` beside `grepl()`, the difference is cosmetic; in others, such as the `NA` handling of `str_c()` or the choice between `+` and `%m+%`, the package makes a decision that base R leaves to you.
 
-@sec-data-frames covered the structure; this chapter covered the three column types that cause the most trouble. But data frames need data, so @sec-reading-writing-data deals with getting files off disk and into R. After that, @sec-data-transformation shows how these pieces combine: `str_detect()` inside `filter()`, `fct_reorder()` inside `ggplot()`, date arithmetic inside `mutate()`. That is where the column-level work starts saving you real time.
+Data frames need data, so @sec-reading-writing-data deals with getting files off disk and into R. After that the pieces combine: `str_detect()` inside `filter()`, `fct_reorder()` inside `ggplot()`, date arithmetic inside `mutate()`.
