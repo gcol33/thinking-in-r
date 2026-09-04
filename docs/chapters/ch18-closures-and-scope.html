@@ -674,21 +674,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Always 1. The counter never advances, because every call starts from scratch: every local variable is born and dies within a single invocation. You could call it a thousand times and nothing would accumulate. So how do you build a function that <em>remembers</em>? The answer runs through environments, scoping rules, and a mechanism with a name borrowed from mathematical logic: the closure.</p>
+<p>Always 1. The counter never advances, because every call starts from scratch: every local variable is born and dies within a single invocation. You could call it a thousand times and nothing would accumulate. So how do you build a function that <em>remembers</em>? The answer runs through environments.</p>
 <section id="sec-environments" class="level2" data-number="18.1">
 <h2 data-number="18.1" class="anchored" data-anchor-id="sec-environments"><span class="header-section-number">18.1</span> Environments</h2>
-<p>An environment maps names to values. Each environment has a parent, forming a chain: when R encounters a name, it checks the current environment first, then walks up the chain until it finds a binding or hits the empty environment at the top.</p>
-<div id="fig-env-chain" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-env-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="../images/environment_chain.png" class="img-fluid figure-img" style="width:100.0%">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-env-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code> in the global environment where it was defined, not <code>x = 20</code> in <code>g</code>’s execution environment.
-</figcaption>
-</figure>
-</div>
-<p>You can inspect the current environment with <code>environment()</code>, list its contents with <code>ls()</code>, and find its parent with <code>parent.env()</code>:</p>
+<p>Type two assignments at the console and ask R what it has:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">42</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="st">"hello"</span></span>
@@ -699,7 +688,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>()</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: R_GlobalEnv&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Functions remember things by holding a reference to the environment where they were created, which is why scope matters here.</p>
+<p><code>ls()</code> lists the names you have bound, and <code>environment()</code> tells you where. That place is an environment: a mapping from names to values. Every environment has a parent, and the parents form a chain: when R meets a name, it checks the current environment first and then walks up the chain until it finds a binding or reaches the empty environment at the top. <code>parent.env()</code> returns the parent of any environment you hand it.</p>
 <section id="sec-global-environment" class="level3" data-number="18.1.1">
 <h3 data-number="18.1.1" class="anchored" data-anchor-id="sec-global-environment"><span class="header-section-number">18.1.1</span> The global environment</h3>
 <p>The global environment (<code>.GlobalEnv</code>, or equivalently <code>globalenv()</code>) is where your interactive work lives. Every time you type <code>x &lt;- 42</code> at the console, you create a binding here, at the bottom of the search path. It is also the default enclosing environment for any function you define interactively, and that default status has consequences.</p>
@@ -709,18 +698,18 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 </div>
 <p>Three properties make it special. It never gets garbage-collected; it persists for the entire R session. Its parent is not fixed: it shifts whenever you attach a new package with <code>library()</code>. And it is the only environment you routinely modify by hand, because functions create and destroy their own execution environments automatically (<a href="#sec-execution-environments" class="quarto-xref"><span>Section 18.3</span></a>), while the global environment simply accumulates bindings as you work.</p>
 <p>That accumulation lets you explore interactively, building data objects step by step. It also means any function defined in the global environment can see and silently depend on those objects. A function that works in your current session may break in a fresh one because it relied on a global variable you forgot to pass as an argument.</p>
-<p>In lambda calculus, that function is an <em>open term</em>: its result depends on bindings outside its own body. Pass all dependencies as arguments and it becomes a <em>closed term</em>, portable and self-contained. But what happens when a name <em>isn’t</em> passed as an argument?</p>
+<p>Pass every dependency as an argument and the function becomes portable. But what happens when a name <em>isn’t</em> passed as an argument?</p>
 </section>
 <section id="the-search-path" class="level3" data-number="18.1.2">
 <h3 data-number="18.1.2" class="anchored" data-anchor-id="the-search-path"><span class="header-section-number">18.1.2</span> The search path</h3>
-<p>When you type <code>x</code> at the console, R checks the global environment first; if no match turns up, it moves to the parent, then the parent’s parent, walking up the chain until it either finds the name or runs out of environments. This chain is the <em>search path</em>:</p>
+<p>When you type <code>x</code> at the console, R checks the global environment first; if no match turns up, it moves to the parent, then the parent’s parent, until it either finds the name or runs out of environments. <code>search()</code> prints that chain:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">search</span>()</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] ".GlobalEnv"        "package:stats"     "package:graphics" </span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [4] "package:grDevices" "package:utils"     "package:datasets" </span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [7] "package:methods"   "Autoloads"         "package:base"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The global environment sits at the bottom, attached packages stack above it, and <code>package:base</code> lives near the top. That is why you can call <code>mean()</code> without writing <code>base::mean()</code>: R walks the chain, finds <code>mean</code> in the base package, and uses it. But the search path only governs lookups that start from the global environment. What governs lookups inside a function?</p>
+<p>This is the <em>search path</em>. The global environment sits at the bottom, attached packages stack above it, and <code>package:base</code> lives near the top. That is why you can call <code>mean()</code> without writing <code>base::mean()</code>: R walks the chain, finds <code>mean</code> in the base package, and uses it. But the search path only governs lookups that start from the global environment. What governs lookups inside a function?</p>
 </section>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
@@ -741,47 +730,64 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">g</span>()</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The result is 10, not 20. <code>f</code> was defined in the global environment, so it looks for <code>x</code> there, ignoring the <code>x &lt;- 20</code> inside <code>g</code> where it was merely <em>called</em>. This is <em>lexical scoping</em>: a function resolves names where it was defined, not where it was called.</p>
-<p>The alternative, <em>dynamic scoping</em>, searches the call stack instead; the same function would return different results depending on who calls it. R got lexical scoping from Scheme (1975), not from S, which originally used dynamic scoping (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>); without it, closures would not work.</p>
-<p>Four rules govern how R resolves names:</p>
-<ol type="1">
-<li><p><strong>Name masking.</strong> Local names shadow names in parent environments. If a function defines <code>x</code>, that <code>x</code> hides any <code>x</code> in the global environment.</p></li>
-<li><p><strong>Functions vs variables.</strong> R distinguishes function lookups from variable lookups. If you call <code>f(3)</code>, R searches for <code>f</code> but skips non-function values. This means you can have a variable <code>c &lt;- 10</code> and still call <code>c(1, 2, 3)</code> to create a vector, because R knows you want the function.</p></li>
-<li><p><strong>Fresh start.</strong> Every function call gets a fresh execution environment. Variables from a previous call don’t carry over.</p></li>
-<li><p><strong>Dynamic lookup.</strong> R looks up names when the function <em>runs</em>, not when it’s defined. If a function uses a free variable, its value can change between calls:</p></li>
-</ol>
+<p>The result is 10, not 20. <code>f</code> was defined in the global environment, so it looks for <code>x</code> there, ignoring the <code>x &lt;- 20</code> inside <code>g</code> where it was merely <em>called</em>.</p>
+<div id="fig-env-chain" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-env-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/environment_chain.png" class="img-fluid figure-img" style="width:100.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-env-chain-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code> in the global environment where it was defined, not <code>x = 20</code> in <code>g</code>’s execution environment.
+</figcaption>
+</figure>
+</div>
+<p>This is <em>lexical scoping</em>, the rule R took from Scheme (<a href="ch02-family-tree.html#sec-scheme" class="quarto-xref"><span>Section 2.2</span></a>): a function resolves names where it was defined, not where it was called. The alternative, <em>dynamic scoping</em>, searches the call stack instead, so the same function would return different results depending on who called it. S looked free variables up in the top-level workspace, and R’s choice of the Scheme rule is what makes the rest of this chapter possible.</p>
+<p>Lexical scoping settles where R looks. Two more details settle what it finds there. A local name hides the same name further up the chain:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>multiplier <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>scale <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">*</span> multiplier</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">scale</span>(<span class="dv">5</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="dv">20</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  x</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 20</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>x</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>f</code> returns its own <code>x</code> and the global <code>x</code> is untouched; this is <em>name masking</em>. Lookup also cares whether you are calling a name or reading it: for <code>f(3)</code>, R searches for <code>f</code> and skips any binding that is not a function, which is why you can have a variable <code>c &lt;- 10</code> and still call <code>c(1, 2, 3)</code>.</p>
+<p>The other thing to know is <em>when</em> R looks. Names are resolved when the function <em>runs</em>, not when it is defined, so if a function uses a variable it does not define, the value can change between calls:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>multiplier <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>scale <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">*</span> multiplier</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">scale</span>(<span class="dv">5</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>multiplier <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">scale</span>(<span class="dv">5</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 50</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>multiplier <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">scale</span>(<span class="dv">5</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 50</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>scale</code> never snapshots the value of <code>multiplier</code> at definition time; it reaches into the enclosing environment fresh on every call, which means the function adapts automatically if <code>multiplier</code> changes. Occasionally useful. More often, a source of bugs: someone modifies a global variable, and a seemingly unrelated function starts returning different results, with nothing at the call site to explain why.</p>
+<p><code>scale</code> never snapshots the value of <code>multiplier</code> at definition time; it reaches into the enclosing environment fresh on every call, which is <em>dynamic lookup</em>. The function adapts automatically if <code>multiplier</code> changes. Occasionally useful. More often, a source of bugs: someone modifies a global variable, and a seemingly unrelated function starts returning different results, with nothing at the call site to explain why.</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
 <li><p>Predict the output before running:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="cf">function</span>() x</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">g</span>()</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
-<li><p>Predict the output:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="cf">function</span>() x</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="cf">function</span>() x</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">g</span>()</span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Why is the result different from what you might expect? (Hint: rule 4.)</p></li>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p>Predict the output:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  g <span class="ot">&lt;-</span> <span class="cf">function</span>() x</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">g</span>()</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Why is the result different from what you might expect? (Hint: dynamic lookup.)</p></li>
 <li><p>Can you have a variable named <code>mean</code> and still call the function <code>mean()</code>? Try it.</p></li>
 </ol>
 </section>
@@ -790,32 +796,32 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <h2 data-number="18.3" class="anchored" data-anchor-id="sec-execution-environments"><span class="header-section-number">18.3</span> Execution environments</h2>
 <p>Every time you call a function, R creates a new environment (the <em>execution environment</em>) with the function’s arguments and local variables as bindings. That is why the counter at the top of this chapter never advances:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> n <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  n</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> n <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  n</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Call it ten times, a hundred times; you always get 1, because each call gets its own execution environment with its own <code>n</code>, and the previous call’s <code>n</code> vanishes the moment that call returns (rule 3).</p>
+<p>Call it ten times, a hundred times; you always get 1, because each call gets its own execution environment with its own <code>n</code>, and the previous call’s <code>n</code> vanishes the moment that call returns.</p>
 <p>The parent of this fresh execution environment is not the environment where the function was <em>called</em>; it is the environment where the function was <em>defined</em> (the enclosing environment). This is what makes scoping lexical: the parent chain is determined by the structure of the source code, not by which function happened to call which at runtime.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="st">"global"</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>outer <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="st">"outer"</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  inner <span class="ot">&lt;-</span> <span class="cf">function</span>() x</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner</span>()</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">outer</span>()</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "outer"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="st">"global"</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>outer <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="st">"outer"</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  inner <span class="ot">&lt;-</span> <span class="cf">function</span>() x</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner</span>()</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="fu">outer</span>()</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "outer"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>inner</code> was defined inside <code>outer</code>, so its enclosing environment is <code>outer</code>’s execution environment, and when <code>inner</code> looks for <code>x</code>, it finds <code>"outer"</code>, not <code>"global"</code>. But <code>outer</code>’s execution environment is temporary. Normally, local variables live and die with the call: when the function returns, its execution environment gets garbage-collected and everything inside it disappears.</p>
 <p>Unless something keeps it alive. What if <code>outer</code> returned <code>inner</code> instead of calling it? What if a function escaped the environment where it was born, carrying a reference that prevented the garbage collector from reclaiming it?</p>
@@ -824,57 +830,70 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <ol type="1">
 <li><p>Write a function <code>fresh()</code> that creates a local variable <code>n &lt;- 0</code>, increments it, and returns it. Call it three times and verify you always get 1.</p></li>
 <li><p>Predict the output:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>make <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>() a</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">make</span>()</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="dv">99</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="fu">h</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>make <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>() a</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">make</span>()</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="dv">99</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">h</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ol>
 </section>
 </section>
 <section id="sec-closures" class="level2" data-number="18.4">
 <h2 data-number="18.4" class="anchored" data-anchor-id="sec-closures"><span class="header-section-number">18.4</span> Closures</h2>
-<p>All R functions are technically closures (they all carry an enclosing environment), but the term earns its keep when a function captures variables from a parent that isn’t the global environment. Here is a counter that actually counts:</p>
+<p>Here is a counter that actually counts:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>make_counter <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>() {</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;&lt;-</span> n <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    n</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>count <span class="ot">&lt;-</span> <span class="fu">make_counter</span>()</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>()</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>()</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>()</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>make_counter <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>() {</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;&lt;-</span> n <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    n</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>count <span class="ot">&lt;-</span> <span class="fu">make_counter</span>()</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>()</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>()</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span>()</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>When you call <code>make_counter()</code>, R creates an execution environment with <code>n &lt;- 0</code>. The inner function is defined in that environment, making it the inner function’s enclosing environment. When <code>make_counter</code> returns this inner function, the execution environment would normally be garbage-collected. The returned function still points to it, though, so it survives. Each subsequent call to <code>count()</code> creates its own fresh execution environment for its local work, but the enclosing environment (the one from <code>make_counter</code> that holds <code>n</code>) is shared across all calls, persistent as long as <code>count</code> exists. That is how <code>count</code> remembers its state between invocations.</p>
-<p>But notice the <code>&lt;&lt;-</code>. That choice is not cosmetic.</p>
-<p><code>&lt;&lt;-</code> is the super-assignment operator. Instead of creating a local binding, it searches parent environments for an existing binding named <code>n</code> and modifies it in place. Without <code>&lt;&lt;-</code>, writing <code>n &lt;- n + 1</code> would create a <em>local</em> <code>n</code> in the execution environment, shadowing the captured one, and the counter would always return 1 (the same broken non-counter from the top of the chapter).</p>
+<p>When you call <code>make_counter()</code>, R creates an execution environment with <code>n &lt;- 0</code> and defines the inner function there, so that environment becomes the inner function’s enclosing environment. When <code>make_counter</code> returns, its execution environment would normally be garbage-collected, but the returned function still points to it, so it survives. Each later call to <code>count()</code> gets its own fresh execution environment for local work, while the enclosing environment holding <code>n</code> is shared across all of them and lives as long as <code>count</code> does. That is how <code>count</code> remembers.</p>
+<p>This is the closure from <a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a>, where <code>make_adder</code> remembered a constant. The same captured environment can hold state that changes, and the <code>&lt;&lt;-</code> on the fourth line is what changes it.</p>
+<p><code>&lt;&lt;-</code> is the super-assignment operator. Instead of creating a local binding, it searches parent environments for an existing binding named <code>n</code> and modifies it in place. With a plain <code>&lt;-</code>, <code>n &lt;- n + 1</code> would create a <em>local</em> <code>n</code> in the execution environment, shadowing the captured one, and the counter would always return 1, the same broken non-counter from the top of the chapter.</p>
 <p>Two counters are independent, because each call to <code>make_counter()</code> creates a separate execution environment with its own <code>n</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="fu">make_counter</span>()</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">make_counter</span>()</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">a</span>()</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">a</span>()</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="fu">a</span>()</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">b</span>()</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="fu">make_counter</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">make_counter</span>()</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">a</span>()</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">a</span>()</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="fu">a</span>()</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">b</span>()</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>a</code> has counted to 3; <code>b</code> has counted to 1. They share no state; each factory call minted a private universe. But the mechanism that keeps these universes alive is the same one that can leak state into the global environment if <code>&lt;&lt;-</code> is used carelessly.</p>
-<p>Connection to <a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a>: <code>make_adder</code> was a preview. Now you understand <em>why</em> the returned function remembers <code>n</code>: an environment stays alive because something still points to it.</p>
-<p>In lambda calculus, the same thing happens through substitution. In <code>make_adder(5)</code>, the returned function <code>\(x) x + n</code> has <code>n</code> as a <em>free variable</em>: a name that is used but not defined inside the function. The closure captures <code>n = 5</code>, binding that free variable. In lambda notation, <code>make_adder</code> is <code>(λn. λx. x + n)</code>, and applying it to 5 gives <code>λx. x + 5</code> by substitution (beta reduction), replacing the free variable <code>n</code> with a concrete value. Closures are the runtime mechanism that makes this substitution real. The name itself comes from this idea: a closure <em>closes over</em> its free variables, turning an open term (one with unresolved names) into a closed one (where every variable is accounted for).</p>
-<p>Every closure you create in R is a beta reduction frozen mid-step. <code>make_adder(5)</code> reduces <code>(λn. λx. x + n)</code> to <code>λx. x + 5</code>, but the returned function doesn’t evaluate further until you give it an <code>x</code>. The closure holds the partially reduced term, waiting. When you finally call <code>add5(3)</code>, another beta reduction fires: <code>(λx. x + 5)(3)</code> becomes <code>3 + 5</code>, and R evaluates it to <code>8</code>. Two reductions, two calls, one answer.</p>
-<p>R does exactly this internally when it resolves the captured binding <code>n = 5</code> in the enclosing environment. But <code>&lt;&lt;-</code> gave the closure something lambda calculus never had to worry about: the ability to mutate its captured bindings. That power needs guardrails.</p>
+<p><code>a</code> has counted to 3; <code>b</code> has counted to 1. They share no state.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The lambda calculus connection
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In <code>make_adder(5)</code>, the returned function <code>\(x) x + n</code> uses <code>n</code> without defining it: <code>n</code> is a <em>free variable</em>, and a term with free variables is an <em>open term</em>. Applying <code>(λn. λx. x + n)</code> to 5 substitutes 5 for <code>n</code> and gives <code>λx. x + 5</code> (<a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a>), a <em>closed term</em> in which every name is accounted for. A closure is the runtime version of that substitution: it <em>closes over</em> its free variables by keeping the environment that binds them, which is where the name comes from. R stops one step short of the substitution, though. The closure holds <code>n = 5</code> in an environment instead of writing it into the body, and <code>&lt;&lt;-</code> can change what the environment holds. Lambda calculus has substitution only; R’s closures have substitution and a mutable cell.</p>
+</div>
+</div>
+</div>
+<p>But the mechanism that keeps their environments alive is the same one that can leak state into the global environment when <code>&lt;&lt;-</code> is used carelessly.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -886,18 +905,18 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 </section>
 <section id="sec-super-assignment" class="level2" data-number="18.5">
 <h2 data-number="18.5" class="anchored" data-anchor-id="sec-super-assignment"><span class="header-section-number">18.5</span> <code>&lt;&lt;-</code> and mutable state</h2>
-<p><code>&lt;&lt;-</code> is the only way to create mutable state in R’s functional world, because it searches parent environments for an existing binding and modifies it there. If it doesn’t find the variable in any parent, it creates one in the global environment. That is almost always a mistake.</p>
+<p><code>&lt;&lt;-</code> gives a closure mutable state by searching parent environments for an existing binding and modifying it there. If it finds none in any parent, it creates one in the global environment, and that is almost always a mistake.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(oops, <span class="at">envir =</span> <span class="fu">globalenv</span>())  <span class="co"># clean slate</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in rm(oops, envir = globalenv()): object 'oops' not found</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  oops <span class="ot">&lt;&lt;-</span> <span class="st">"surprise"</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>oops</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "surprise"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">exists</span>(<span class="st">"oops"</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  oops <span class="ot">&lt;&lt;-</span> <span class="st">"surprise"</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>()</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>oops</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "surprise"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>oops</code> was never defined anywhere, so <code>&lt;&lt;-</code> walked all the way up the parent chain, found nothing, and quietly created it in the global environment. A side effect invisible at the call site, exactly the kind of hidden dependency that makes code hard to debug.</p>
+<p><code>oops</code> was never defined anywhere, so <code>&lt;&lt;-</code> walked all the way up the parent chain, found nothing, and created it in the global environment: a side effect invisible at the call site, exactly the kind of hidden dependency that makes code hard to debug.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -912,10 +931,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 </div>
 </div>
 <p>Inside a closure, <code>&lt;&lt;-</code> is safe precisely because the variable it modifies lives in the closure’s private environment, not in the global environment. Nobody outside the closure can see it or change it (unless they deliberately reach into the environment with <code>environment(f)$n</code>, which is an explicit, conscious choice, not an accident).</p>
-<p>But safe is not the same as free. When you use <code>&lt;&lt;-</code>, the function gains memory — each call can depend on every previous call — and every reader of that function must now track two things: what happens inside the function body, and what state the enclosing environment carries from prior calls. Lambda calculus never had this problem because substitution is the only operation: <code>(λn. λx. x + n)(5)</code> reduces to <code>λx. x + 5</code>, and the <code>5</code> is baked in permanently, not stored in a mutable cell that some future call might overwrite. R’s closures give you the substitution <em>and</em> the mutable cell. That combination is what makes the counter work — each call to <code>count()</code> modifies <code>n</code> in the enclosing environment, and the next call sees the updated value. It is also what makes <code>&lt;&lt;-</code> bugs invisible from the call site: the one-character slip from <code>n &lt;&lt;- n + 1</code> to <code>n &lt;- n + 1</code> produces no error and no warning, just a counter stuck at 1.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(oops, <span class="at">envir =</span> <span class="fu">globalenv</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
+<p>The safety costs something, though. Once a function uses <code>&lt;&lt;-</code>, each call can depend on every previous call, and a reader must track two things: what the body does, and what the enclosing environment carries over from earlier calls. That is what makes the counter work, since each call to <code>count()</code> updates <code>n</code> and the next call sees the new value. It is also what makes <code>&lt;&lt;-</code> bugs invisible from the call site: the one-character slip from <code>n &lt;&lt;- n + 1</code> to <code>n &lt;- n + 1</code> produces no error and no warning, just a counter stuck at 1.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -957,14 +973,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  count <span class="ot">&lt;&lt;-</span> count <span class="sc">+</span> <span class="dv">1</span></span>
 <span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  total <span class="sc">/</span> count</span>
 <span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>This version pollutes the global environment with <code>total</code> and <code>count</code>, which any other code can read or modify; you cannot have two independent running means; and if you forget to reset them, your next analysis starts with stale state. The closure version has none of these problems, and its uses reach well beyond counters and accumulators:</p>
-<ul>
-<li><strong>Function factories</strong> (<a href="ch20-function-factories.html" class="quarto-xref"><span>Chapter 20</span></a>): parameterized families of functions. <code>make_adder</code>, <code>make_multiplier</code>, and their real-world cousins in ggplot2 themes, statistical tests, and data transformations.</li>
-<li><strong>Memoization:</strong> cache expensive results so they’re computed only once.</li>
-<li><strong>Callbacks and event handlers:</strong> carry context without globals, common in Shiny applications.</li>
-<li><strong>Encapsulated modules:</strong> a list of closures sharing a private environment.</li>
-</ul>
-<p>That last pattern deserves a concrete example, because a list of closures sharing an environment is functionally equivalent to an object with methods and private fields:</p>
+<p>This version pollutes the global environment with <code>total</code> and <code>count</code>, which any other code can read or modify; you cannot have two independent running means; and if you forget to reset them, your next analysis starts with stale state. The closure version has none of these problems, and the same shape carries well beyond counters. Function factories (<a href="ch20-function-factories.html" class="quarto-xref"><span>Chapter 20</span></a>) build parameterized families of functions, <code>make_adder</code> and <code>make_multiplier</code> and their cousins in ggplot2 themes and statistical tests. A closure can cache expensive results so they are computed only once, which is memoization. A callback in a Shiny application carries its context in a closure instead of in globals. And a list of closures sharing one private environment behaves like an object with methods and private fields:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>make_bank_account <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">balance =</span> <span class="dv">0</span>) {</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
@@ -986,7 +995,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>acct<span class="sc">$</span><span class="fu">check</span>()</span>
 <span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 120</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Three closures share a single environment containing one private variable, <code>balance</code>. From the outside, <code>acct</code> behaves like an object with methods; from the inside, it is just functions closing over a shared environment. Peter Norvig observed that “closures are poor man’s objects, and objects are poor man’s closures.” R6 works this way internally: each R6 object is an environment, and its methods are functions whose enclosing environment is that same environment. <a href="ch24-s3-and-s7.html" class="quarto-xref"><span>Chapter 24</span></a> explores where that equivalence leads.</p>
+<p>Three closures share a single environment containing one private variable, <code>balance</code>. From the outside, <code>acct</code> behaves like an object with methods; from the inside, it is functions closing over a shared environment. Closures are a poor man’s objects, as the old Lisp line goes, and objects are a poor man’s closures. R6 objects are built this way: each one is an environment, and its methods are functions whose enclosing environment is that same environment. <a href="ch24-s3-and-s7.html" class="quarto-xref"><span>Chapter 24</span></a> explores where that equivalence leads.</p>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
@@ -1007,7 +1016,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2</span></span>
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>(count)</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x000001ec9468d1c0&gt;</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: 0x000001de3164fa18&gt;</span></span>
 <span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span>(<span class="fu">environment</span>(count))</span>
 <span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "n"</span></span>
 <span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>(count)<span class="sc">$</span>n</span>
@@ -1025,7 +1034,7 @@ Figure&nbsp;18.1: The environment chain: <code>f</code> finds <code>x = 10</code
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">env_print</span>(<span class="fu">environment</span>(count))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>These tools are not for production code (reaching into a closure’s environment breaks its encapsulation), but for learning they are the fastest way to see what a closure actually holds. Make one, inspect its environment, call it, inspect again. A closure that holds state and a list of closures that share an environment start to look a lot like an object with methods, which is exactly the connection <a href="ch24-s3-and-s7.html#sec-s3-basics" class="quarto-xref"><span>Section 24.2</span></a> explores.</p>
+<p>These tools are not for production code (reaching into a closure’s environment breaks its encapsulation), but for learning they are the fastest way to see what a closure holds. Make one, inspect its environment, call it, inspect again.</p>
 <section id="exercises-6" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-6">Exercises</h3>
 <ol type="1">
@@ -1128,53 +1137,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

@@ -624,13 +624,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#exercises-4" id="toc-exercises-4" class="nav-link" data-scroll-target="#exercises-4">Exercises</a></li>
   </ul></li>
-  <li><a href="#sec-putting-it-together" id="toc-sec-putting-it-together" class="nav-link" data-scroll-target="#sec-putting-it-together"><span class="header-section-number">17.7</span> Putting it together</a></li>
-  <li><a href="#sec-ggplot-lambda" id="toc-sec-ggplot-lambda" class="nav-link" data-scroll-target="#sec-ggplot-lambda"><span class="header-section-number">17.8</span> ggplot2 as lambda calculus</a>
+  <li><a href="#sec-putting-it-together" id="toc-sec-putting-it-together" class="nav-link" data-scroll-target="#sec-putting-it-together"><span class="header-section-number">17.7</span> Putting it together</a>
   <ul class="collapse">
   <li><a href="#exercises-5" id="toc-exercises-5" class="nav-link" data-scroll-target="#exercises-5">Exercises</a></li>
   </ul></li>
-  <li><a href="#sec-common-mistakes" id="toc-sec-common-mistakes" class="nav-link" data-scroll-target="#sec-common-mistakes"><span class="header-section-number">17.9</span> Common mistakes</a></li>
-  <li><a href="#sec-saving-plots" id="toc-sec-saving-plots" class="nav-link" data-scroll-target="#sec-saving-plots"><span class="header-section-number">17.10</span> Saving plots</a></li>
+  <li><a href="#sec-common-mistakes" id="toc-sec-common-mistakes" class="nav-link" data-scroll-target="#sec-common-mistakes"><span class="header-section-number">17.8</span> Common mistakes</a></li>
+  <li><a href="#sec-saving-plots" id="toc-sec-saving-plots" class="nav-link" data-scroll-target="#sec-saving-plots"><span class="header-section-number">17.9</span> Saving plots</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/gcol33/thinking-in-r/edit/main/chapters/ch17-visualization.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/gcol33/thinking-in-r/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -657,33 +656,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Try building a bar chart in base R, then a scatterplot, then a histogram. Each one calls a different function with different arguments, different parameter names, different assumptions about what your data looks like. You learn three APIs instead of one idea. ggplot2 takes the opposite approach: it gives you a grammar, a small vocabulary of composable pieces that describe <em>any</em> plot, and you assemble the pieces yourself. Once the grammar clicks, you stop asking “which function draws a heatmap?” and start asking “what mapping, what geometry, what coordinate system?”</p>
-<p>This chapter assumes you have tidy data (<a href="ch16-tidy-data.html" class="quarto-xref"><span>Chapter 16</span></a>), can reshape it with dplyr (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>), and can pipe it through transformations (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>). The data is clean. Now you see it.</p>
+<p>Try building a bar chart in base R, then a scatterplot, then a histogram. Each one calls a different function with different arguments, different parameter names, different assumptions about what your data looks like. You learn three APIs instead of one idea. ggplot2 gives you a grammar: a small vocabulary of composable pieces that describes <em>any</em> plot, and you assemble the pieces yourself. Once the grammar clicks, you stop asking “which function draws a heatmap?” and start asking “what mapping, what geometry, what coordinate system?”</p>
+<p>This chapter assumes your data is tidy (<a href="ch16-tidy-data.html" class="quarto-xref"><span>Chapter 16</span></a>) and that you can filter and summarise it with dplyr. The data is clean; now you look at it.</p>
 <section id="sec-grammar-of-graphics" class="level2" data-number="17.1">
 <h2 data-number="17.1" class="anchored" data-anchor-id="sec-grammar-of-graphics"><span class="header-section-number">17.1</span> The grammar of graphics</h2>
-<p>In 1999, Leland Wilkinson published <em>The Grammar of Graphics</em>, and the central argument was deceptively simple: a plot is not a type. Not a bar chart, not a scatterplot, not a heatmap. A plot is a mapping from data to visual properties, rendered by geometric objects, in a coordinate system; types are consequences of choices, not starting points.</p>
-<p>Hadley Wickham turned this theory into software in 2005, building ggplot2 as a layered grammar where plots emerge from composing independent components:</p>
-<ol type="1">
-<li><strong>Data</strong>: a tidy data frame (<a href="ch16-tidy-data.html" class="quarto-xref"><span>Chapter 16</span></a>).</li>
-<li><strong>Aesthetics</strong> (<code>aes()</code>): which variables map to which visual properties.</li>
-<li><strong>Geoms</strong>: what shapes represent the data.</li>
-<li><strong>Stats</strong>: statistical transformations (often implicit).</li>
-<li><strong>Scales</strong>: how data values translate to aesthetic values (colors, sizes, axes).</li>
-<li><strong>Facets</strong>: small multiples, splitting by a variable.</li>
-<li><strong>Themes</strong>: non-data visual styling.</li>
-</ol>
-<p>Most plots need only three: data + aesthetics + geom. The rest are refinements you reach for when the defaults aren’t enough.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: package 'palmerpenguins' was built under R version 4.6.1</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     penguins, penguins_raw</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The simplest ggplot2 call needs three things: data, an aesthetic mapping, and a geom:</p>
+<p>The simplest ggplot2 call needs three things:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> bill_length_mm, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -695,11 +681,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p><code>ggplot()</code> sets up the coordinate system, <code>aes()</code> maps bill length to the x-axis and body mass to the y-axis, and <code>geom_point()</code> draws one point per row. The <code>+</code> adds the geom as a layer. Three lines, the entire grammar. But what happens when you want to encode a third variable?</p>
+<p><code>ggplot()</code> takes the data and sets up the coordinate system, <code>aes()</code> maps bill length to the x-axis and body mass to the y-axis, and <code>geom_point()</code> draws one point per row. The <code>+</code> adds the geom as a layer. Those three pieces, the data, an <em>aesthetic mapping</em> and a <em>geom</em>, are enough for most plots. Four more refine them when the defaults fall short: a <em>stat</em> transforms the data before drawing (a histogram counts before it draws bars), <em>scales</em> decide how data values become colors, sizes and axis positions, <em>facets</em> split one plot into panels, and a <em>theme</em> styles everything that is not data. Each gets a section below.</p>
+<p>This way of describing a plot comes from a 1999 book, <em>The Grammar of Graphics</em>, in which the statistician Leland Wilkinson argued that a plot is a mapping from data to visual properties, drawn by geometric objects in a coordinate system, and that “bar chart” or “scatterplot” are names for particular choices. Hadley Wickham turned the argument into software in 2005, and ggplot2 is the result: plots built by composing those independent components. But what happens when you want to encode a third variable?</p>
 </section>
 <section id="sec-aesthetics" class="level2" data-number="17.2">
 <h2 data-number="17.2" class="anchored" data-anchor-id="sec-aesthetics"><span class="header-section-number">17.2</span> Aesthetics: data to visuals</h2>
-<p><code>aes()</code> creates a mapping from columns to visual properties:</p>
+<p><code>aes()</code> creates a mapping from columns to visual properties. Add a third one:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> bill_length_mm, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species, <span class="at">shape =</span> species)) <span class="sc">+</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">stroke =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
@@ -713,7 +700,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Writing <code>color = species</code> maps each species to a different color; ggplot2 picks the palette automatically and adds a legend. The mappings you will use most are <code>x</code>, <code>y</code>, and <code>color</code> (or <code>fill</code>); <code>shape</code>, <code>size</code>, <code>alpha</code>, <code>linetype</code>, and <code>group</code> are there when you need them.</p>
+<p>Writing <code>fill = species</code> maps each species to a different fill color, and <code>shape = species</code> to a different point shape; ggplot2 builds the legend for you. The two <code>scale_</code> lines choose the palette and the point shapes, and scales get their own section (<a href="#sec-scales" class="quarto-xref"><span>Section 17.4</span></a>). The mappings you will use most are <code>x</code>, <code>y</code>, and <code>color</code> (or <code>fill</code>); <code>shape</code>, <code>size</code>, <code>alpha</code>, <code>linetype</code>, and <code>group</code> are there when you need them.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -730,9 +717,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>There is one distinction that trips up everyone, usually within the first hour. Inside <code>aes()</code> means <em>mapped to a variable</em>. Outside <code>aes()</code> means <em>fixed for all observations</em>.</p>
+<p>There is one distinction that trips up everyone, usually within the first hour. Compare these two calls:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Color varies by species</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fill varies by species</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> bill_length_mm, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">fill =</span> species, <span class="at">shape =</span> species), <span class="at">stroke =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_d</span>() <span class="sc">+</span></span>
@@ -757,6 +744,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
+<p>In the first, <code>fill</code> sits inside <code>aes()</code>, so it varies with a column and gets a legend. In the second it sits outside, so it is one fixed value for every point. Inside <code>aes()</code> means <em>mapped to a variable</em>; outside means <em>set for all observations</em>.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -767,10 +755,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>If someone’s plot has a legend they didn’t ask for, they probably put a variable outside <code>aes()</code>. If all their points turned the same color when they shouldn’t have, they put a constant inside <code>aes()</code>. Getting this one distinction right fixes roughly half of all ggplot2 questions on Stack Overflow.</p>
+<p>If someone’s plot has a legend they didn’t ask for and every point is the same color, they put a constant inside <code>aes()</code>, and ggplot2 has dutifully mapped a variable with one value. If a column that exists comes back as “object not found”, they put its name outside <code>aes()</code>, where R looks it up in the workspace instead of the data. Getting this one distinction right fixes roughly half of all ggplot2 questions on Stack Overflow.</p>
 </div>
 </div>
-<p>Aesthetics placed in <code>ggplot()</code> are inherited by every layer; aesthetics placed in a specific <code>geom_*()</code> apply only to that layer. This inheritance keeps your code DRY, but it also means a misplaced aesthetic can quietly propagate to layers you didn’t intend. So what shapes can those layers draw?</p>
+<p>Aesthetics placed in <code>ggplot()</code> are inherited by every layer; aesthetics placed in a specific <code>geom_*()</code> apply only to that layer. Inheritance saves repeating the mapping in every layer, and it also means a misplaced aesthetic can quietly propagate to layers you didn’t intend. So what shapes can those layers draw?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -782,50 +770,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-geoms" class="level2" data-number="17.3">
 <h2 data-number="17.3" class="anchored" data-anchor-id="sec-geoms"><span class="header-section-number">17.3</span> Geoms: shapes for data</h2>
-<p>Each geom renders data differently. Same aesthetics, different geom, different plot. The question is which geom fits the question you are asking. A rough guide:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Question</th>
-<th>Geom</th>
-<th>Data shape</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>How are two continuous variables related?</td>
-<td><code>geom_point()</code>, <code>geom_smooth()</code></td>
-<td>x continuous, y continuous</td>
-</tr>
-<tr class="even">
-<td>How is one variable distributed?</td>
-<td><code>geom_histogram()</code>, <code>geom_density()</code></td>
-<td>x continuous</td>
-</tr>
-<tr class="odd">
-<td>How do distributions compare across groups?</td>
-<td><code>geom_boxplot()</code>, <code>geom_violin()</code></td>
-<td>x categorical, y continuous</td>
-</tr>
-<tr class="even">
-<td>How does a quantity change over time?</td>
-<td><code>geom_line()</code></td>
-<td>x ordered (time), y continuous</td>
-</tr>
-<tr class="odd">
-<td>How do counts or totals compare across categories?</td>
-<td><code>geom_bar()</code> (counts rows), <code>geom_col()</code> (uses a y value)</td>
-<td>x categorical</td>
-</tr>
-</tbody>
-</table>
-<p>Start from the question, pick the geom, then refine. The rest of this section shows each one in turn.</p>
-<p><code>geom_point()</code> draws a scatterplot, the natural choice for two continuous variables:</p>
+<p>Each geom draws the same mapped data as a different shape. <code>geom_point()</code> draws a scatterplot, the natural choice for two continuous variables:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -900,7 +845,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Layers compose with <code>+</code>. The plot above has two layers, points and a linear fit, and each <code>+</code> adds a component to the same plot object. But adding layers only changes the geometry. What about controlling <em>how</em> data values map to visual properties?</p>
+<p>Which geom fits which question:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Question</th>
+<th>Geom</th>
+<th>Data shape</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>How are two continuous variables related?</td>
+<td><code>geom_point()</code>, <code>geom_smooth()</code></td>
+<td>x continuous, y continuous</td>
+</tr>
+<tr class="even">
+<td>How is one variable distributed?</td>
+<td><code>geom_histogram()</code>, <code>geom_density()</code></td>
+<td>x continuous</td>
+</tr>
+<tr class="odd">
+<td>How do distributions compare across groups?</td>
+<td><code>geom_boxplot()</code>, <code>geom_violin()</code></td>
+<td>x categorical, y continuous</td>
+</tr>
+<tr class="even">
+<td>How does a quantity change over time?</td>
+<td><code>geom_line()</code></td>
+<td>x ordered (time), y continuous</td>
+</tr>
+<tr class="odd">
+<td>How do counts or totals compare across categories?</td>
+<td><code>geom_bar()</code> (counts rows), <code>geom_col()</code> (uses a y value)</td>
+<td>x categorical</td>
+</tr>
+</tbody>
+</table>
+<p>Start from the question, pick the geom, then refine. Layers compose with <code>+</code>: the last plot above has two layers, points and a linear fit, and each <code>+</code> adds a component to the same plot object. But adding layers only changes the geometry. What about controlling <em>how</em> data values map to visual properties?</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -912,9 +899,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-scales" class="level2" data-number="17.4">
 <h2 data-number="17.4" class="anchored" data-anchor-id="sec-scales"><span class="header-section-number">17.4</span> Scales: controlling the mapping</h2>
-<p>Every aesthetic has a scale, whether you set one or not. Scales control how data values become visual values: which colors, which axis limits, which labels.</p>
-<p>When you write <code>aes(x = bill_length_mm)</code>, ggplot2 quietly creates a default <code>scale_x_continuous()</code> behind the scenes, and you only need to override it when the default behavior falls short: when you want to change axis limits, transform the axis, or pick specific colors.</p>
-<p>Position scales control axes:</p>
+<p>Every aesthetic has a scale, whether you set one or not. When you write <code>aes(x = bill_length_mm)</code>, ggplot2 creates a default <code>scale_x_continuous()</code> behind the scenes, and you override it only when the default falls short: to change axis limits, transform the axis, or pick specific colors. Position scales control axes:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> body_mass_g, <span class="at">y =</span> flipper_length_mm)) <span class="sc">+</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
@@ -927,7 +912,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>Color scales control how values map to colors. For discrete variables, the function <code>scale_color_viridis_d()</code> is a strong default — colorblind-friendly and perceptually uniform:</p>
+<p>Color scales control how values map to colors. For a discrete variable, <code>scale_fill_viridis_d()</code> (or <code>scale_color_viridis_d()</code> for the <code>color</code> aesthetic) is a strong default: colorblind-friendly and perceptually uniform:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> bill_length_mm, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species, <span class="at">shape =</span> species)) <span class="sc">+</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">stroke =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
@@ -941,7 +926,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p><code>labs()</code> controls titles and labels. Always label your axes with units, because <code>bill_length_mm</code> is a column name, not a label:</p>
+<p><code>labs()</code> sets titles and axis labels:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> bill_length_mm, <span class="at">y =</span> body_mass_g, <span class="at">fill =</span> species, <span class="at">shape =</span> species)) <span class="sc">+</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">stroke =</span> <span class="fl">0.4</span>, <span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
@@ -1015,7 +1000,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>By default, all panels share the same axis scales. You can free them with <code>scales = "free_y"</code> or <code>scales = "free"</code>, but use this cautiously: free scales make comparison across panels harder, which is the whole point of small multiples in the first place.</p>
 <p>When should you facet instead of coloring? Facet when the groups would overlap too much for color to separate them, or when you want each group’s pattern to stand on its own without visual interference. Color works when groups are few, visually separable, and you want to see them in the same coordinate space.</p>
-<p>Either way, faceting replaces the temptation to build the same plot three times with a loop or copy-paste. One <code>facet_wrap()</code> call produces all the panels, with shared axes for honest comparison, and the grammar handles the layout while you focus on the question. But what about the visual details that have nothing to do with data?</p>
+<p>Either way, one <code>facet_wrap()</code> call produces every panel with shared axes, where a loop or copy-paste would have built the same plot three times. But what about the visual details that have nothing to do with data?</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -1065,8 +1050,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Themes are cosmetic. Spend your time on clear mappings and good labels before worrying about fonts.</p>
-<p>That said, pick one default early (<code>theme_minimal()</code> or <code>theme_bw()</code> are the usual choices) and use it everywhere. Three plots in the same report should share a theme.</p>
+<p>Themes are cosmetic; clear mappings and good labels come first. Still, pick one default early (<code>theme_minimal()</code> or <code>theme_bw()</code> are the usual choices) and use it everywhere, because three plots in the same report should share a theme.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1106,27 +1090,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>The pipe feeds data into <code>ggplot()</code>, and after that, <code>+</code> composes the layers. Each line adds one component, so you can read the full specification top to bottom, like a recipe where every ingredient appears in order.</p>
-<p>The pattern for most visualizations follows the same shape:</p>
-<ol type="1">
-<li>Start with the data.</li>
-<li>Pipe it through any needed transformations (filtering, summarizing).</li>
-<li>Hand it to <code>ggplot()</code> with your aesthetic mappings.</li>
-<li>Add geoms.</li>
-<li>Refine with scales, facets, labels, and a theme.</li>
-</ol>
-<p>Each step is independent: swap <code>geom_point()</code> for <code>geom_jitter()</code> and nothing else in the specification changes. <code>+</code> is doing more work than it looks like.</p>
-</section>
-<section id="sec-ggplot-lambda" class="level2" data-number="17.8">
-<h2 data-number="17.8" class="anchored" data-anchor-id="sec-ggplot-lambda"><span class="header-section-number">17.8</span> ggplot2 as lambda calculus</h2>
-<p>A ggplot specification is a program. Not metaphorically: it is a tree of expressions that gets evaluated to produce output, just like any other R expression, and the connection to the ideas from <a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a> runs deep.</p>
-<p><code>aes()</code> is a function that returns unevaluated expressions. When you write <code>aes(x = bill_length_mm, y = body_mass_g)</code>, R does not look up <code>bill_length_mm</code> in your environment; it captures the expression and stores it for later evaluation inside the data frame. This is the same quoting mechanism you will encounter in <a href="ch26-metaprogramming.html" class="quarto-xref"><span>Chapter 26</span></a>: <code>aes()</code> is non-standard evaluation applied to visualization. The mapping is a <em>description</em> of a computation, not the computation itself, exactly like a lambda expression describes a function without executing it.</p>
-<p>The <code>+</code> operator on ggplot layers is monoidal composition. Each layer is an independent unit, combining two with <code>+</code> produces a new plot object, and the empty plot <code>ggplot()</code> acts as an identity element (adding it changes nothing). An associative binary operation with an identity element is a monoid, one of the simplest structures in algebra. String concatenation with <code>""</code> as its identity is a monoid, and so are list concatenation and function composition. ggplot layers are another instance of the same pattern. We will see in <a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a> that <code>Reduce()</code> works precisely because it folds over a monoid, and in <a href="ch30-r-as-mathematics.html#sec-category-connections" class="quarto-xref"><span>Section 30.8</span></a> how the pattern generalizes further.</p>
-<p>When ggplot2 draws a plot, it runs a sequence of transformations: data, then stat (statistical transformation), then scale (map values to aesthetic space), then coord (project into pixel coordinates), then render (draw shapes). Each <code>geom_*()</code> specifies what the final rendering step should draw; everything before it is a data transformation pipeline.</p>
-<p>This pipeline is itself function composition. Each step takes a data structure and returns a data structure, making it <code>render ∘ coord ∘ scale ∘ stat</code>, pure composition.</p>
-<p>This is why the grammar works so well: a small set of composable functions rather than a grab bag of plot types. You have already seen this principle at work: small functions that compose are more powerful than large functions that don’t (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>). ggplot2 applies that principle to visualization.</p>
-<p>Compare this to what came before. Base R’s <code>plot()</code>, <code>barplot()</code>, and <code>hist()</code> are self-contained functions, each with its own parameter names and its own assumptions about data shape. Adding a fitted line to a scatterplot means calling <code>abline()</code> after <code>plot()</code>, a second function that depends on the first having already drawn to the graphics device. There is no plot object to inspect or modify; the drawing has already happened. If you want a variant (a scatterplot with a smoothed trend, faceted by species, with a custom color scale), you are writing procedural drawing code. The grammar inverts that relationship. Each layer is an independent object, and combining two with <code>+</code> produces a new plot object you can store, modify, and pass around before anything touches the screen. The layers compose because they are values, not side effects, following the same principle that makes pipe chains and <code>map()</code> calls work. Graphics is where composition becomes visible, because you can see the result on the screen and trace each layer back to the line of code that produced it.</p>
-<p>What happens when you apply this principle to your own domain?</p>
+<p>The pipe feeds data into <code>ggplot()</code>, and after that <code>+</code> composes the layers. Each line adds one component, so you can read the full specification top to bottom. Most plots follow that shape: start with the data, pipe it through whatever filtering or summarising it needs, hand it to <code>ggplot()</code> with the aesthetic mappings, add geoms, then refine with scales, facets, labels, and a theme. Each step is independent: swap <code>geom_point()</code> for <code>geom_jitter()</code> and nothing else in the specification changes. <code>+</code> is doing more work than it looks like.</p>
+<p>Base R’s <code>plot()</code>, <code>barplot()</code>, and <code>hist()</code> are self-contained functions, each with its own parameter names and its own assumptions about data shape. Adding a fitted line to a scatterplot means calling <code>abline()</code> after <code>plot()</code>, a second function that depends on the first having already drawn to the graphics device. There is no plot object to inspect or modify; the drawing has already happened. In ggplot2 each layer is an independent object, and combining two with <code>+</code> produces a new plot object you can store, modify, and pass around before anything touches the screen. The layers compose because they are values, not side effects, the same property that makes pipe chains work (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>).</p>
+<p>When the plot object is finally drawn, ggplot2 runs it through a fixed sequence: the data, then the stat (this is where a histogram counts), then the scales (values become colors and axis positions), then the coordinate system (positions become pixels), then the geom draws. Each step takes a data structure and returns one, so the whole thing is function composition, <code>render ∘ coord ∘ scale ∘ stat</code>, and a <code>geom_*()</code> only decides what the last step draws.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The lambda calculus connection
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><code>aes()</code> returns unevaluated expressions. When you write <code>aes(x = bill_length_mm)</code>, R does not look up <code>bill_length_mm</code> in your environment; it captures the expression and evaluates it later inside the data frame. The mapping is a description of a computation, the way a lambda expression describes a function without running it, and the capturing is the quoting mechanism of <a href="ch26-metaprogramming.html" class="quarto-xref"><span>Chapter 26</span></a>.</p>
+<p><code>+</code> on layers is the same monoid as the pipe (<a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>): combining two layers gives a layer, the grouping does not matter, and the empty <code>ggplot()</code> is the identity. <code>Reduce()</code> folds over exactly this structure in <a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a>.</p>
+</div>
+</div>
+</div>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
@@ -1136,10 +1119,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 </section>
 </section>
-<section id="sec-common-mistakes" class="level2" data-number="17.9">
-<h2 data-number="17.9" class="anchored" data-anchor-id="sec-common-mistakes"><span class="header-section-number">17.9</span> Common mistakes</h2>
-<p><strong>Putting <code>aes()</code> in the wrong place.</strong> A variable inside <code>aes()</code> creates a mapping; a value outside <code>aes()</code> sets a constant. If your legend looks unexpected, check which side of <code>aes()</code> your arguments are on (<a href="#sec-aesthetics" class="quarto-xref"><span>Section 17.2</span></a>).</p>
-<p><strong>Using <code>|&gt;</code> instead of <code>+</code> after <code>ggplot()</code>.</strong> The pipe feeds data into <code>ggplot()</code>, but after that first call, every addition uses <code>+</code>. This trips up every beginner exactly once. If you get an error like “could not find function <code>geom_point</code>”, you probably wrote <code>|&gt;</code> where you needed <code>+</code>. The reason ggplot2 uses <code>+</code> rather than <code>|&gt;</code> is partly historical (ggplot2 predates both magrittr and the native pipe by a decade) and partly conceptual: the pipe transforms data sequentially, while <code>+</code> accumulates structure, and these are different composition models (pipeline vs builder).</p>
+<section id="sec-common-mistakes" class="level2" data-number="17.8">
+<h2 data-number="17.8" class="anchored" data-anchor-id="sec-common-mistakes"><span class="header-section-number">17.8</span> Common mistakes</h2>
+<p>A variable inside <code>aes()</code> creates a mapping; a value outside <code>aes()</code> sets a constant. If your legend looks unexpected, check which side of <code>aes()</code> your arguments are on (<a href="#sec-aesthetics" class="quarto-xref"><span>Section 17.2</span></a>).</p>
+<p>The pipe feeds data into <code>ggplot()</code>, but after that first call every addition uses <code>+</code>. Writing <code>|&gt;</code> where <code>+</code> belongs trips up every beginner exactly once, and ggplot2 now recognises the slip: the error says that <code>mapping</code> must be created by <code>aes()</code> and asks whether you used <code>|&gt;</code> instead of <code>+</code>. ggplot2 uses <code>+</code> partly for historical reasons (it predates magrittr by seven years and the native pipe by fourteen) and partly because the two operators mean different things: the pipe passes data through a sequence of transformations, while <code>+</code> accumulates structure into one object.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Wrong</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> bill_length_mm, <span class="at">y =</span> body_mass_g)) <span class="sc">|&gt;</span></span>
@@ -1149,15 +1132,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(penguins, <span class="fu">aes</span>(<span class="at">x =</span> bill_length_mm, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
 <span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Making multiple layers when the data needs reshaping.</strong> If you find yourself writing <code>geom_line(aes(y = col_a))</code> and then <code>geom_line(aes(y = col_b))</code> for different columns, that is a signal to use <code>pivot_longer()</code> first (<a href="ch16-tidy-data.html" class="quarto-xref"><span>Chapter 16</span></a>) and map the new column to an aesthetic.</p>
-<p><strong>Complex calculations inside <code>aes()</code>.</strong> Move them to <code>mutate()</code> first (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>). Something like <code>aes(x = log(value + 1) / max(value))</code> is hard to read and harder to debug; create the column, then map it.</p>
-<p><strong>Overloading a single plot.</strong> Too many colors, too many geoms, too much data crammed into one frame. If a plot is hard to read, split it into facets or separate plots. A simpler plot almost always communicates better.</p>
-<p>Most ggplot2 errors aren’t really about syntax. They are about structure: the data is in the wrong shape, the mapping is in the wrong place, or the wrong composition operator connects the layers. When a plot doesn’t look right, check the data and the mappings before adjusting visual parameters, because the grammar tells you where the problem is if you listen to it.</p>
+<p>If you find yourself writing <code>geom_line(aes(y = col_a))</code> and then <code>geom_line(aes(y = col_b))</code> for different columns, that is a signal to <code>pivot_longer()</code> first (<a href="ch16-tidy-data.html" class="quarto-xref"><span>Chapter 16</span></a>) and map the new column to an aesthetic.</p>
+<p>Complex calculations inside <code>aes()</code> belong in <code>mutate()</code> (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>). Something like <code>aes(x = log(value + 1) / max(value))</code> is hard to read and harder to debug; create the column, then map it.</p>
+<p>Too many colors, too many geoms, too much data crammed into one frame. If a plot is hard to read, split it into facets or separate plots. A simpler plot almost always communicates better.</p>
+<p>Most ggplot2 errors come from structure: the data is in the wrong shape, the mapping is in the wrong place, or the wrong operator connects the layers. When a plot doesn’t look right, check the data and the mappings before adjusting visual parameters.</p>
 <p>Once the plot is right, you need to get it out of R.</p>
 </section>
-<section id="sec-saving-plots" class="level2" data-number="17.10">
-<h2 data-number="17.10" class="anchored" data-anchor-id="sec-saving-plots"><span class="header-section-number">17.10</span> Saving plots</h2>
-<p>A ggplot object is a deferred computation: it describes a plot but does not produce pixels until you print or save it. Printing sends the result to the screen; <code>ggsave()</code> sends it to a file:</p>
+<section id="sec-saving-plots" class="level2" data-number="17.9">
+<h2 data-number="17.9" class="anchored" data-anchor-id="sec-saving-plots"><span class="header-section-number">17.9</span> Saving plots</h2>
+<p><code>ggsave()</code> writes the most recent plot to a file:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"penguins_scatter.png"</span>, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="dv">5</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -1170,7 +1153,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"penguins_scatter.pdf"</span>, <span class="at">plot =</span> p, <span class="at">width =</span> <span class="dv">8</span>, <span class="at">height =</span> <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The <code>width</code> and <code>height</code> arguments control the output dimensions in inches (the default unit), and getting these right matters more than any theme adjustment: a plot squeezed into half its natural width produces unreadable axis labels, while a plot stretched too wide scatters the data into a sparse, floating emptiness. Experiment with dimensions before finalizing. It’s the last step, but it determines whether anyone can actually read what you built.</p>
+<p>A ggplot object describes a plot and produces no pixels until you print it or save it; <code>p</code> above is a description, and <code>ggsave()</code> is what renders it. The <code>width</code> and <code>height</code> arguments set the output size in inches, and getting them right matters more than any theme adjustment: a plot squeezed into half its natural width produces unreadable axis labels, and a plot stretched too wide leaves the points floating in empty space. Experiment with dimensions before finalizing.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1278,53 +1261,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

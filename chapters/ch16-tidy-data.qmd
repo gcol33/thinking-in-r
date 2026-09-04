@@ -5,22 +5,14 @@
 source(here::here("_common.R"))
 ```
 
-You have a data frame with population figures for three countries, and the years are column names: `pop_2020`, `pop_2021`, `pop_2022`. You want to plot population over time, so you try mapping `year` to the x-axis. There is no `year` column. The information is there, hiding in plain sight, encoded in the syntax of your column headers rather than the semantics of your data. Every dplyr verb you learned in @sec-data-transformation, every ggplot2 aesthetic you'll ever write, every model formula you'll ever fit: they all assume that each variable lives in its own column. When it doesn't, nothing works. Getting data into the right shape occupies more of a working analyst's time than any model or visualization, and yet most introductions to R treat it as an afterthought, something you do before the real work begins. This chapter treats it as the real work, because it is.
+You have a data frame with population figures for three countries, and the years are column names: `pop_2020`, `pop_2021`, `pop_2022`. You want to plot population over time, so you try mapping `year` to the x-axis. There is no `year` column. The years are there, but they live in the column headers, where no verb can reach them. Every dplyr verb from @sec-data-transformation, every ggplot2 aesthetic you will write, every model formula you will fit assumes that each variable lives in its own column. When it doesn't, nothing works. Getting data into that shape takes more of a working analyst's time than any model or plot, and this chapter treats it as the real work.
 
-You already have the pieces: data frames from @sec-data-frames, verbs from @sec-data-transformation, pipes from @sec-pipes-and-composition. What you're missing is the target shape those tools expect.
+You already have the pieces: data frames, verbs, pipes. What you're missing is the target shape those tools expect.
 
 
 ## What tidy means {#sec-what-tidy-means}
 
-Hadley Wickham's 2014 paper "Tidy data"\index{tidy data} defines three rules:
-
-1. Each variable is a column.
-2. Each observation is a row\index{tidy data!one observation per row}.
-3. Each type of observational unit is a table.
-
-They sound obvious. They aren't. Most real-world data breaks at least one of them, and recognizing which rule is broken (let alone fixing it) takes practice.
-
-Consider a table of population data with years spread across the column names:
+Here is the population table from the opening, with years spread across the column names:
 
 ```{r}
 pop_wide <- data.frame(
@@ -32,13 +24,7 @@ pop_wide <- data.frame(
 pop_wide
 ```
 
-What is the variable here? Year. But "year" doesn't appear as a column; it's buried inside the names `pop_2020`, `pop_2021`, `pop_2022`, three columns where there should be one. Not tidy.
-
-These rules are a simplified version of something database designers have known since the 1970s, when Edgar Codd defined a set of normal forms to eliminate redundancy. The structural problem R programmers wrestle with today is the same one Codd solved in relational algebra before R existed.
-
-![Wide\index{wide format} and long\index{long format} formats contain the same information — the pivot is an isomorphism.](../images/wide_vs_long.png){#fig-wide-vs-long width=100%}
-
-The tidy version has three columns: `country`, `year`, and `population`. One variable per column, one observation per row, nine values arranged so that every tool you've learned can reach them.
+What is the variable here? Year. But `year` doesn't appear as a column; it's buried inside the names `pop_2020`, `pop_2021`, `pop_2022`, three columns where there should be one. The same nine values can be arranged with `year` as a column of its own:
 
 ```{r}
 pop_tidy <- data.frame(
@@ -49,7 +35,25 @@ pop_tidy <- data.frame(
 pop_tidy
 ```
 
-Now you can filter by year, group by country, plot year on the x-axis. Every dplyr verb and every ggplot2 aesthetic mapping works because each variable occupies its own column, and the tools compose because the data has a consistent shape. But who wants to rearrange nine values by hand?
+Now you can filter by year, group by country, plot year on the x-axis. Every dplyr verb and every ggplot2 aesthetic works because each variable occupies its own column and each observation its own row.
+
+Hadley Wickham's 2014 paper "Tidy data"\index{tidy data} turns that into three rules:
+
+1. Each variable is a column.
+2. Each observation is a row\index{tidy data!one observation per row}.
+3. Each type of observational unit is a table.
+
+They sound obvious, and most real-world data still breaks at least one of them. Recognizing which rule is broken (let alone fixing it) takes practice.
+
+![Wide\index{wide format} and long\index{long format} formats contain the same information.](../images/wide_vs_long.png){#fig-wide-vs-long width=100%}
+
+::: {.callout-note collapse="true"}
+## Codd's normal forms
+
+The three rules are a simplified version of something database designers have used since the 1970s, when Edgar Codd defined a set of normal forms to remove redundancy from relational tables (@sec-list-of-vectors). The structural problem R programmers wrestle with today is the one Codd solved before R existed.
+:::
+
+But who wants to rearrange nine values by hand?
 
 
 ### Exercises {.unnumbered}
@@ -86,17 +90,13 @@ pop_wide |>
   )
 ```
 
-Three countries, three years, nine population values: the information content is identical in both forms. `pivot_longer()` and `pivot_wider()` are inverses; applying one and then the other returns you to where you started (up to column ordering). A pair of reversible transformations like this is called an *isomorphism*: two structures that contain the same information in different arrangements. Wide and long formats are isomorphic; neither is "more correct."
+The nine population values are all still there, one per row instead of three per row. `pivot_longer()` and `pivot_wider()` are inverses: apply one and then the other and you are back where you started, up to column order. A pair of reversible transformations like this is called an *isomorphism*, two structures holding the same information in different arrangements, so neither wide nor long is "more correct."
 
 What changes when you pivot is the *alignment* between the data's shape and your next tool's expectations. A report reader wants wide, because scanning countries across years in a single row is easier than scrolling. A `ggplot()` call wants long, because each aesthetic maps to one column and each observation occupies one row. Grouped summaries need the grouping variable to be a column, not a set of column names baked into the header. Choosing a format is choosing which tool you are about to hand the data to, and pivoting is the translation between those expectations.
 
-The hard part is not the reshaping itself but deciding *what* to reshape. Given an arbitrary table with merged cells, hierarchical headers, and embedded metadata, determining the correct tidy structure requires human judgment about what constitutes a variable, an observation, and a value. Wickham's 2014 paper defines these three terms precisely to make that judgment tractable: once you answer "is year a variable or a value?", the reshaping follows mechanically.
+The hard part is deciding *what* to reshape. Given a table with merged cells, hierarchical headers, and embedded metadata, the tidy structure depends on a judgment about what counts as a variable, an observation, and a value. Wickham's paper defines those three terms precisely so that the judgment can be made: once you answer "is year a variable or a value?", the reshaping follows mechanically.
 
-Three arguments control the transformation:
-
-- `cols`: which columns to pivot. Accepts tidy selection helpers like `starts_with()`, `where(is.numeric)`, or a range with `:`.
-- `names_to`: what to call the new column made from column names.
-- `values_to`: what to call the new column made from cell values.
+The call above names three things. `cols` says which columns to pivot, as a range with `:` or a helper like `starts_with()` or `where(is.numeric)`; `names_to` names the new column made from the old column names; `values_to` names the new column made from the cell values.
 
 The column names still carry the `pop_` prefix, and `year` is character, not integer. Two more arguments fix that:
 
@@ -113,7 +113,7 @@ pop_wide |>
 
 `names_prefix` strips the leading text; `names_transform` applies a function to the extracted names, here converting character years to integers.
 
-For more complex column names, `names_sep` and `names_pattern` let you split structured names into multiple new columns. If you had columns like `bill_length_mm` and `bill_depth_mm`, you could split on `_` to extract both the measurement and the unit. The tidyr pivoting vignette covers these cases in detail. But what about the opposite direction, when your data is *too* long?
+For more structured column names, `names_sep` and `names_pattern` split each name into several new columns: `bill_length_mm` and `bill_depth_mm` can be split on `_` into the measurement and the unit. The tidyr pivoting vignette covers these cases. But what about the opposite direction, when your data is *too* long?
 
 
 ### Exercises {.unnumbered}
@@ -159,10 +159,7 @@ measurements |>
   )
 ```
 
-Two arguments:
-
-- `names_from`: which column's values become the new column names.
-- `values_from`: which column's values fill the new cells.
+`names_from` says which column's values become the new column names, and `values_from` says which column fills the new cells.
 
 When some combinations don't exist in the data, `pivot_wider()` fills those cells with `NA`. The `values_fill` argument lets you choose a different default:
 
@@ -196,7 +193,7 @@ If you reach for `pivot_wider()` during analysis, pause and ask whether your dow
 
 ## When data isn't tidy (and that's fine) {#sec-when-not-tidy}
 
-Tidy data is for analysis. Not every use case is analysis.
+Tidy data is the shape for analysis. A table also gets read, printed, and typed in, and those jobs want a different shape.
 
 Wide tables are easier for humans to scan: a table with countries as rows and years as columns fits on a screen, while the same data in long form might scroll for hundreds of rows. Wide format is also what some matrix operations, correlation computations, and model interfaces expect when they want one column per predictor.
 
@@ -223,10 +220,6 @@ albums <- data.frame(
 )
 ```
 
-### Mutating joins {.unnumbered}
-
-Mutating joins add columns from the second table to the first.
-
 `left_join()`\index{left\_join()}\index{join} keeps all rows from the left table and attaches matching columns from the right, filling `NA` where no match exists:
 
 ```{r}
@@ -241,7 +234,7 @@ Ringo has no album in the `albums` table, so his `album` comes back `NA`; Mick h
 bands |> inner_join(albums, by = "name")
 ```
 
-Ringo and Mick are both gone. Only the three names appearing in both tables survive.
+Ringo and Mick are both gone. Only the three names appearing in both tables survive. Both joins add columns from the second table to the first; dplyr calls them *mutating joins*.
 
 When the key columns have different names, use `join_by()`:
 
@@ -254,11 +247,7 @@ instruments <- data.frame(
 albums |> left_join(instruments, by = join_by(name == musician))
 ```
 
-### Filtering joins {.unnumbered}
-
-Filtering joins don't add columns. They filter rows.
-
-`semi_join()` keeps rows in the left table that have a match in the right:
+`semi_join()` keeps the rows in the left table that have a match in the right, and adds nothing:
 
 ```{r}
 bands |> semi_join(albums, by = "name")
@@ -272,7 +261,7 @@ Same three rows as `inner_join()`, but without the `album` column. You're using 
 bands |> anti_join(albums, by = "name")
 ```
 
-Only Ringo: the one band member with no album in the `albums` table. `anti_join()` is your best tool for finding what's missing. Which customers placed no orders? Which species have no observations? Which students didn't submit?
+Only Ringo: the one band member with no album in the `albums` table. `anti_join()` is your best tool for finding what's missing. Which customers placed no orders? Which species have no observations? Which students didn't submit? These two are *filtering joins*: they change which rows survive and leave the columns alone.
 
 ::: callout-tip
 ## Opinion
@@ -291,7 +280,7 @@ Start with `left_join()`. Use `anti_join()` to debug. The others are situational
 
 ## Other tidyr tools {#sec-other-tidyr}
 
-Pivoting handles structure; joins handle combination. A handful of other tidyr functions handle the messy details that remain after those two big moves.
+After pivoting and joining, a handful of other tidyr functions handle the messy details that remain.
 
 ### Separating and uniting columns {.unnumbered}
 
@@ -311,7 +300,7 @@ dates |>
   )
 ```
 
-This replaces the older `separate()`, which relied on position-based splitting and was less predictable. For complex patterns, `separate_wider_regex()` lets you use regular expressions.
+The older `separate()` still works and shows up in a lot of existing code. For patterns a single delimiter cannot express, `separate_wider_regex()` takes a regular expression.
 
 `unite()`\index{unite()} does the inverse, pasting columns together:
 
@@ -357,7 +346,7 @@ Tidy data is a structural contract: one variable per column, one observation per
 ::: {.callout-note collapse="true"}
 ## The mathematics underneath
 
-These tools compose precisely because they all expect the same shape, and the connection to their mathematical foundations runs deeper than most R programmers realize. Codd's relational algebra and the simply typed lambda calculus are both built on function application and composition over structured types, which is why the same ideas keep surfacing in R, SQL, and formal logic. In category theory, a join is a *pullback*: given two tables that each map to a shared key space, the join constructs the most general table consistent with both. Think of it as a Venn diagram for rows, where the overlap is determined by the key column; `inner_join` keeps only the overlap, while `left_join` keeps everything on the left and fills the gaps with `NA`.
+In category theory, a join is a *pullback*: given two tables that each map to a shared key space, the join constructs the most general table consistent with both. `inner_join()` keeps only the rows whose keys appear on both sides; `left_join()` keeps every row on the left and fills the gaps with `NA`. The same construction appears in Codd's relational algebra (@sec-data-transformation), which is why joins look alike in R, SQL, and formal logic.
 :::
 
-But shape is only half the story. Once your data is tidy, you still need to *do* something with it, and doing the same thing to many groups, many columns, or many models at once is where iteration enters. That's next.
+Shape is half the story. Once your data is tidy, every column is something a plot can map to an axis, a color, or a panel, and that is where the next chapter starts.

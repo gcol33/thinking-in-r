@@ -1,10 +1,10 @@
 # Current work: readability pass
 
-Last updated 2026-09-04 (ch13-15 session).
+Last updated 2026-09-04 (ch16-18 session).
 
 ## Status
 
-Chapters 1 to 15 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in the commit after it). Chapters 16 onward have not. Next session: ch16, ch17, ch18.
+Chapters 1 to 18 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in the commit after it). Chapters 19 onward have not. Next session: ch19, ch20, ch21.
 
 ## The problem
 
@@ -83,8 +83,21 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Cut: ch13 circular closer ("Which brings us back to where we started"), ch14 "This is actually surprising" and the "Compare the two calls" teacher-mode paragraph, ch15 "Pipes made them legible" mic drop and the chapter-as-destination closer.
 - Word counts: ch13 2841 to 2850, ch14 2570 to 2458, ch15 2181 to 2078.
 
+## Notes from ch16-18
+
+- Three factual fixes: ch17 said the `|>`-instead-of-`+` slip errors with "could not find function `geom_point`" (ggplot2 4.0.3 says "`mapping` must be created by `aes()`" and asks whether you used `|>` instead of `+`); ch17's aesthetics Opinion had the symptoms backwards (a constant inside `aes()` is what gives the unwanted legend and one color; a bare column name outside `aes()` gives "object not found", verified with `ggplot_build()`); ch17 prose said `color = species` with an automatic palette next to code that used `fill`/`shape` with explicit `scale_` calls. Prose now describes the code as written.
+- Stale closer: ch16 ended "iteration ... That's next", but ch17 is visualization. Now points at plots; iteration stays in the `nest()` paragraph's @sec-purrr-map.
+- Re-teaching removed: ch18 repeated ch07's "every function is technically a closure" sentence and its make_adder beta reduction; now back-references @sec-functions-returning-functions and the ch18 callout adds only free variables, open/closed terms and the mutable cell. ch17 re-explained the monoid from ch14/ch15; now one sentence in a callout pointing at @sec-pipes-and-composition. ch16 Codd now a callout pointing at the ch11 relational-model callout (@sec-list-of-vectors).
+- Show-before-name: ch16 population table and `pop_tidy` before the three rules; joins shown before "mutating"/"filtering" (the two unnumbered subheadings are gone); ch17 first `ggplot()` call before the seven components (the numbered bold list is now two prose sentences), the inside/outside `aes()` pair before the rule, the geom table after the geom examples, `ggsave()` before "a ggplot object is a description"; ch18 `ls()`/`environment()` before the definition of an environment, `search()` before "search path", the environment-chain figure moved from the Environments section to the lexical-scoping example it depicts, the four bold scoping rules became prose with a new name-masking chunk (dynamic lookup named after the `multiplier` example; "rule 3"/"rule 4" references replaced).
+- Section removed: ch17 "ggplot2 as lambda calculus" (`#sec-ggplot-lambda`, unreferenced elsewhere). The base-R comparison and the stat/scale/coord/render pipeline stayed in "Putting it together" as main text; `aes()` quoting and the monoid went into a "The lambda calculus connection" callout. Cross-refs to @sec-functions-are-values-chapter and @sec-category-connections dropped.
+- Bullet-to-prose: ch16 `pivot_longer()`/`pivot_wider()` argument lists; ch17 common-mistakes bold lead-ins and the five-step "pattern for most visualizations"; ch18 closure use cases.
+- ch18 `<<-` demo: `rm(oops)` (which printed an "object not found" warning under `error: true`) became `exists("oops")` printing `FALSE`; the trailing cleanup chunk is `include: false`.
+- Dropped the Peter Norvig attribution for "closures are a poor man's objects" (the line is usually credited to others; now "as the old Lisp line goes", index entry removed). Check if the user wants a named source.
+- Flag for another session: ch02 line 86 says S had lexical scoping "exactly as in the `make_adder` example"; ch18 now says S looked free variables up in the top-level workspace (R FAQ 3.3.1). One of the two chapters has to move.
+- Word counts: ch16 2508 to 2392, ch17 3591 to 3261, ch18 3158 to 2873.
+
 ## Files for the next session
 
-- `chapters/ch16-tidy-data.qmd`
-- `chapters/ch17-visualization.qmd`
-- `chapters/ch18-closures-and-scope.qmd`
+- `chapters/ch19-iteration-without-loops.qmd`
+- `chapters/ch20-function-factories.qmd`
+- `chapters/ch21-reduce-and-accumulate.qmd`

@@ -618,8 +618,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#sec-when-not-tidy" id="toc-sec-when-not-tidy" class="nav-link" data-scroll-target="#sec-when-not-tidy"><span class="header-section-number">16.4</span> When data isn’t tidy (and that’s fine)</a></li>
   <li><a href="#sec-joins" id="toc-sec-joins" class="nav-link" data-scroll-target="#sec-joins"><span class="header-section-number">16.5</span> Joins: combining tables</a>
   <ul class="collapse">
-  <li><a href="#mutating-joins" id="toc-mutating-joins" class="nav-link" data-scroll-target="#mutating-joins">Mutating joins</a></li>
-  <li><a href="#filtering-joins" id="toc-filtering-joins" class="nav-link" data-scroll-target="#filtering-joins">Filtering joins</a></li>
   <li><a href="#exercises-3" id="toc-exercises-3" class="nav-link" data-scroll-target="#exercises-3">Exercises</a></li>
   </ul></li>
   <li><a href="#sec-other-tidyr" id="toc-sec-other-tidyr" class="nav-link" data-scroll-target="#sec-other-tidyr"><span class="header-section-number">16.6</span> Other tidyr tools</a>
@@ -655,18 +653,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>You have a data frame with population figures for three countries, and the years are column names: <code>pop_2020</code>, <code>pop_2021</code>, <code>pop_2022</code>. You want to plot population over time, so you try mapping <code>year</code> to the x-axis. There is no <code>year</code> column. The information is there, hiding in plain sight, encoded in the syntax of your column headers rather than the semantics of your data. Every dplyr verb you learned in <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>, every ggplot2 aesthetic you’ll ever write, every model formula you’ll ever fit: they all assume that each variable lives in its own column. When it doesn’t, nothing works. Getting data into the right shape occupies more of a working analyst’s time than any model or visualization, and yet most introductions to R treat it as an afterthought, something you do before the real work begins. This chapter treats it as the real work, because it is.</p>
-<p>You already have the pieces: data frames from <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>, verbs from <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>, pipes from <a href="ch15-pipes-and-composition.html" class="quarto-xref"><span>Chapter 15</span></a>. What you’re missing is the target shape those tools expect.</p>
+<p>You have a data frame with population figures for three countries, and the years are column names: <code>pop_2020</code>, <code>pop_2021</code>, <code>pop_2022</code>. You want to plot population over time, so you try mapping <code>year</code> to the x-axis. There is no <code>year</code> column. The years are there, but they live in the column headers, where no verb can reach them. Every dplyr verb from <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>, every ggplot2 aesthetic you will write, every model formula you will fit assumes that each variable lives in its own column. When it doesn’t, nothing works. Getting data into that shape takes more of a working analyst’s time than any model or plot, and this chapter treats it as the real work.</p>
+<p>You already have the pieces: data frames, verbs, pipes. What you’re missing is the target shape those tools expect.</p>
 <section id="sec-what-tidy-means" class="level2" data-number="16.1">
 <h2 data-number="16.1" class="anchored" data-anchor-id="sec-what-tidy-means"><span class="header-section-number">16.1</span> What tidy means</h2>
-<p>Hadley Wickham’s 2014 paper “Tidy data” defines three rules:</p>
-<ol type="1">
-<li>Each variable is a column.</li>
-<li>Each observation is a row.</li>
-<li>Each type of observational unit is a table.</li>
-</ol>
-<p>They sound obvious. They aren’t. Most real-world data breaks at least one of them, and recognizing which rule is broken (let alone fixing it) takes practice.</p>
-<p>Consider a table of population data with years spread across the column names:</p>
+<p>Here is the population table from the opening, with years spread across the column names:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pop_wide <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">country    =</span> <span class="fu">c</span>(<span class="st">"Norway"</span>, <span class="st">"Sweden"</span>, <span class="st">"Denmark"</span>),</span>
@@ -680,19 +671,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  Sweden    10350    10380    10420</span></span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 Denmark     5831     5840     5857</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>What is the variable here? Year. But “year” doesn’t appear as a column; it’s buried inside the names <code>pop_2020</code>, <code>pop_2021</code>, <code>pop_2022</code>, three columns where there should be one. Not tidy.</p>
-<p>These rules are a simplified version of something database designers have known since the 1970s, when Edgar Codd defined a set of normal forms to eliminate redundancy. The structural problem R programmers wrestle with today is the same one Codd solved in relational algebra before R existed.</p>
-<div id="fig-wide-vs-long" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-wide-vs-long-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="../images/wide_vs_long.png" class="img-fluid figure-img" style="width:100.0%">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-wide-vs-long-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;16.1: Wide and long formats contain the same information — the pivot is an isomorphism.
-</figcaption>
-</figure>
-</div>
-<p>The tidy version has three columns: <code>country</code>, <code>year</code>, and <code>population</code>. One variable per column, one observation per row, nine values arranged so that every tool you’ve learned can reach them.</p>
+<p>What is the variable here? Year. But <code>year</code> doesn’t appear as a column; it’s buried inside the names <code>pop_2020</code>, <code>pop_2021</code>, <code>pop_2022</code>, three columns where there should be one. The same nine values can be arranged with <code>year</code> as a column of its own:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>pop_tidy <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">country    =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"Norway"</span>, <span class="st">"Sweden"</span>, <span class="st">"Denmark"</span>), <span class="at">each =</span> <span class="dv">3</span>),</span>
@@ -711,7 +690,41 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 8 Denmark 2021       5840</span></span>
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 9 Denmark 2022       5857</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Now you can filter by year, group by country, plot year on the x-axis. Every dplyr verb and every ggplot2 aesthetic mapping works because each variable occupies its own column, and the tools compose because the data has a consistent shape. But who wants to rearrange nine values by hand?</p>
+<p>Now you can filter by year, group by country, plot year on the x-axis. Every dplyr verb and every ggplot2 aesthetic works because each variable occupies its own column and each observation its own row.</p>
+<p>Hadley Wickham’s 2014 paper “Tidy data” turns that into three rules:</p>
+<ol type="1">
+<li>Each variable is a column.</li>
+<li>Each observation is a row.</li>
+<li>Each type of observational unit is a table.</li>
+</ol>
+<p>They sound obvious, and most real-world data still breaks at least one of them. Recognizing which rule is broken (let alone fixing it) takes practice.</p>
+<div id="fig-wide-vs-long" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-wide-vs-long-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="../images/wide_vs_long.png" class="img-fluid figure-img" style="width:100.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-wide-vs-long-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;16.1: Wide and long formats contain the same information.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Codd’s normal forms
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The three rules are a simplified version of something database designers have used since the 1970s, when Edgar Codd defined a set of normal forms to remove redundancy from relational tables (<a href="ch11-data-frames.html#sec-list-of-vectors" class="quarto-xref"><span>Section 11.1</span></a>). The structural problem R programmers wrestle with today is the one Codd solved before R existed.</p>
+</div>
+</div>
+</div>
+<p>But who wants to rearrange nine values by hand?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -764,15 +777,10 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 8 Denmark pop_2021       5840</span></span>
 <span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 9 Denmark pop_2022       5857</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Three countries, three years, nine population values: the information content is identical in both forms. <code>pivot_longer()</code> and <code>pivot_wider()</code> are inverses; applying one and then the other returns you to where you started (up to column ordering). A pair of reversible transformations like this is called an <em>isomorphism</em>: two structures that contain the same information in different arrangements. Wide and long formats are isomorphic; neither is “more correct.”</p>
+<p>The nine population values are all still there, one per row instead of three per row. <code>pivot_longer()</code> and <code>pivot_wider()</code> are inverses: apply one and then the other and you are back where you started, up to column order. A pair of reversible transformations like this is called an <em>isomorphism</em>, two structures holding the same information in different arrangements, so neither wide nor long is “more correct.”</p>
 <p>What changes when you pivot is the <em>alignment</em> between the data’s shape and your next tool’s expectations. A report reader wants wide, because scanning countries across years in a single row is easier than scrolling. A <code>ggplot()</code> call wants long, because each aesthetic maps to one column and each observation occupies one row. Grouped summaries need the grouping variable to be a column, not a set of column names baked into the header. Choosing a format is choosing which tool you are about to hand the data to, and pivoting is the translation between those expectations.</p>
-<p>The hard part is not the reshaping itself but deciding <em>what</em> to reshape. Given an arbitrary table with merged cells, hierarchical headers, and embedded metadata, determining the correct tidy structure requires human judgment about what constitutes a variable, an observation, and a value. Wickham’s 2014 paper defines these three terms precisely to make that judgment tractable: once you answer “is year a variable or a value?”, the reshaping follows mechanically.</p>
-<p>Three arguments control the transformation:</p>
-<ul>
-<li><code>cols</code>: which columns to pivot. Accepts tidy selection helpers like <code>starts_with()</code>, <code>where(is.numeric)</code>, or a range with <code>:</code>.</li>
-<li><code>names_to</code>: what to call the new column made from column names.</li>
-<li><code>values_to</code>: what to call the new column made from cell values.</li>
-</ul>
+<p>The hard part is deciding <em>what</em> to reshape. Given a table with merged cells, hierarchical headers, and embedded metadata, the tidy structure depends on a judgment about what counts as a variable, an observation, and a value. Wickham’s paper defines those three terms precisely so that the judgment can be made: once you answer “is year a variable or a value?”, the reshaping follows mechanically.</p>
+<p>The call above names three things. <code>cols</code> says which columns to pivot, as a range with <code>:</code> or a helper like <code>starts_with()</code> or <code>where(is.numeric)</code>; <code>names_to</code> names the new column made from the old column names; <code>values_to</code> names the new column made from the cell values.</p>
 <p>The column names still carry the <code>pop_</code> prefix, and <code>year</code> is character, not integer. Two more arguments fix that:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>pop_wide <span class="sc">|&gt;</span></span>
@@ -797,7 +805,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 9 Denmark  2022       5857</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>names_prefix</code> strips the leading text; <code>names_transform</code> applies a function to the extracted names, here converting character years to integers.</p>
-<p>For more complex column names, <code>names_sep</code> and <code>names_pattern</code> let you split structured names into multiple new columns. If you had columns like <code>bill_length_mm</code> and <code>bill_depth_mm</code>, you could split on <code>_</code> to extract both the measurement and the unit. The tidyr pivoting vignette covers these cases in detail. But what about the opposite direction, when your data is <em>too</em> long?</p>
+<p>For more structured column names, <code>names_sep</code> and <code>names_pattern</code> split each name into several new columns: <code>bill_length_mm</code> and <code>bill_depth_mm</code> can be split on <code>_</code> into the measurement and the unit. The tidyr pivoting vignette covers these cases. But what about the opposite direction, when your data is <em>too</em> long?</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -847,11 +855,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 A            22.1       65</span></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 B            19.8       72</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Two arguments:</p>
-<ul>
-<li><code>names_from</code>: which column’s values become the new column names.</li>
-<li><code>values_from</code>: which column’s values fill the new cells.</li>
-</ul>
+<p><code>names_from</code> says which column’s values become the new column names, and <code>values_from</code> says which column fills the new cells.</p>
 <p>When some combinations don’t exist in the data, <code>pivot_wider()</code> fills those cells with <code>NA</code>. The <code>values_fill</code> argument lets you choose a different default:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>incomplete <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
@@ -895,7 +899,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 </section>
 <section id="sec-when-not-tidy" class="level2" data-number="16.4">
 <h2 data-number="16.4" class="anchored" data-anchor-id="sec-when-not-tidy"><span class="header-section-number">16.4</span> When data isn’t tidy (and that’s fine)</h2>
-<p>Tidy data is for analysis. Not every use case is analysis.</p>
+<p>Tidy data is the shape for analysis. A table also gets read, printed, and typed in, and those jobs want a different shape.</p>
 <p>Wide tables are easier for humans to scan: a table with countries as rows and years as columns fits on a screen, while the same data in long form might scroll for hundreds of rows. Wide format is also what some matrix operations, correlation computations, and model interfaces expect when they want one column per predictor.</p>
 <p>Data entry follows the same logic. If you’re recording daily temperatures for three cities, a spreadsheet with cities as rows and dates as columns feels natural; nobody fills in a three-column long-form table by hand (and anyone who tells you they do is lying, or masochistic, or both).</p>
 <p>So reshape to tidy when you need dplyr and ggplot, reshape to wide when you need a human to read the table. Do not get religious about it.</p>
@@ -915,9 +919,6 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">album =</span> <span class="fu">c</span>(<span class="st">"Imagine"</span>, <span class="st">"Ram"</span>, <span class="st">"All Things Must Pass"</span>, <span class="st">"Some Girls"</span>)</span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<section id="mutating-joins" class="level3 unnumbered">
-<h3 class="unnumbered anchored" data-anchor-id="mutating-joins">Mutating joins</h3>
-<p>Mutating joins add columns from the second table to the first.</p>
 <p><code>left_join()</code> keeps all rows from the left table and attaches matching columns from the right, filling <code>NA</code> where no match exists:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>bands <span class="sc">|&gt;</span> <span class="fu">left_join</span>(albums, <span class="at">by =</span> <span class="st">"name"</span>)</span>
@@ -936,7 +937,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2   Paul   bass                  Ram</span></span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 George guitar All Things Must Pass</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Ringo and Mick are both gone. Only the three names appearing in both tables survive.</p>
+<p>Ringo and Mick are both gone. Only the three names appearing in both tables survive. Both joins add columns from the second table to the first; dplyr calls them <em>mutating joins</em>.</p>
 <p>When the key columns have different names, use <code>join_by()</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>instruments <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
@@ -951,11 +952,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 George All Things Must Pass     guitar</span></span>
 <span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4   Mick           Some Girls       &lt;NA&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-</section>
-<section id="filtering-joins" class="level3 unnumbered">
-<h3 class="unnumbered anchored" data-anchor-id="filtering-joins">Filtering joins</h3>
-<p>Filtering joins don’t add columns. They filter rows.</p>
-<p><code>semi_join()</code> keeps rows in the left table that have a match in the right:</p>
+<p><code>semi_join()</code> keeps the rows in the left table that have a match in the right, and adds nothing:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>bands <span class="sc">|&gt;</span> <span class="fu">semi_join</span>(albums, <span class="at">by =</span> <span class="st">"name"</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     name  plays</span></span>
@@ -970,7 +967,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    name plays</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 Ringo drums</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Only Ringo: the one band member with no album in the <code>albums</code> table. <code>anti_join()</code> is your best tool for finding what’s missing. Which customers placed no orders? Which species have no observations? Which students didn’t submit?</p>
+<p>Only Ringo: the one band member with no album in the <code>albums</code> table. <code>anti_join()</code> is your best tool for finding what’s missing. Which customers placed no orders? Which species have no observations? Which students didn’t submit? These two are <em>filtering joins</em>: they change which rows survive and leave the columns alone.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -984,7 +981,6 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <p>Start with <code>left_join()</code>. Use <code>anti_join()</code> to debug. The others are situational. <code>right_join()</code> exists but is rarely needed: swap the table order and use <code>left_join()</code> instead. <code>full_join()</code> keeps everything from both sides, which sounds safe but usually signals that you haven’t decided what your unit of analysis actually is.</p>
 </div>
 </div>
-</section>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -996,7 +992,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 </section>
 <section id="sec-other-tidyr" class="level2" data-number="16.6">
 <h2 data-number="16.6" class="anchored" data-anchor-id="sec-other-tidyr"><span class="header-section-number">16.6</span> Other tidyr tools</h2>
-<p>Pivoting handles structure; joins handle combination. A handful of other tidyr functions handle the messy details that remain after those two big moves.</p>
+<p>After pivoting and joining, a handful of other tidyr functions handle the messy details that remain.</p>
 <section id="separating-and-uniting-columns" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="separating-and-uniting-columns">Separating and uniting columns</h3>
 <p><code>separate_wider_delim()</code> splits one column into several by a delimiter:</p>
@@ -1019,7 +1015,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2     2 2024  07    22   </span></span>
 <span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3     3 2024  11    01</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This replaces the older <code>separate()</code>, which relied on position-based splitting and was less predictable. For complex patterns, <code>separate_wider_regex()</code> lets you use regular expressions.</p>
+<p>The older <code>separate()</code> still works and shows up in a lot of existing code. For patterns a single delimiter cannot express, <code>separate_wider_regex()</code> takes a regular expression.</p>
 <p><code>unite()</code> does the inverse, pasting columns together:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">year =</span> <span class="dv">2024</span>, <span class="at">month =</span> <span class="st">"03"</span>, <span class="at">day =</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
@@ -1072,7 +1068,7 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 <h2 data-number="16.7" class="anchored" data-anchor-id="sec-tidy-data-summary"><span class="header-section-number">16.7</span> Summary</h2>
 <p>Tidy data is a structural contract: one variable per column, one observation per row, one observational unit per table. <code>pivot_longer()</code> turns columns into rows (the common direction), <code>pivot_wider()</code> turns rows into columns (the occasional direction), and joins combine tables by matching keys.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1081,13 +1077,13 @@ Figure&nbsp;16.1: Wide and long formats contain the same information — the piv
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>These tools compose precisely because they all expect the same shape, and the connection to their mathematical foundations runs deeper than most R programmers realize. Codd’s relational algebra and the simply typed lambda calculus are both built on function application and composition over structured types, which is why the same ideas keep surfacing in R, SQL, and formal logic. In category theory, a join is a <em>pullback</em>: given two tables that each map to a shared key space, the join constructs the most general table consistent with both. Think of it as a Venn diagram for rows, where the overlap is determined by the key column; <code>inner_join</code> keeps only the overlap, while <code>left_join</code> keeps everything on the left and fills the gaps with <code>NA</code>.</p>
+<p>In category theory, a join is a <em>pullback</em>: given two tables that each map to a shared key space, the join constructs the most general table consistent with both. <code>inner_join()</code> keeps only the rows whose keys appear on both sides; <code>left_join()</code> keeps every row on the left and fills the gaps with <code>NA</code>. The same construction appears in Codd’s relational algebra (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>), which is why joins look alike in R, SQL, and formal logic.</p>
 </div>
 </div>
 </div>
-<p>But shape is only half the story. Once your data is tidy, you still need to <em>do</em> something with it, and doing the same thing to many groups, many columns, or many models at once is where iteration enters. That’s next.</p>
+<p>Shape is half the story. Once your data is tidy, every column is something a plot can map to an axis, a color, or a panel, and that is where the next chapter starts.</p>
 
 
 </section>
@@ -1182,53 +1178,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
