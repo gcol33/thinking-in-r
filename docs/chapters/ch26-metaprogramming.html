@@ -651,8 +651,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>You have been writing <code>lm(y ~ x)</code> since <a href="ch17-visualization.html" class="quarto-xref"><span>Chapter 17</span></a>, and <code>filter(penguins, species == "Adelie")</code> since <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>. Both do something that might seem impossible: <code>y ~ x</code> is not evaluated before <code>lm()</code> sees it, and <code>species</code> is found inside a data frame, not in your environment. Normally, <code>1 + 1</code> evaluates to <code>2</code> and the expression disappears. R can keep it. Code in R is a data structure you can hold, examine, rearrange, and run whenever you choose.</p>
-<p>That difference has a name: metaprogramming. Code that operates on code. You have been using it from your first formula, your first call to <code>aes()</code>, your first dplyr pipeline, all of it built on the machinery this chapter describes.</p>
+<p>You have been writing <code>lm(y ~ x)</code> and <code>filter(penguins, species == "Adelie")</code> for chapters. Both do something that might seem impossible: <code>y ~ x</code> is not evaluated before <code>lm()</code> sees it, and <code>species</code> is found inside a data frame, not in your environment. Normally, <code>1 + 1</code> evaluates to <code>2</code> and the expression disappears. R can keep it. Code in R is a data structure you can hold, examine, rearrange, and run whenever you choose.</p>
 <section id="sec-code-is-data" class="level2" data-number="26.1">
 <h2 data-number="26.1" class="anchored" data-anchor-id="sec-code-is-data"><span class="header-section-number">26.1</span> Code is data</h2>
 <p><code>quote()</code> captures an expression without evaluating it:</p>
@@ -660,7 +659,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">quote</span>(x <span class="sc">+</span> <span class="dv">1</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x + 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>No result. What you got back is the expression itself: <code>x + 1</code> was not computed but returned as a data structure (a <em>call object</em>) that you can store, inspect, and eventually evaluate. If that sounds strange, think of it through lambda calculus: <code>(λx. x + 1)(3)</code> reduces to 4, but if you “quote” the term you get the syntactic object <code>(λx. x + 1)(3)</code>, something you can pull apart and study without triggering the reduction. <code>quote(1 + 1)</code> in R gives you the expression tree, not the value 2.</p>
+<p>No result. What you got back is the expression itself: <code>x + 1</code> was not computed but returned as a data structure (a <em>call object</em>) that you can store, inspect, and eventually evaluate. <code>quote(1 + 1)</code> gives you the expression tree, not the value 2.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">quote</span>(x <span class="sc">+</span> <span class="dv">1</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(e)</span>
@@ -679,10 +678,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">eval</span>(e)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>eval()</code> takes the frozen expression and evaluates it in the current environment, where <code>x</code> is 10, so the result is 11. The cycle is always the same: capture code, possibly modify it, then evaluate it somewhere. But why would you want to?</p>
-<p>In <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>, Church’s lambda calculus treated functions as data that could be passed around and applied. R extends that principle to <em>all code</em>, not only functions. An expression is a value, exactly like a number or a string. In <a href="ch07-functions-are-values.html#sec-operators-are-functions" class="quarto-xref"><span>Section 7.5</span></a>, you saw that <code>+</code> is a function and <code>2 + 3</code> is a function call. That function call is also a data structure you can capture and manipulate before it ever executes.</p>
-<p>R inherited this idea from Lisp, where <code>(quote (+ 1 2))</code> returns the list <code>(+ 1 2)</code> instead of computing 3. A language whose code has the same structure as its data is called <em>homoiconic</em>: Lisp code is lists, Lisp data is lists; R code is call objects (trees), and R data includes call objects.</p>
-<p>R’s homoiconicity means it gets this for free. Python, Java, and C++ are not homoiconic: their code is text, so metaprogramming means parsing strings, which is fragile. Python’s <code>inspect.getsource()</code> returns a string you then have to parse; R’s <code>quote(x + 1)</code> gives you the syntax tree directly — a call object you can subset with <code>[[</code>, modify with replacement, and evaluate in any environment you choose. That tree is an ordinary R object. It lives in memory, responds to R’s standard operations, and you can pass it to functions like any vector or list. Tidy evaluation, formula interfaces, and ggplot2’s <code>aes()</code> all rest on that foundation.</p>
+<p><code>eval()</code> takes the frozen expression and evaluates it in the current environment, where <code>x</code> is 10, so the result is 11. The cycle is always the same: capture code, possibly modify it, then evaluate it somewhere. Code that operates on code in this way is called <em>metaprogramming</em>, and you have been using it since your first formula, your first <code>aes()</code>, and your first dplyr pipeline.</p>
+<p>In <a href="ch07-functions-are-values.html#sec-operators-are-functions" class="quarto-xref"><span>Section 7.5</span></a>, you saw that <code>+</code> is a function and <code>2 + 3</code> is a function call. That function call is also an ordinary R object. It lives in memory, can be subset with <code>[[</code>, modified by assignment, passed to functions like any vector or list, and evaluated in any environment you choose. Tidy evaluation, formula interfaces, and ggplot2’s <code>aes()</code> all rest on that.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where <code>quote</code> comes from
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In lambda calculus, <code>(λx. x + 1)(3)</code> reduces to 4; quoting the term gives you the syntactic object <code>(λx. x + 1)(3)</code> instead, something you can pull apart and study without triggering the reduction (<a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>). Lisp built that distinction into the language: <code>(quote (+ 1 2))</code> returns the list <code>(+ 1 2)</code> instead of computing 3, and since Lisp programs are themselves lists, code and data share one representation. A language with that property is called <em>homoiconic</em>. R has it too: R code is a tree of call objects, and call objects are R data. Python, Java and C++ store code as text, so metaprogramming there starts by parsing a string.</p>
+</div>
+</div>
+</div>
 </section>
 <section id="sec-asts" class="level2" data-number="26.2">
 <h2 data-number="26.2" class="anchored" data-anchor-id="sec-asts"><span class="header-section-number">26.2</span> Abstract syntax trees</h2>
@@ -695,14 +708,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ├─y </span></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   └─2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>What looks like a flat sequence of tokens on the page is actually a tree where <code>+</code> sits at the root, <code>x</code> hangs off one branch, and <code>* (y, 2)</code> hangs off the other. The tree encodes precedence: <code>*</code> binds tighter than <code>+</code>, so <code>y * 2</code> forms a subtree nested inside the <code>+</code> node, and R knows to evaluate it first without needing parentheses from you.</p>
-<p>Three kinds of nodes make up every AST:</p>
-<ul>
-<li><strong>Constants</strong>: <code>1</code>, <code>"hello"</code>, <code>TRUE</code>. These are leaves. They have no children.</li>
-<li><strong>Symbols</strong> (names): <code>x</code>, <code>y</code>, <code>mean</code>. Also leaves. They represent name lookups: when evaluated, R searches for the value bound to that name.</li>
-<li><strong>Calls</strong>: function applications. These are branches. The first child is the function, the rest are arguments.</li>
-</ul>
-<p>That is the entire vocabulary. <code>x + 1</code> is a call to <code>`+`</code> with arguments <code>x</code> and <code>1</code>. <code>if (x &gt; 0) "yes" else "no"</code> is a call to <code>`if`</code> with three arguments. There is no special syntax that escapes the tree; even control flow is just function calls wearing different clothes.</p>
+<p>What looks like a flat sequence of tokens on the page is a tree where <code>+</code> sits at the root, <code>x</code> hangs off one branch, and <code>* (y, 2)</code> hangs off the other. The tree encodes precedence: <code>*</code> binds tighter than <code>+</code>, so <code>y * 2</code> forms a subtree nested inside the <code>+</code> node, and R evaluates it first without needing parentheses from you.</p>
+<p><code>x</code> and <code>y</code> are names; when the tree is evaluated, R looks up whatever value is bound to them. <code>2</code> is a constant and needs no lookup. <code>+</code> and <code>*</code> are function calls, each with its function as the first child and its arguments as the rest. Those three kinds of node, <em>constants</em>, <em>symbols</em> (the technical name for names) and <em>calls</em>, make up every R expression there is. Even control flow is a call:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>lobstr<span class="sc">::</span><span class="fu">ast</span>(<span class="cf">if</span> (x <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="st">"yes"</span> <span class="cf">else</span> <span class="st">"no"</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; █─`if` </span></span>
@@ -712,6 +719,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ├─"yes" </span></span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; └─"no"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p><code>if (x &gt; 0) "yes" else "no"</code> is a call to <code>`if`</code> with three arguments. There is no syntax that escapes the tree.</p>
 <p>You can take a call object apart with standard list operations, where the first element is the function and the rest are the arguments:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">quote</span>(<span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
@@ -768,35 +776,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; a + b</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>You called <code>f(a + b)</code>, and <code>substitute(x)</code> reached back across the function boundary to the call site, grabbing <code>a + b</code>, the expression the caller actually wrote. The same mechanism powers <code>dplyr::filter()</code>: it sees <code>species == "Adelie"</code> as an expression rather than immediately evaluating it and getting an error about a missing variable.</p>
-<p>The rlang equivalents are <code>enexpr()</code> (captures an expression) and <code>enquo()</code> (captures an expression plus its environment, forming a <em>quosure</em>). The decision rule is simple. If your function will be called by dplyr or other tidy-evaluation-aware code, use <code>enexpr()</code>/<code>enquo()</code>, because they integrate with <code>!!</code>, <code>{ }</code>, and <code>eval_tidy()</code>. For standalone base R, <code>substitute()</code> and <code>eval()</code> are sufficient and carry zero dependencies.</p>
+<p>rlang’s version of <code>substitute()</code> is <code>enexpr()</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> <span class="cf">function</span>(x) rlang<span class="sc">::</span><span class="fu">enexpr</span>(x)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">g</span>(a <span class="sc">+</span> b)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; a + b</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p>Its sibling <code>enquo()</code> captures the expression together with the environment it was written in, and the pair is called a <em>quosure</em>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="cf">function</span>(x) rlang<span class="sc">::</span><span class="fu">enquo</span>(x)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">h</span>(a <span class="sc">+</span> b)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;quosure&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; expr: ^a + b</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; env:  global</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>If your function will be called alongside dplyr, use the rlang versions, because the rest of tidy evaluation (<a href="#sec-building-expressions" class="quarto-xref"><span>Section 26.4</span></a>) is built around them. For standalone base R, <code>substitute()</code> and <code>eval()</code> are sufficient and carry zero dependencies.</p>
 <p>Once you have an expression, you evaluate it with <code>eval()</code>. The second argument controls <em>where</em>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">quote</span>(x <span class="sc">+</span> <span class="dv">1</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">eval</span>(e, <span class="fu">list</span>(<span class="at">x =</span> <span class="dv">10</span>))</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">eval</span>(e, <span class="fu">list</span>(<span class="at">x =</span> <span class="dv">100</span>))</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 101</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">quote</span>(x <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">eval</span>(e, <span class="fu">list</span>(<span class="at">x =</span> <span class="dv">10</span>))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">eval</span>(e, <span class="fu">list</span>(<span class="at">x =</span> <span class="dv">100</span>))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 101</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The same frozen expression, evaluated in different environments, gives different results. Data masking is exactly that trick: <code>eval_tidy()</code> from rlang evaluates an expression against a data frame, so <code>filter(penguins, species == "Adelie")</code> looks up <code>species</code> in the data rather than in the global environment.</p>
+<p>The same frozen expression, evaluated in different environments, gives different results. Data masking (<a href="ch23-lazy-evaluation.html#sec-data-masking" class="quarto-xref"><span>Section 23.4</span></a>) is exactly that trick: <code>eval_tidy()</code> from rlang evaluates an expression against a data frame, so <code>filter(penguins, species == "Adelie")</code> looks up <code>species</code> in the data rather than in the global environment.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rlang)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>))</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">eval_tidy</span>(<span class="fu">expr</span>(x <span class="sc">+</span> y), <span class="at">data =</span> df)</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11 22 33</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rlang)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), <span class="at">y =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>))</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">eval_tidy</span>(<span class="fu">expr</span>(x <span class="sc">+</span> y), <span class="at">data =</span> df)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11 22 33</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Tidy evaluation calls this pattern defuse-and-inject: capture, optionally modify, then evaluate in the right context.</p>
 <p>One more base R tool worth knowing: <code>match.call()</code>. Inside a function, it returns the entire call as the user typed it, with arguments matched by name:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>my_lm <span class="ot">&lt;-</span> <span class="cf">function</span>(formula, data, <span class="at">subset =</span> <span class="cn">NULL</span>) {</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">match.call</span>()</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="fu">my_lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> mtcars)</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; my_lm(formula = y ~ x, data = mtcars)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>my_lm <span class="ot">&lt;-</span> <span class="cf">function</span>(formula, data, <span class="at">subset =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">match.call</span>()</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">my_lm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> mtcars)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; my_lm(formula = y ~ x, data = mtcars)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Many modeling functions use <code>match.call()</code> to record the call for reproducibility. When you print a fitted model and see <code>Call: lm(formula = y ~ x, data = mtcars)</code>, that string came from <code>match.call()</code> stashing the original invocation.</p>
 <section id="exercises-1" class="level3 unnumbered">
@@ -813,49 +829,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>What if the function name or the variable is not known until runtime, when your code has to decide at the last moment what expression to build? You need to construct the expression from parts.</p>
 <p><code>rlang::call2()</code> constructs a call object:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">call2</span>(<span class="st">"+"</span>, <span class="dv">1</span>, <span class="dv">2</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 + 2</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">eval</span>(rlang<span class="sc">::</span><span class="fu">call2</span>(<span class="st">"+"</span>, <span class="dv">1</span>, <span class="dv">2</span>))</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">call2</span>(<span class="st">"+"</span>, <span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 + 2</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">eval</span>(rlang<span class="sc">::</span><span class="fu">call2</span>(<span class="st">"+"</span>, <span class="dv">1</span>, <span class="dv">2</span>))</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The next step is <em>quasiquotation</em>: building an expression template with holes that get filled in at construction time. The <code>!!</code> (bang-bang) operator injects a value into an expression:</p>
+<p><code>call2()</code> builds one call at a time. For anything larger, write the expression as a template and mark the holes with <code>!!</code> (bang-bang):</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>my_var <span class="ot">&lt;-</span> rlang<span class="sc">::</span><span class="fu">expr</span>(body_mass_g)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">expr</span>(<span class="fu">mean</span>(<span class="sc">!!</span>my_var))</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mean(body_mass_g)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>my_var <span class="ot">&lt;-</span> rlang<span class="sc">::</span><span class="fu">expr</span>(body_mass_g)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">expr</span>(<span class="fu">mean</span>(<span class="sc">!!</span>my_var))</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mean(body_mass_g)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>!!</code> replaced <code>my_var</code> with its value (<code>body_mass_g</code>), producing the expression <code>mean(body_mass_g)</code>. Without <code>!!</code>, you would get <code>mean(my_var)</code>, which is an entirely different expression and not the one you wanted.</p>
-<p><code>!!!</code> (triple bang, or splice) injects a list of expressions as separate arguments:</p>
+<p><code>!!</code> replaced <code>my_var</code> with its value (<code>body_mass_g</code>), producing the expression <code>mean(body_mass_g)</code>. Without <code>!!</code>, you would get <code>mean(my_var)</code>, which is an entirely different expression and not the one you wanted. A template whose holes are filled at construction time is <em>quasiquotation</em>, and <code>!!!</code> (triple bang, or splice) fills a hole with a whole list of expressions as separate arguments:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>vars <span class="ot">&lt;-</span> rlang<span class="sc">::</span><span class="fu">exprs</span>(species, island)</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">expr</span>(<span class="fu">group_by</span>(penguins, <span class="sc">!!!</span>vars))</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; group_by(penguins, species, island)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>vars <span class="ot">&lt;-</span> rlang<span class="sc">::</span><span class="fu">exprs</span>(species, island)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">expr</span>(<span class="fu">group_by</span>(penguins, <span class="sc">!!!</span>vars))</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; group_by(penguins, species, island)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This is what <code>{ }</code> (embrace) from tidy evaluation does under the hood. When you write a function like:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>my_summary <span class="ot">&lt;-</span> <span class="cf">function</span>(data, var) {</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  data <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">mean =</span> <span class="fu">mean</span>({{ var }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(palmerpenguins<span class="sc">::</span>penguins, body_mass_g)</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 1</span></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    mean</span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt;</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 4202.</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(palmerpenguins<span class="sc">::</span>penguins, flipper_length_mm)</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 1</span></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    mean</span></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt;</span></span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  201.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>my_summary <span class="ot">&lt;-</span> <span class="cf">function</span>(data, var) {</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  data <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">mean =</span> <span class="fu">mean</span>({{ var }}, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(palmerpenguins<span class="sc">::</span>penguins, body_mass_g)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 1</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    mean</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt;</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 4202.</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(palmerpenguins<span class="sc">::</span>penguins, flipper_length_mm)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 1</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    mean</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;dbl&gt;</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  201.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>the embrace operator defuses <code>var</code> with <code>enquo()</code> and injects it with <code>!!</code>, which means it is syntactic sugar for the defuse-and-inject pattern. The caller writes bare column names, exactly as they would with dplyr directly, and your function forwards them transparently, no quoted strings, no special syntax at the call site.</p>
+<p>the embrace operator defuses <code>var</code> with <code>enquo()</code> and injects it with <code>!!</code>. Tidy evaluation calls the whole cycle <em>defuse-and-inject</em>: capture the caller’s expression, inject it into a template, evaluate the result in the right context, and <code>{ }</code> is syntactic sugar for it. The caller writes bare column names, exactly as they would with dplyr directly, and your function forwards them, no quoted strings, no special syntax at the call site.</p>
 <p>Base R has <code>bquote()</code> for quasiquotation, using <code>.()</code> instead of <code>!!</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>my_var <span class="ot">&lt;-</span> <span class="fu">quote</span>(body_mass_g)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bquote</span>(<span class="fu">mean</span>(.(my_var)))</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mean(body_mass_g)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>my_var <span class="ot">&lt;-</span> <span class="fu">quote</span>(body_mass_g)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bquote</span>(<span class="fu">mean</span>(.(my_var)))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; mean(body_mass_g)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>It works, but <code>bquote()</code> is less common in practice and does not support splicing. All of these tools, <code>!!</code>, <code>bquote()</code>, <code>expr()</code>, solve the same problem that Lisp macros have addressed since the 1960s: how to write code that writes code, safely, without collapsing into string manipulation. When Wickham designed tidy evaluation, he was adapting that lineage for R, and the result is that you can generate expressions with the same structural guarantees that <code>quote()</code> gives you by hand.</p>
+<p>It works, but <code>bquote()</code> is less common in practice and does not support splicing. <code>!!</code>, <code>bquote()</code> and <code>expr()</code> all solve the problem Lisp macros have solved since the 1960s: writing code that writes code without falling back to pasting strings together. The expressions you build this way have the same tree structure that <code>quote()</code> gives you by hand.</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
@@ -869,35 +884,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="26.5" class="anchored" data-anchor-id="sec-formulas-as-expressions"><span class="header-section-number">26.5</span> Formulas as expressions</h2>
 <p>Before anyone used the word “metaprogramming” in an R context, there were formulas. When you write:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lm</span>(body_mass_g <span class="sc">~</span> bill_length_mm, <span class="at">data =</span> palmerpenguins<span class="sc">::</span>penguins)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; lm(formula = body_mass_g ~ bill_length_mm, data = palmerpenguins::penguins)</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    (Intercept)  bill_length_mm  </span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         362.31           87.42</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lm</span>(body_mass_g <span class="sc">~</span> bill_length_mm, <span class="at">data =</span> palmerpenguins<span class="sc">::</span>penguins)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; lm(formula = body_mass_g ~ bill_length_mm, data = palmerpenguins::penguins)</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    (Intercept)  bill_length_mm  </span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         362.31           87.42</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>the expression <code>body_mass_g ~ bill_length_mm</code> is not evaluated in the ordinary sense. R captures it as a <em>formula object</em>: two expressions (the left-hand side and the right-hand side) bundled together with the environment where the formula was created.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> y <span class="sc">~</span> x <span class="sc">+</span> z</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(f)</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "language"</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(f)</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>f[[<span class="dv">2</span>]]</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; y</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>f[[<span class="dv">3</span>]]</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x + z</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> y <span class="sc">~</span> x <span class="sc">+</span> z</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(f)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "language"</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(f)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>f[[<span class="dv">2</span>]]</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; y</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>f[[<span class="dv">3</span>]]</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x + z</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>A formula stores its terms as call objects. <code>f[[2]]</code> is the left-hand side (<code>y</code>), <code>f[[3]]</code> is the right-hand side (<code>x + z</code>). The formula also carries an environment attribute:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>(f)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: R_GlobalEnv&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>(f)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;environment: R_GlobalEnv&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Formulas work across function boundaries because the formula remembers where its variables should be looked up. Quosures in tidy evaluation solve the same problem: an expression bundled with its environment.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -906,32 +921,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Wickham borrowed the concept directly from formulas, and their 30-year track record in R’s modeling ecosystem is what made the design credible.</p>
+<p>Wickham borrowed the design from formulas, which had been carrying an environment alongside their expressions in R’s modelling functions long before tidy evaluation existed. A quosure still inherits from the formula class: <code>class(rlang::quo(x))</code> is <code>c("quosure", "formula")</code>.</p>
 </div>
 </div>
 </div>
 <p>The formula language (<code>+</code>, <code>*</code>, <code>:</code>, <code>-</code>, <code>I()</code>) is a domain-specific language for specifying models. <code>y ~ x1 * x2</code> does not mean “multiply x1 by x2.” It means “include x1, x2, and their interaction.” <code>model.matrix()</code> interprets these operators to build the design matrix:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">model.matrix</span>(<span class="sc">~</span> species <span class="sc">+</span> island, <span class="at">data =</span> palmerpenguins<span class="sc">::</span>penguins) <span class="sc">|&gt;</span> <span class="fu">head</span>()</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   (Intercept) speciesChinstrap speciesGentoo islandDream islandTorgersen</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1           1                0             0           0               1</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2           1                0             0           0               1</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3           1                0             0           0               1</span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4           1                0             0           0               1</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5           1                0             0           0               1</span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6           1                0             0           0               1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">model.matrix</span>(<span class="sc">~</span> species <span class="sc">+</span> island, <span class="at">data =</span> palmerpenguins<span class="sc">::</span>penguins) <span class="sc">|&gt;</span> <span class="fu">head</span>()</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   (Intercept) speciesChinstrap speciesGentoo islandDream islandTorgersen</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1           1                0             0           0               1</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2           1                0             0           0               1</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3           1                0             0           0               1</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4           1                0             0           0               1</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5           1                0             0           0               1</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6           1                0             0           0               1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>You can also build formulas dynamically, which becomes useful when the set of predictors is not known in advance:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>predictors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"bill_length_mm"</span>, <span class="st">"flipper_length_mm"</span>)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(<span class="st">"body_mass_g ~"</span>, <span class="fu">paste</span>(predictors, <span class="at">collapse =</span> <span class="st">" + "</span>)))</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>f</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; body_mass_g ~ bill_length_mm + flipper_length_mm</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>predictors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"bill_length_mm"</span>, <span class="st">"flipper_length_mm"</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(<span class="st">"body_mass_g ~"</span>, <span class="fu">paste</span>(predictors, <span class="at">collapse =</span> <span class="st">" + "</span>)))</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>f</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; body_mass_g ~ bill_length_mm + flipper_length_mm</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Constructing code from data, then running it: that is metaprogramming at its most practical. The formula is a piece of code assembled from strings, about to be interpreted by <code>lm()</code> as a model specification, and neither the user nor the modeling function needs to know it was built programmatically.</p>
-<p>The connection to <a href="ch23-lazy-evaluation.html" class="quarto-xref"><span>Chapter 23</span></a> is direct. Formulas are non-standard evaluation: the variable names are unquoted, <code>body_mass_g</code> is looked up in <code>penguins</code> rather than in the calling environment. Dplyr uses the same trick, just with newer machinery.</p>
+<p>Formulas are non-standard evaluation (<a href="ch23-lazy-evaluation.html#sec-nse" class="quarto-xref"><span>Section 23.3</span></a>): the variable names are unquoted, and <code>body_mass_g</code> is looked up in <code>penguins</code> rather than in the calling environment. dplyr uses the same trick with newer machinery.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -943,18 +958,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-when-metaprogramming" class="level2" data-number="26.6">
 <h2 data-number="26.6" class="anchored" data-anchor-id="sec-when-metaprogramming"><span class="header-section-number">26.6</span> When to use metaprogramming</h2>
 <p>Metaprogramming lets you generate code, build DSLs, and eliminate boilerplate. That power comes with a cost.</p>
-<p><strong>Good uses:</strong></p>
-<ul>
-<li><strong>Domain-specific languages.</strong> Model formulas, ggplot2 aesthetics, dplyr pipelines. These are all DSLs built on metaprogramming. If you are building a package with an interactive interface that benefits from concise, expressive syntax, metaprogramming is the right tool.</li>
-<li><strong>Code generation.</strong> Building model specifications programmatically, creating batches of test cases, generating reports from templates.</li>
-<li><strong>Debugging and inspection.</strong> <code>substitute()</code> to see what was passed, <code>match.call()</code> to record the exact call for reproducibility.</li>
-</ul>
-<p><strong>Bad uses:</strong></p>
-<ul>
-<li><strong>Things that work with regular functions.</strong> If <code>f(x)</code> solves the problem, do not complicate it with <code>eval(substitute(...))</code>.</li>
-<li><strong>Performance.</strong> Metaprogramming is not faster. It is more flexible, which is a different axis entirely.</li>
-<li><strong>Showing off.</strong> Code that manipulates code is hard to read and hard to debug. Use it when the benefit (a concise user interface) outweighs the cost (a complex implementation), not before.</li>
-</ul>
+<p>It pays when the interface is the product. Model formulas, ggplot2 aesthetics and dplyr pipelines are all DSLs built on metaprogramming, and a package with an interactive interface gains the same concise syntax from the same tools. It pays for code generation: building model specifications programmatically, creating batches of test cases, generating reports from templates. And it pays for inspection, where <code>substitute()</code> shows what was passed and <code>match.call()</code> records the exact call for reproducibility.</p>
+<p>It does not pay when an ordinary function would do: if <code>f(x)</code> solves the problem, <code>eval(substitute(...))</code> only adds a layer to debug. Nor does it make anything faster; metaprogramming is more flexible, which is a different axis. Code that manipulates code is hard to read and hard to debug, so use it when the benefit (a concise user interface) outweighs the cost (a complex implementation), not before.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -971,13 +976,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-metaprogramming-landscape" class="level2" data-number="26.7">
 <h2 data-number="26.7" class="anchored" data-anchor-id="sec-metaprogramming-landscape"><span class="header-section-number">26.7</span> The metaprogramming toolkit</h2>
-<p>For further study:</p>
-<ul>
-<li><strong>Tidy evaluation</strong> (rlang): <code>expr()</code>, <code>enquo()</code>, <code>eval_tidy()</code>, <code>!!</code>, <code>!!!</code>, <code>{ }</code>. The system behind dplyr, tidyr, and ggplot2. Covered in depth in Advanced R, chapters 17 through 20.</li>
-<li><strong>Base R tools</strong>: <code>quote()</code>, <code>substitute()</code>, <code>eval()</code>, <code>match.call()</code>, <code>sys.call()</code>, <code>bquote()</code>. These predate rlang and still power much of R’s infrastructure. Every R programmer should know <code>substitute()</code> and <code>eval()</code>.</li>
-<li><strong>Inspection packages</strong>: <code>lobstr</code> for AST visualization, <code>pryr</code> for probing environments and function internals.</li>
-<li><strong>Further reading</strong>: Wickham’s <em>Advanced R</em> (2nd edition) devotes four chapters to metaprogramming. Mailund’s <em>Metaprogramming in R</em> (Springer, 2017) is a book-length treatment covering domain-specific languages and code generation.</li>
-</ul>
+<p>The tools in this chapter fall into two families. Base R has <code>quote()</code>, <code>substitute()</code>, <code>eval()</code>, <code>match.call()</code>, <code>sys.call()</code> and <code>bquote()</code>; they predate rlang and still power much of R’s own infrastructure, and <code>substitute()</code> with <code>eval()</code> is the pair every R programmer should know. rlang’s tidy evaluation adds <code>expr()</code>, <code>enquo()</code>, <code>eval_tidy()</code>, <code>!!</code>, <code>!!!</code> and <code>{ }</code>, the system behind dplyr, tidyr and ggplot2. For seeing what you have built, <code>lobstr::ast()</code> draws the tree. Wickham’s <em>Advanced R</em> (second edition) devotes chapters 17 to 21 to metaprogramming, and Mailund’s <em>Metaprogramming in R</em> (Apress, 2017) is a book-length treatment that goes on to domain-specific languages and code generation.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1079,53 +1078,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

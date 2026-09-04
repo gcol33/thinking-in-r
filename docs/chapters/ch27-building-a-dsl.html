@@ -653,29 +653,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <p>Suppose you write <code>y ~ x1 + x2</code> and R does not add anything. The plus sign, which in every other context means addition, now means “include this predictor in the model.” The tilde computes nothing; it freezes two expressions into an object for later interpretation.</p>
 <p>You have been using this notation since your first linear regression, probably without asking the obvious question: how does R let ordinary operators mean something completely different depending on context? The answer runs through everything you have learned so far: non-standard evaluation, operator overloading, and S3 dispatch combine to let you rewrite what R’s syntax means.</p>
-<p>You already have the pieces. <code>quote()</code> captures code as data (<a href="ch26-metaprogramming.html#sec-code-is-data" class="quarto-xref"><span>Section 26.1</span></a>), <code>substitute()</code> captures the caller’s code (<a href="ch26-metaprogramming.html#sec-capture-evaluate" class="quarto-xref"><span>Section 26.3</span></a>), S3 dispatch selects behavior by type (<a href="ch24-s3-and-s7.html#sec-dispatch" class="quarto-xref"><span>Section 24.1</span></a>), and operators are just functions (<a href="ch07-functions-are-values.html#sec-operators-are-functions" class="quarto-xref"><span>Section 7.5</span></a>). This chapter puts them together: you will dissect DSLs you already use, then build one from scratch.</p>
-<p>A domain-specific language, or DSL, is a small language designed for one task. SQL queries data, regular expressions match text, and HTML structures documents. These are <em>external</em> DSLs with their own parsers, their own syntax, their own tooling.</p>
-<p>R excels at something different: <em>internal</em> DSLs, mini-languages embedded inside R itself, using R’s own syntax but giving it new meaning. The formula interface, ggplot2’s grammar of graphics, dplyr’s verb chains, data.table’s <code>[i, j, by]</code> notation: each lives inside R and plays by R’s rules (mostly).</p>
-<p>By the mid-1960s, programmers were drowning in general-purpose syntax that forced every domain into the same mold. Peter Landin argued in 1966 that they should be able to build “a language appropriate to the problem.” R’s formula interface, which dates to S in the 1980s, shares the same instinct: capture code, give it new meaning.</p>
+<p>You already have the pieces. <code>quote()</code> and <code>substitute()</code> capture code as data, S3 dispatch selects behavior by type, and operators are functions (<a href="ch07-functions-are-values.html#sec-operators-are-functions" class="quarto-xref"><span>Section 7.5</span></a>). This chapter puts them together: you will dissect DSLs you already use, then build one from scratch.</p>
+<p>A domain-specific language, or DSL, is a small language designed for one task. SQL queries data, regular expressions match text, and HTML structures documents; each has its own parser, its own syntax and its own tooling, and lives outside any general-purpose language, which makes it an <em>external</em> DSL. The formula interface is an <em>internal</em> DSL: a mini-language embedded inside R, using R’s own syntax and giving it new meaning. ggplot2’s grammar of graphics, dplyr’s verb chains and data.table’s <code>[i, j, by]</code> notation are the same kind, and each plays by R’s rules, mostly.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The next 700 languages
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In 1965 a prospectus from the American Mathematical Association counted 1,700 special-purpose programming languages in use across more than 700 application areas, each with its own syntax and its own compiler. A British computer scientist, Peter Landin, put that count at the head of a 1966 paper titled “The Next 700 Programming Languages” and proposed a different arrangement: one common core, with each application area adding only the vocabulary it needed. An internal DSL is that arrangement inside a single language. The formula interface, which arrived with the third version of S in the early 1990s, takes R’s core and adds a vocabulary for models.</p>
+</div>
+</div>
+</div>
 <section id="sec-existing-dsls" class="level2" data-number="27.1">
 <h2 data-number="27.1" class="anchored" data-anchor-id="sec-existing-dsls"><span class="header-section-number">27.1</span> R’s existing DSLs</h2>
-<p>The test of a DSL is not cleverness of syntax but consistency of mapping: every domain concept corresponds to a language construct, and the correspondence holds without exceptions that the user must memorize. R’s existing DSLs each take a different approach to achieving this.</p>
-<p><strong>Formulas.</strong> <code>y ~ x1 + x2</code> is R’s oldest DSL. The <code>~</code> operator creates a formula interface object storing two expressions (the left- and right-hand sides) plus the environment where it was created; it computes nothing. Inside the formula, <code>+</code> does not mean addition but “include this term,” <code>*</code> means “include main effects and their interaction,” and <code>:</code> means “interaction only.” This is code that means something completely different from its usual meaning, interpreted not by R’s evaluator but by <code>model.matrix()</code>. You explored this in <a href="ch26-metaprogramming.html#sec-formulas-as-expressions" class="quarto-xref"><span>Section 26.5</span></a>. But formulas freeze structure at definition time. What if you want to build structure incrementally, adding pieces one at a time?</p>
-<p><strong>ggplot2.</strong> The <code>+</code> operator for ggplot objects does not add numbers. It layers graphical components:</p>
+<p>What makes a DSL work is consistency of mapping: every domain concept corresponds to a language construct, and the correspondence holds without exceptions that the user must memorize. R’s existing DSLs each achieve this differently.</p>
+<p><code>y ~ x1 + x2</code> is R’s oldest DSL. The <code>~</code> operator creates a formula object storing two expressions (the left- and right-hand sides) plus the environment where it was created, and computes nothing. Inside the formula, <code>+</code> means “include this term,” <code>*</code> means “include main effects and their interaction,” and <code>:</code> means “interaction only.” The code means something different from its usual meaning, and it is interpreted by <code>model.matrix()</code> rather than by R’s evaluator, as you saw in <a href="ch26-metaprogramming.html#sec-formulas-as-expressions" class="quarto-xref"><span>Section 26.5</span></a>. But formulas freeze structure at definition time. What if you want to build structure incrementally, adding pieces one at a time?</p>
+<p>ggplot2’s <code>+</code> layers graphical components onto a plot object:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(mtcars, <span class="fu">aes</span>(<span class="at">x =</span> wt, <span class="at">y =</span> mpg)) <span class="sc">+</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>aes()</code> captures column names as expressions without evaluating them, while <code>+.gg</code> (the S3 method for <code>+</code> on ggplot objects) takes the existing plot and attaches the new layer. This is the <code>+</code> operator overloading pattern in ggplot2. The plot builds incrementally, one <code>+</code> at a time, accumulating a list of layers, scales, and coordinates. Incremental building solves the formula problem, but it introduces a new one: every <code>+</code> is a standalone layer, with no awareness of what the other layers are doing.</p>
-<p><strong>dplyr.</strong> Here the verbs know about the data. <code>filter(penguins, species == "Adelie")</code> captures <code>species == "Adelie"</code> as an expression and evaluates it against the data frame using data masking (<a href="ch26-metaprogramming.html#sec-capture-evaluate" class="quarto-xref"><span>Section 26.3</span></a>). The pipe operator chains verbs together, each doing one thing: filter rows, select columns, create new columns, summarize groups. Because the verbs are S3 generics, they dispatch on the data source. <code>filter.data.frame</code> works on data frames; <code>filter.tbl_lazy</code> generates SQL. Same syntax, different backend. That generality comes at a cost, though: each verb is a separate function call, and the pipe threading them together is syntactic, not semantic. Could you collapse the whole pipeline into a single expression?</p>
-<p><strong>data.table.</strong> <code>DT[i, j, by]</code> overloads the <code>[</code> operator so that all three arguments are captured by <code>substitute()</code> and evaluated in the data.table’s scope. No pipe, no chain of function calls. Everything happens inside <code>[</code>, which is both concise and dense.</p>
-<p>The technique varies, but the principle does not. Capture code, give it new meaning. What happens when you try this yourself?</p>
+<p><code>aes()</code> captures column names as expressions without evaluating them, and the <code>+</code> method for plot objects takes the existing plot and attaches the new layer. The plot builds incrementally, one <code>+</code> at a time, accumulating a list of layers, scales, and coordinates. Incremental building solves the formula problem, but it introduces a new one: every <code>+</code> is a standalone layer, with no awareness of what the other layers are doing.</p>
+<p>dplyr’s verbs know about the data. <code>filter(penguins, species == "Adelie")</code> captures <code>species == "Adelie"</code> as an expression and evaluates it against the data frame using data masking (<a href="ch23-lazy-evaluation.html#sec-data-masking" class="quarto-xref"><span>Section 23.4</span></a>). The pipe chains verbs together, each doing one thing: filter rows, select columns, create new columns, summarize groups. Because the verbs are S3 generics, they dispatch on the data source: <code>filter.data.frame</code> works on data frames, and dbplyr’s <code>filter.tbl_lazy</code> generates SQL. Same syntax, different backend. That generality has a cost: each verb is a separate function call, and the pipe that threads them together knows nothing about what they do. Could you collapse the whole pipeline into a single expression?</p>
+<p>data.table does. <code>DT[i, j, by]</code> overloads the <code>[</code> operator so that all three arguments are captured by <code>substitute()</code> and evaluated in the data.table’s scope. No pipe, no chain of function calls. Everything happens inside <code>[</code>, which is both concise and dense.</p>
+<p>The technique varies; the principle, capture code and give it new meaning, does not. What happens when you try this yourself?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
 <li>Type <code>ggplot2::aes</code> at the console (no parentheses) and read the source. Where does it capture the user’s expressions? What function does it use?</li>
-<li>Look at the source of <code>ggplot2</code>’s internal <code>"+.gg"</code> function (use the triple-colon operator). What does <code>+</code> actually do to a ggplot object?</li>
+<li>Print the S3 method for <code>+</code> on plot objects with <code>getS3method("+", "gg")</code>. What does <code>+</code> actually do to a ggplot object?</li>
 <li>Compare <code>filter(df, x &gt; 5)</code> to <code>df[df$x &gt; 5, ]</code>. What does dplyr’s version gain from NSE? What does it cost?</li>
 </ol>
 </section>
@@ -703,8 +717,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; wt</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>When ggplot2 eventually builds the plot, it evaluates these quosures against the data frame, so <code>wt</code> is looked up in <code>mtcars</code>, not in the global environment. This separation of capture and evaluation is the mechanism that makes the entire system work: you write code that looks like it refers to columns directly, and the library quietly intercepts those references and redirects them to the data.</p>
-<p>The <code>+.gg</code> method, meanwhile, simply takes the existing plot object, attaches the new component (a layer, a scale, a theme), and returns the modified plot. This is an expression builder pattern: the plot is a list that grows with each <code>+</code>, and rendering happens only when you print it.</p>
-<p>This two-phase design (build a description, then execute it) appears in SQL query builders, in compiler intermediate representations, and in ggplot2. The user describes <em>what</em> they want; the system decides <em>how</em> to produce it. But you do not need ggplot2’s sophistication to exploit the same pattern.</p>
+<p>The <code>+</code> method, meanwhile, takes the existing plot object, attaches the new component (a layer, a scale, a theme), and returns the modified plot. The plot is a description that grows with each <code>+</code>, and rendering happens only when you print it. An object built up like this is an <em>expression builder</em>, and the two-phase design, describe first and execute later, is the same one SQL query builders use. You do not need ggplot2’s sophistication to use the pattern.</p>
 </section>
 <section id="sec-unit-dsl" class="level2" data-number="27.3">
 <h2 data-number="27.3" class="anchored" data-anchor-id="sec-unit-dsl"><span class="header-section-number">27.3</span> Building a unit-aware DSL</h2>
@@ -786,22 +799,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>to <span class="ot">&lt;-</span> <span class="cf">function</span>(x, target) {</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">inherits</span>(x, <span class="st">"unit_val"</span>)) {</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="fu">sprintf</span>(<span class="st">"x must be a unit_val, got %s"</span>, <span class="fu">class</span>(x)[<span class="dv">1</span>]))</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.character</span>(target) <span class="sc">||</span> <span class="fu">length</span>(target) <span class="sc">!=</span> <span class="dv">1</span>) {</span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"target must be a single character string"</span>)</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The DSL's operators maintain the unit_val invariant internally,</span></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># but to() is a boundary function: it accepts a string from the</span></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># user, so we validate here to keep invalid states out of the system.</span></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  key <span class="ot">&lt;-</span> <span class="fu">paste0</span>(x<span class="sc">$</span>unit, <span class="st">"_to_"</span>, target)</span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  factor <span class="ot">&lt;-</span> conversions[[key]]</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(factor)) {</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="fu">sprintf</span>(<span class="st">"no conversion from %s to %s"</span>, x<span class="sc">$</span>unit, target))</span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">new_unit</span>(x<span class="sc">$</span>value <span class="sc">*</span> factor, target)</span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># to() takes a string from the user, so validate at the boundary</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">inherits</span>(x, <span class="st">"unit_val"</span>)) {</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="fu">sprintf</span>(<span class="st">"x must be a unit_val, got %s"</span>, <span class="fu">class</span>(x)[<span class="dv">1</span>]))</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.character</span>(target) <span class="sc">||</span> <span class="fu">length</span>(target) <span class="sc">!=</span> <span class="dv">1</span>) {</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"target must be a single character string"</span>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  key <span class="ot">&lt;-</span> <span class="fu">paste0</span>(x<span class="sc">$</span>unit, <span class="st">"_to_"</span>, target)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  factor <span class="ot">&lt;-</span> conversions[[key]]</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(factor)) {</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="fu">sprintf</span>(<span class="st">"no conversion from %s to %s"</span>, x<span class="sc">$</span>unit, target))</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">new_unit</span>(x<span class="sc">$</span>value <span class="sc">*</span> factor, target)</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">meters</span>(<span class="dv">1500</span>) <span class="sc">|&gt;</span> <span class="fu">to</span>(<span class="st">"km"</span>)</span>
@@ -852,14 +863,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-dsl-techniques" class="level2" data-number="27.4">
 <h2 data-number="27.4" class="anchored" data-anchor-id="sec-dsl-techniques"><span class="header-section-number">27.4</span> Techniques for DSL construction</h2>
 <p>The unit DSL used three techniques: S3 classes, operator overloading, and constructor functions. More ambitious DSLs draw on a larger toolkit.</p>
-<p><strong>Operator overloading.</strong> R lets you define methods for <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>[</code>, <code>[[</code>, <code>&lt;</code>, <code>&gt;</code>, <code>==</code>, <code>|</code>, <code>&amp;</code>, and more. You can also create custom infix operators with the <code>%op%</code> syntax:</p>
+<p>R lets you define methods for <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>[</code>, <code>[[</code>, <code>&lt;</code>, <code>&gt;</code>, <code>==</code>, <code>|</code>, <code>&amp;</code>, and more, and when none of the built-in operators expresses the right meaning you can make your own with the <code>%op%</code> syntax:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="st">"%to%"</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, target) <span class="fu">to</span>(x, target)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">meters</span>(<span class="dv">1500</span>) <span class="sc">%to%</span> <span class="st">"km"</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1.5 km</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Custom infixes are useful when the built-in operators do not express the right meaning. The <code>%&gt;%</code> pipe from magrittr is the most famous example; <code>%in%</code> is a base R one.</p>
-<p><strong>NSE for expression capture.</strong> If your DSL needs to capture column names, formulas, or unevaluated expressions, use <code>substitute()</code> (base R) or <code>enquo()</code> (rlang). The unit DSL did not need NSE because its inputs are plain values, but a query-builder DSL would:</p>
+<p>A custom infix operator is an ordinary function with a name that R’s parser lets you write between its arguments. magrittr’s <code>%&gt;%</code> is the most famous; <code>%in%</code> is a base R one.</p>
+<p>If your DSL needs to capture column names, formulas, or unevaluated expressions, use <code>substitute()</code> (base R) or <code>enquo()</code> (rlang). The unit DSL did not need that, because its inputs are plain values, but a query-builder DSL would:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>where <span class="ot">&lt;-</span> <span class="cf">function</span>(.data, expr) {</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  e <span class="ot">&lt;-</span> <span class="fu">substitute</span>(expr)</span>
@@ -868,8 +879,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="fu">where</span>(mtcars, mpg <span class="sc">&gt;</span> <span class="dv">30</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>That is a miniature version of what <code>dplyr::filter()</code> does: capture the expression, evaluate it against the data frame.</p>
-<p><strong>Formula interfaces.</strong> Use formulas when your DSL needs two-sided specifications. The <code>~</code> already prevents evaluation, and the formula carries its environment:</p>
+<p>That is a miniature version of what <code>dplyr::filter()</code> does: capture the expression, evaluate it against the data frame. When the specification has two sides, a formula is the ready-made container; <code>~</code> already prevents evaluation, and the formula carries its environment:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>specify <span class="ot">&lt;-</span> <span class="cf">function</span>(formula, data) {</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  lhs <span class="ot">&lt;-</span> <span class="fu">all.vars</span>(formula[[<span class="dv">2</span>]])</span>
@@ -878,8 +888,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="fu">specify</span>(mpg <span class="sc">~</span> wt <span class="sc">+</span> hp, mtcars)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>S3 dispatch as polymorphism.</strong> If your DSL should work on multiple data backends (data frames, databases, remote APIs), define your verbs as S3 generics so each backend gets its own method. This is exactly how dplyr supports data frames and SQL databases with the same syntax.</p>
-<p><strong>Expression builders.</strong> The ggplot2 approach: each operation returns an object, and the objects compose. The user builds up a description while execution is deferred until the end, separating specification from computation and making the DSL composable. When should you <em>not</em> use these techniques?</p>
+<p>If your DSL should work on several backends (data frames, databases, remote APIs), define your verbs as S3 generics so that each backend gets its own method, which is how dplyr runs the same syntax on data frames and on SQL databases. And if the work is expensive or the order of operations matters, build a description first and execute it at the end, the way ggplot2 does: each operation returns an object, the objects compose, and computation is deferred. When should you <em>not</em> use these techniques?</p>
 </section>
 <section id="sec-eval-parse" class="level2" data-number="27.5">
 <h2 data-number="27.5" class="anchored" data-anchor-id="sec-eval-parse"><span class="header-section-number">27.5</span> <code>eval(parse(text = ...))</code>: the anti-pattern</h2>
@@ -926,25 +935,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-dsl-design" class="level2" data-number="27.6">
 <h2 data-number="27.6" class="anchored" data-anchor-id="sec-dsl-design"><span class="header-section-number">27.6</span> Design principles</h2>
-<p>A DSL is an interface, and the same mistakes that make function APIs hard to use make DSLs worse because the user has fewer escape hatches when things go sideways.</p>
-<p><strong>Keep the surface small.</strong> A DSL with fifty special operators is a burden, not a language. The formula interface has about six operators (<code>~</code>, <code>+</code>, <code>*</code>, <code>:</code>, <code>-</code>, <code>I()</code>). ggplot2 has a handful of geom types and a <code>+</code>. Resist adding syntax, because each new operator is a concept the user must internalize before they can read anyone else’s code.</p>
-<p><strong>Make errors readable.</strong> When units do not match, the error says “cannot add m and s.” When a conversion does not exist, it says “no conversion from m to min.” Good error messages name the things the user wrote, not the implementation details, which is <a href="ch25-contracts-and-defensive-code.html" class="quarto-xref"><span>Chapter 25</span></a> applied to DSL design.</p>
-<p><strong>Make it composable.</strong> Every expression in the DSL should return something usable as input to the next expression. <code>meters(5) + meters(3)</code> returns a <code>unit_val</code> that you can pass to <code>to()</code> or combine with more values; ggplot2’s <code>+</code> returns a plot object ready for more layers. Composability comes from consistent types: operations on <code>unit_val</code> always return <code>unit_val</code>. Notice the tension with “keep the surface small”: real composability often demands more operators, not fewer. If you can add unit values but not multiply them, the DSL is small but users will hit a wall the moment they need to compute velocity from distance and time. You have to decide which wall is worse: the cognitive load of a larger surface, or the frustration of an expressive dead end. There is no universal answer; the domain decides.</p>
-<p><strong>Do not surprise.</strong> If your DSL overloads <code>+</code>, it should still be associative: <code>(a + b) + c</code> should equal <code>a + (b + c)</code>. If it redefines <code>*</code>, users will expect it to distribute over <code>+</code>. Violating mathematical expectations creates confusion even when the behavior is internally consistent.</p>
-<p><strong>Document the grammar.</strong> A DSL has a grammar: what expressions are valid, what they mean, how they compose. Write it down, even informally. “A <code>unit_val</code> can be combined with <code>+</code> or <code>-</code> if units match. Use <code>to()</code> to convert between units. Constructors: <code>meters()</code>, <code>seconds()</code>, <code>kg()</code>.” Five sentences. That is the complete grammar, and a user who reads it can write any valid expression in the DSL without further instruction. Whether five sentences will still be enough after your DSL has lived in production for a year is a different question.</p>
+<p>A DSL is an interface, and the same mistakes that make function APIs hard to use make DSLs worse, because the user has fewer escape hatches when things go wrong.</p>
+<p>Keep the surface small. A DSL with fifty special operators is a burden. The formula interface has about six operators (<code>~</code>, <code>+</code>, <code>*</code>, <code>:</code>, <code>-</code>, <code>I()</code>), and ggplot2 has a handful of geom types and a <code>+</code>. Resist adding syntax, because each new operator is a concept the user must internalize before they can read anyone else’s code.</p>
+<p>Make errors readable. When units do not match, the error says “cannot add m and s.” When a conversion does not exist, it says “no conversion from m to min.” Good error messages name the things the user wrote, not the implementation details, which is <a href="ch25-contracts-and-defensive-code.html" class="quarto-xref"><span>Chapter 25</span></a> applied to DSL design.</p>
+<p>Make it composable. Every expression in the DSL should return something usable as input to the next expression. <code>meters(5) + meters(3)</code> returns a <code>unit_val</code> that you can pass to <code>to()</code> or combine with more values; ggplot2’s <code>+</code> returns a plot object ready for more layers. Composability comes from consistent types: operations on <code>unit_val</code> always return <code>unit_val</code>. There is a tension here with keeping the surface small, because real composability often demands more operators. If you can add unit values but not multiply them, the DSL is small but users will hit a wall the moment they need to compute velocity from distance and time. You have to decide which wall is worse: the cognitive load of a larger surface, or the frustration of an expressive dead end. There is no universal answer; the domain decides.</p>
+<p>Do not surprise. If your DSL overloads <code>+</code>, it should still be associative: <code>(a + b) + c</code> should equal <code>a + (b + c)</code>. If it redefines <code>*</code>, users will expect it to distribute over <code>+</code>. Violating mathematical expectations creates confusion even when the behavior is internally consistent.</p>
+<p>Document the grammar. A DSL has a grammar: what expressions are valid, what they mean, how they compose. Write it down, even informally. “A <code>unit_val</code> can be combined with <code>+</code> or <code>-</code> if units match. Use <code>to()</code> to convert between units. Constructors: <code>meters()</code>, <code>seconds()</code>, <code>kg()</code>.” Five sentences. That is the complete grammar, and a user who reads it can write any valid expression in the DSL without further instruction. Whether five sentences will still be enough after your DSL has lived in production for a year is a different question.</p>
 </section>
 <section id="sec-dsl-together" class="level2" data-number="27.7">
 <h2 data-number="27.7" class="anchored" data-anchor-id="sec-dsl-together"><span class="header-section-number">27.7</span> Putting it all together</h2>
-<p>The chapter’s DSL used five ingredients:</p>
-<ol type="1">
-<li><strong>S3 class</strong> (<code>unit_val</code>) to represent domain objects.</li>
-<li><strong>Constructor functions</strong> (<code>meters()</code>, <code>seconds()</code>, <code>kg()</code>) to provide vocabulary.</li>
-<li><strong>Operator overloading</strong> (<code>+.unit_val</code>, <code>-.unit_val</code>) to give arithmetic domain-specific meaning.</li>
-<li><strong>Validation</strong> (unit mismatch errors) to enforce domain rules.</li>
-<li><strong>Composability</strong> (every operation returns a <code>unit_val</code>) to make expressions chainable.</li>
-</ol>
+<p>The chapter’s DSL used five ingredients: an S3 class (<code>unit_val</code>) to represent domain objects, constructor functions (<code>meters()</code>, <code>seconds()</code>, <code>kg()</code>) as vocabulary, operator methods (<code>+.unit_val</code>, <code>-.unit_val</code>) to give arithmetic domain-specific meaning, validation (the unit-mismatch errors) to enforce domain rules, and a consistent return type (every operation returns a <code>unit_val</code>) so that expressions chain.</p>
 <p>A more ambitious DSL would add NSE to capture column names or expressions, use S3 generics to dispatch across backends, and build expression objects that defer evaluation. ggplot2 uses all of these. The progression from “simple class with overloaded operators” to “full expression-builder DSL with lazy evaluation and multiple backends” is a continuum, and you do not need the full machinery for every problem. Start with the simplest technique that makes your interface read naturally; add complexity only when the domain demands it.</p>
-<p>The formula interface from the opening of this chapter, where <code>+</code> stopped meaning addition and started meaning “include this predictor” — you now know exactly how that trick works: an S3 class, a method for <code>+</code>, and a function that interprets the captured expression in a new context.</p>
+<p>The formula interface from the opening of this chapter, where <code>+</code> stopped meaning addition and started meaning “include this predictor”, works the same way: an operator (<code>~</code>) that captures instead of computing, a class for what it returns, and a function (<code>model.matrix()</code>) that interprets the captured expression in a new context.</p>
 <p>R gave the formula system no special privileges. The same tools are available to you. When you find yourself writing repetitive, mechanical code, consider whether a small DSL, even just a class with a few overloaded operators, would let you express the same ideas more directly.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
@@ -1049,53 +1051,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

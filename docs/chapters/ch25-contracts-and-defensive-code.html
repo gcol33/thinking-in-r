@@ -666,7 +666,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `price * (1 + rate)`:</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! non-numeric argument to binary operator</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The error message says <code>non-numeric argument to binary operator</code>. If you already know what went wrong, that is enough; if you don’t, it is useless. The real problem is that someone passed <code>"42"</code> instead of <code>42</code>, but R doesn’t tell you that. It tells you about a multiplication that failed three levels deep.</p>
+<p>The error message says <code>non-numeric argument to binary operator</code>. If you already know what went wrong, that is enough; if you don’t, it is useless. The real problem is that someone passed <code>"42"</code> instead of <code>42</code>, but R doesn’t tell you that. It tells you about a multiplication that failed, and leaves you to work out which argument was the string.</p>
 <p>With validation, the error surfaces immediately:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>add_tax <span class="ot">&lt;-</span> <span class="cf">function</span>(price, rate) {</span>
@@ -681,12 +681,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! price must be numeric, got character</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Check inputs at the boundary, where data enters your function, not in the guts where it is consumed. The principle is short: <em>fail fast, fail loud, fail clear</em>.</p>
-<p>R has no static types, no compiler, no ahead-of-time guarantees. Every precondition you want enforced must be enforced by code you write. That sounds like a burden, but it has an upside: every assumption is visible in the function body when you revisit it six months later. <code>if (!is.numeric(price)) stop(...)</code> is verbose, but it is also impossible to miss.</p>
-<p>The Ariane 5 rocket self-destructed 37 seconds after launch in 1996 because a 64-bit float was silently converted to a 16-bit integer, overflowing without a check. A single <code>stop()</code> equivalent would have saved a $370 million rocket.</p>
-<p>A 2003 NASA study found that 40% of aerospace software failures came from <em>missing</em> code: checks the programmers never wrote. When your function returns <code>NA</code> instead of erroring on bad input, you are in the same category of silent failure.</p>
-<p><code>stop()</code> with a clear message forces the caller to deal with the problem immediately, before the bad value propagates through fifty lines of downstream code.</p>
+<p>R has no static types and no compile-time checks. Every precondition you want enforced must be enforced by code you write. That sounds like a burden, but it has an upside: every assumption is visible in the function body when you revisit it six months later. <code>if (!is.numeric(price)) stop(...)</code> is verbose, but it is also impossible to miss, and it forces the caller to deal with the problem before the bad value propagates through fifty lines of downstream code.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Two missing checks
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>On 4 June 1996, 37 seconds into its first flight, the Ariane 5 rocket converted a 64-bit float holding its horizontal velocity into a 16-bit signed integer. Ariane 4 had flown for years with that conversion, and its velocities had always fit. Ariane 5 flew faster; the value overflowed, the guidance computer shut down, and the rocket and its payload, worth about 500 million euros, were destroyed. The conversion had been left unprotected on purpose, to keep the processor load down. A study of seven NASA spacecraft, published in 2004, found the same shape in a quieter setting: most safety-critical software changes after launch added handling for situations the original requirements had never mentioned. The requirements had rarely been wrong; they had been incomplete. When your function returns <code>NA</code> instead of stopping on bad input, it is in the same category.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -695,7 +708,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>A <code>stop()</code> that fires on wrong input is a runtime proof by contradiction: “if this value were numeric, execution would continue; it isn’t, so we halt.” The Curry-Howard correspondence formalizes this: types are propositions, programs are proofs, and a function with signature <code>A -&gt; B</code> is a proof that “if A then B.” Dependently typed languages (Idris, Agda) encode preconditions in the type system itself, making runtime <code>stop()</code> calls unnecessary. R sits at the opposite end of that spectrum. The question both approaches answer is the same: “what must hold for this computation to be sound?”</p>
 </div>
@@ -704,7 +717,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-stop-warning-message" class="level2" data-number="25.2">
 <h2 data-number="25.2" class="anchored" data-anchor-id="sec-stop-warning-message"><span class="header-section-number">25.2</span> <code>stop()</code>, <code>warning()</code>, and <code>message()</code></h2>
-<p>R gives you three signalling functions, each pitched at a different severity. The differences matter more than you might think.</p>
+<p>R gives you three signalling functions, each pitched at a different severity.</p>
 <p><code>stop("msg")</code> halts execution and signals an error. Use it when the function cannot produce a correct result.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>divide <span class="ot">&lt;-</span> <span class="cf">function</span>(x, y) {</span>
@@ -720,14 +733,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>safe_log <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(x <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">warning</span>(<span class="st">"non-positive values replaced with NA"</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ifelse</span>(x <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="fu">log</span>(x), <span class="cn">NA</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">3</span>))</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in safe_log(c(1, -2, 3)): non-positive values replaced with NA</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in log(x): NaNs produced</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  x[x <span class="sc">&lt;=</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log</span>(x)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">3</span>))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in safe_log(c(1, -2, 3)): non-positive values replaced with NA</span></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.000000       NA 1.098612</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p>The result comes back, with the warning printed above it. Had the function called <code>log()</code> on the original vector, R would have added a second warning of its own, <code>NaNs produced</code>, and the caller would have seen two messages for one problem.</p>
 <p><code>message("msg")</code> prints informational output: progress updates, status reports, diagnostics. <code>suppressMessages()</code> silences these, which is why <code>message()</code> is better than <code>cat()</code> for status output. It respects the caller’s wishes.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>load_data <span class="ot">&lt;-</span> <span class="cf">function</span>(path) {</span>
@@ -810,22 +824,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-validation-patterns" class="level2" data-number="25.4">
 <h2 data-number="25.4" class="anchored" data-anchor-id="sec-validation-patterns"><span class="header-section-number">25.4</span> Common validation patterns</h2>
-<p>A function that expects a numeric scalar but receives a character vector of length three will fail somewhere. The question is where. These patterns catch the problem at the door.</p>
-<ul>
-<li><strong>Type checks</strong>: <code>is.numeric(x)</code>, <code>is.character(x)</code>, <code>is.logical(x)</code>, <code>is.data.frame(x)</code>, <code>is.list(x)</code>.</li>
-<li><strong>Length checks</strong>: <code>length(x) == 1</code> for scalars, <code>length(x) &gt; 0</code> for non-empty inputs.</li>
-<li><strong>Range checks</strong>: <code>x &gt; 0</code> for positive, <code>x &gt;= 0 &amp;&amp; x &lt;= 1</code> for probabilities.</li>
-<li><strong>NULL and NA handling</strong>: <code>is.null(x)</code> and <code>anyNA(x)</code>.</li>
-</ul>
+<p>A function that expects a numeric scalar but receives a character vector of length three will fail somewhere. The question is where. This function checks everything it depends on before doing any work:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">is.null</span>(x)) <span class="fu">stop</span>(<span class="st">"x must not be NULL"</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">anyNA</span>(x)) <span class="fu">stop</span>(<span class="st">"x must not contain NA values"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>top_n_share <span class="ot">&lt;-</span> <span class="cf">function</span>(x, n) {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(x)) <span class="fu">stop</span>(<span class="st">"x must not be NULL"</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.numeric</span>(x)) <span class="fu">stop</span>(<span class="fu">sprintf</span>(<span class="st">"x must be numeric, got %s"</span>, <span class="fu">class</span>(x)[<span class="dv">1</span>]))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">anyNA</span>(x)) <span class="fu">stop</span>(<span class="st">"x must not contain NA values"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(n) <span class="sc">!=</span> <span class="dv">1</span> <span class="sc">||</span> n <span class="sc">&lt;</span> <span class="dv">1</span>) <span class="fu">stop</span>(<span class="st">"n must be a single positive number"</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(<span class="fu">sort</span>(x, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="fu">seq_len</span>(n)]) <span class="sc">/</span> <span class="fu">sum</span>(x)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="fu">top_n_share</span>(<span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">3</span>, <span class="dv">2</span>), <span class="dv">2</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.8</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="fu">top_n_share</span>(<span class="fu">c</span>(<span class="dv">5</span>, <span class="cn">NA</span>, <span class="dv">2</span>), <span class="dv">2</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `top_n_share()`:</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! x must not contain NA values</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>File existence.</strong> <code>file.exists(path)</code>.</p>
+<p>The same four kinds of check come up in almost every function: the type (<code>is.numeric()</code>, <code>is.character()</code>, <code>is.data.frame()</code>), the length (<code>length(x) == 1</code> for a scalar, <code>length(x) &gt; 0</code> for a non-empty input), the range (<code>x &gt; 0</code>, or <code>x &gt;= 0 &amp;&amp; x &lt;= 1</code> for a probability), and the two absences, <code>is.null(x)</code> and <code>anyNA(x)</code>. A function that reads a file adds <code>file.exists(path)</code> before it opens anything:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(path)) <span class="fu">stop</span>(<span class="fu">sprintf</span>(<span class="st">"file not found: %s"</span>, path))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Set membership.</strong> This pattern deserves special attention: <code>match.arg()</code>.</p>
+<p>One more check comes up so often that base R has a function for it. When an argument is a string chosen from a fixed set of options, list the options in the signature and let <code>match.arg()</code> compare against them:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>my_summary <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">method =</span> <span class="fu">c</span>(<span class="st">"mean"</span>, <span class="st">"median"</span>, <span class="st">"trimmed"</span>)) {</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  method <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(method)</span>
@@ -834,31 +853,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">median  =</span> <span class="fu">median</span>(x),</span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">trimmed =</span> <span class="fu">mean</span>(x, <span class="at">trim =</span> <span class="fl">0.1</span>)</span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><code>match.arg()</code> does three things at once. It validates that the argument is one of the allowed choices. It supports partial matching, so <code>my_summary(1:10, "med")</code> works. And it picks the first option as the default, so calling <code>my_summary(1:10)</code> uses <code>"mean"</code>. All of this comes from the function signature, which means the valid choices are visible in the documentation and in <code>?my_summary</code>.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5.5</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="st">"median"</span>)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5.5</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="st">"tri"</span>)</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5.5</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="st">"median"</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5.5</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="st">"tri"</span>)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="st">"xyz"</span>)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `match.arg()`:</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! 'arg' should be one of "mean", "median", "trimmed"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">my_summary</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="st">"xyz"</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `match.arg()`:</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! 'arg' should be one of "mean", "median", "trimmed"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The error message from <code>match.arg()</code> is clear and lists the valid options, which is why it is preferred over manual <code>%in%</code> checks for string arguments with fixed options. But all of these patterns share a problem: writing them out by hand, over and over, for every function in a package.</p>
+<p><code>match.arg()</code> did three things. With no <code>method</code> supplied it picked the first option, so <code>my_summary(1:10)</code> used <code>"mean"</code>. It accepted <code>"tri"</code> as a partial match for <code>"trimmed"</code>. And it rejected <code>"xyz"</code> with a message that lists the valid options, which is why it is preferred over a hand-written <code>%in%</code> check: the choices live in the function signature, where <code>?my_summary</code> shows them, and the error repeats them. But all of these patterns share a problem: writing them out by hand, over and over, for every function in a package.</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
 <li><p>Write a function <code>rescale()</code> that takes a numeric vector <code>x</code> and a <code>method</code> argument accepting <code>"minmax"</code> or <code>"zscore"</code>. Use <code>match.arg()</code> for validation. Test that partial matching works.</p></li>
 <li><p>Add validation to the following function using <code>stopifnot()</code> or <code>if</code>/<code>stop()</code>. Check that <code>data</code> is a data frame, <code>n</code> is a single positive integer, and <code>col</code> is a string that exists as a column name.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>top_rows <span class="ot">&lt;-</span> <span class="cf">function</span>(data, col, <span class="at">n =</span> <span class="dv">5</span>) {</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  data[<span class="fu">order</span>(data[[col]], <span class="at">decreasing =</span> <span class="cn">TRUE</span>), ][<span class="fu">seq_len</span>(n), ]</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>top_rows <span class="ot">&lt;-</span> <span class="cf">function</span>(data, col, <span class="at">n =</span> <span class="dv">5</span>) {</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  data[<span class="fu">order</span>(data[[col]], <span class="at">decreasing =</span> <span class="cn">TRUE</span>), ][<span class="fu">seq_len</span>(n), ]</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ol>
 </section>
 </section>
@@ -866,28 +883,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="25.5" class="anchored" data-anchor-id="sec-checkmate"><span class="header-section-number">25.5</span> The checkmate package</h2>
 <p>Writing the same <code>if (!is.numeric(x)) stop(...)</code> pattern for the fifteenth time in a package gets old fast, and each repetition is another chance to misspell a class name or forget a length check. The <code>checkmate</code> package provides concise, fast assertion functions that handle the boilerplate:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(checkmate)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>process <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">method =</span> <span class="st">"fast"</span>, <span class="at">threshold =</span> <span class="fl">0.5</span>) {</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">assert_data_frame</span>(data, <span class="at">min.rows =</span> <span class="dv">1</span>)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">assert_choice</span>(method, <span class="at">choices =</span> <span class="fu">c</span>(<span class="st">"fast"</span>, <span class="st">"accurate"</span>))</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">assert_number</span>(threshold, <span class="at">lower =</span> <span class="dv">0</span>, <span class="at">upper =</span> <span class="dv">1</span>)</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ...</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(checkmate)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>process <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">method =</span> <span class="st">"fast"</span>, <span class="at">threshold =</span> <span class="fl">0.5</span>) {</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">assert_data_frame</span>(data, <span class="at">min.rows =</span> <span class="dv">1</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">assert_choice</span>(method, <span class="at">choices =</span> <span class="fu">c</span>(<span class="st">"fast"</span>, <span class="st">"accurate"</span>))</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">assert_number</span>(threshold, <span class="at">lower =</span> <span class="dv">0</span>, <span class="at">upper =</span> <span class="dv">1</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ...</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each <code>assert_*</code> function throws an informative error if the check fails. No <code>if</code>/<code>stop</code> boilerplate, no <code>sprintf</code> formatting. The function names are self-documenting: <code>assert_numeric</code>, <code>assert_character</code>, <code>assert_file_exists</code>, <code>assert_flag</code> (for single TRUE/FALSE), and dozens more.</p>
 <p><code>checkmate</code> also provides two softer variants. <code>test_*</code> functions return <code>TRUE</code> or <code>FALSE</code> for use in conditional logic; <code>check_*</code> functions return the error message as a string (or <code>TRUE</code> on success) for custom handling.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Conditional logic</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">test_numeric</span>(x)) {</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(x)</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>(x)</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom error message</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>msg <span class="ot">&lt;-</span> <span class="fu">check_numeric</span>(x, <span class="at">lower =</span> <span class="dv">0</span>)</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">isTRUE</span>(msg)) <span class="fu">stop</span>(<span class="st">"Custom prefix: "</span>, msg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Conditional logic</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">test_numeric</span>(x)) {</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(x)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">length</span>(x)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Custom error message</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>msg <span class="ot">&lt;-</span> <span class="fu">check_numeric</span>(x, <span class="at">lower =</span> <span class="dv">0</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">isTRUE</span>(msg)) <span class="fu">stop</span>(<span class="st">"Custom prefix: "</span>, msg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -908,41 +925,71 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Everything so far has been about signalling your own errors. But sometimes the error comes from somewhere else: a file that doesn’t exist, a web API that times out, a parsing function that chokes on malformed input. You need to <em>catch</em> those errors and decide what to do about them.</p>
 <p><code>tryCatch()</code> catches an error, warning, or message and runs a handler:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log</span>(<span class="st">"a"</span>),</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NA</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>result</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log</span>(<span class="st">"a"</span>),</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NA</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>result</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Instead of crashing, <code>log("a")</code> returns <code>NA</code>. The error handler receives the condition object <code>e</code> and returns a fallback value. This is <em>recovery</em>: you know an error might happen, and you have a plan for it.</p>
 <p><code>try()</code> is a simpler wrapper that returns the result on success, or an object of class <code>"try-error"</code> on failure:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">log</span>(<span class="st">"a"</span>), <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(result)</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "try-error"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">log</span>(<span class="st">"a"</span>), <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(result)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "try-error"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>try()</code> is convenient for quick scripts, but <code>tryCatch()</code> lets you run a handler and catch warnings and messages, not just errors.</p>
 <p>For functional programming, <code>purrr::safely()</code> wraps a function to make it error-tolerant. It returns a list with <code>$result</code> and <code>$error</code>, designed for use with <code>map()</code> when applying a function that might fail on some elements:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>safe_log <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">safely</span>(log)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="dv">10</span>)</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $result</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2.302585</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $error</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="st">"a"</span>)</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $result</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $error</span></span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;simpleError in .f(...): non-numeric argument to mathematical function&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>safe_log <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">safely</span>(log)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="dv">10</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $result</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2.302585</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $error</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="st">"a"</span>)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $result</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $error</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &lt;simpleError in .f(...): non-numeric argument to mathematical function&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>purrr::possibly()</code> is a variation: it returns a default value on failure instead of the <code>$result</code>/<code>$error</code> list. Together with <code>tryCatch()</code>, these form R’s condition handling system.</p>
-<p>Erlang (1986, Ericsson) takes this philosophy to its extreme: instead of preventing crashes with validation, Erlang designs <em>supervisors</em> that detect and restart failed processes. Ericsson’s telecom switches achieved 99.9999999% uptime using this “let it crash” philosophy, and R’s <code>tryCatch()</code> is a mild version of the same idea. Both philosophies agree on the essential point: silent failures are the real enemy. But what does a disciplined version of “catch and recover” look like as a data structure?</p>
-<p>In functional programming, the answer is the <em>Either</em> type (or <em>Result</em> in Rust): a computation either succeeds with a value or fails with an error. <code>tryCatch</code> runs the expression; if it succeeds, you get the result; if it throws, you get the error handler’s output.</p>
+<p><code>purrr::possibly()</code> is a variation: it returns a default value on failure instead of the <code>$result</code>/<code>$error</code> list. Errors, warnings and messages are all <em>conditions</em>, and <code>tryCatch()</code> can take a handler for each.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Let it crash
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In the mid-1980s a team at Ericsson was looking for a language to program telephone switches, machines expected to run for years without a restart. The language they built, Erlang, takes the opposite approach to this chapter: instead of validating inputs so that a process never fails, it lets processes crash and assigns a <em>supervisor</em> process to notice the crash and start a clean copy. Ericsson has claimed nine nines of availability, 99.9999999%, for one of its Erlang-based switches, though the figure comes from a customer’s report on a single installation rather than a systematic measurement. <code>tryCatch()</code> is a mild version of the same idea: the error is expected, and there is a plan for it.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Either and Result
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><code>tryCatch(expr, error = function(e) NA)</code> produces one of two shapes: the value of <code>expr</code>, or whatever the handler returns. Typed functional languages give that pair a name. Haskell’s <code>Either</code> holds either an error or a result, Rust’s <code>Result</code> does the same, and <code>purrr::safely()</code> is the R version: a list with a <code>$result</code> slot and an <code>$error</code> slot, exactly one of them filled.</p>
+</div>
+</div>
+</div>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -968,27 +1015,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="25.7" class="anchored" data-anchor-id="sec-rlang-abort"><span class="header-section-number">25.7</span> <code>rlang::abort()</code> and cli</h2>
 <p><code>rlang::abort()</code> is a modern replacement for <code>stop()</code> that automatically saves a backtrace (the chain of function calls that led to the error) and supports <em>condition classes</em> for selective catching:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">abort</span>(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">message =</span> <span class="st">"x must be positive"</span>,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="st">"validation_error"</span>,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> x</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>rlang<span class="sc">::</span><span class="fu">abort</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">message =</span> <span class="st">"x must be positive"</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="st">"validation_error"</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> x</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>A caller can now catch <code>validation_error</code> specifically, while letting other errors propagate:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tryCatch</span>(</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">my_function</span>(x),</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">validation_error =</span> <span class="cf">function</span>(e) {</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="st">"Validation failed: "</span>, e<span class="sc">$</span>message)</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tryCatch</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">my_function</span>(x),</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">validation_error =</span> <span class="cf">function</span>(e) {</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">message</span>(<span class="st">"Validation failed: "</span>, e<span class="sc">$</span>message)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>cli</code> package takes this further. <code>cli::cli_abort()</code> produces structured, formatted error messages with bullets and inline markup:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_abort</span>(<span class="fu">c</span>(</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"x"</span> <span class="ot">=</span> <span class="st">"{.arg x} must be a positive number."</span>,</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"i"</span> <span class="ot">=</span> <span class="st">"You supplied {.cls {class(x)}} of length {length(x)}."</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>cli<span class="sc">::</span><span class="fu">cli_abort</span>(<span class="fu">c</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"x"</span> <span class="ot">=</span> <span class="st">"{.arg x} must be a positive number."</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"i"</span> <span class="ot">=</span> <span class="st">"You supplied {.cls {class(x)}} of length {length(x)}."</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>"x"</code> prefix marks the main error; <code>"i"</code> marks informational context. <code>{.arg x}</code> and <code>{.cls ...}</code> are cli’s inline formatting: they render the argument name and class with special styling in terminals that support it.</p>
 <p>If you have ever wondered why tidyverse error messages look so polished, with colored bullets and formatted argument names, <code>cli::cli_abort()</code> is the answer. You don’t need cli-formatted errors in scripts, but knowing they exist helps you read the error messages that tidyverse packages produce.</p>
@@ -1004,24 +1051,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-function-interface-design" class="level2" data-number="25.8">
 <h2 data-number="25.8" class="anchored" data-anchor-id="sec-function-interface-design"><span class="header-section-number">25.8</span> Designing function interfaces</h2>
 <p>Validation is downstream of design. A well-designed function is hard to misuse in the first place, which means much of your defensive code never needs to exist.</p>
-<p><strong>Required arguments have no defaults. Optional arguments have sensible defaults.</strong> If a function needs a file path to work, don’t give <code>path</code> a default of <code>NULL</code> and then check for it inside the body. Make the caller provide it.</p>
-<p><strong>Use <code>match.arg()</code> for string options.</strong> The valid choices are visible in the function signature and in the help page, so the caller doesn’t need to read the source code to know what’s allowed.</p>
+<p>Two ways of accepting a plot type:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: choices are visible</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>my_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"scatter"</span>, <span class="st">"line"</span>, <span class="st">"bar"</span>)) {</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ...</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Bad: choices are hidden inside the body</span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>my_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">type =</span> <span class="st">"scatter"</span>) {</span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>type <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"scatter"</span>, <span class="st">"line"</span>, <span class="st">"bar"</span>)) <span class="fu">stop</span>(<span class="st">"invalid type"</span>)</span>
-<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ...</span></span>
-<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>my_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"scatter"</span>, <span class="st">"line"</span>, <span class="st">"bar"</span>)) {</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ...</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>my_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">type =</span> <span class="st">"scatter"</span>) {</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>type <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"scatter"</span>, <span class="st">"line"</span>, <span class="st">"bar"</span>)) <span class="fu">stop</span>(<span class="st">"invalid type"</span>)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># ...</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Put the data first.</strong> This makes the function pipe-friendly (<code>data |&gt; my_func()</code>). Modifier arguments come after.</p>
-<p><strong>Use <code>...</code> sparingly.</strong> If you use it, document what it accepts and where it gets forwarded. An undocumented <code>...</code> is a trap: the caller passes a misspelled argument, <code>...</code> absorbs it silently, and no error is raised. (This is one of R’s most common sources of invisible bugs.)</p>
-<p><strong>Don’t overload argument types.</strong> An argument <code>x</code> that can be a vector, a data frame, or a formula is hard to validate and hard to use, because each accepted type needs its own validation branch and its own documentation. If you find yourself writing <code>if (is.data.frame(x)) ... else if (is.numeric(x)) ...</code>, consider splitting the function or using S3 dispatch.</p>
+<p>Both reject <code>"pie"</code>. The first version also tells the caller what the options are, in the signature and in the help page, before anything goes wrong. In the second the choices are hidden inside the body, and the caller has to read the source or trigger the error to discover them.</p>
+<p>The same logic applies to defaults. If a function needs a file path to work, <code>path</code> gets no default; giving it <code>NULL</code> and checking for <code>NULL</code> inside the body is validation code that a required argument would have made unnecessary. Optional arguments get sensible defaults. The data argument goes first, so the function works in a pipe (<code>data |&gt; my_func()</code>), and the modifiers come after.</p>
+<p>Use <code>...</code> sparingly. If you use it, document what it accepts and where it gets forwarded, because a misspelled argument name disappears into <code>...</code> without an error, and a function that quietly drops <code>na.rm = TRUE</code> is one of R’s most common sources of invisible bugs.</p>
+<p>An argument <code>x</code> that can be a vector, a data frame, or a formula is hard to validate and hard to document, because each accepted type needs its own branch. If you find yourself writing <code>if (is.data.frame(x)) ... else if (is.numeric(x)) ...</code>, consider splitting the function or using S3 dispatch.</p>
 <p>This connects to <a href="ch24-s3-and-s7.html" class="quarto-xref"><span>Chapter 24</span></a>: S7 properties with type declarations are validation built into the class definition. When you declare that a property must be a positive numeric scalar, invalid objects cannot exist. Validation at construction time, enforced by the type system, is the strongest form of defensive programming.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -1134,53 +1179,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

@@ -27,7 +27,7 @@ add_tax <- function(price, rate) {
 add_tax("42", 0.2)
 ```
 
-The error message says `non-numeric argument to binary operator`. If you already know what went wrong, that is enough; if you don't, it is useless. The real problem is that someone passed `"42"` instead of `42`, but R doesn't tell you that. It tells you about a multiplication that failed three levels deep.
+The error message says `non-numeric argument to binary operator`. If you already know what went wrong, that is enough; if you don't, it is useless. The real problem is that someone passed `"42"` instead of `42`, but R doesn't tell you that. It tells you about a multiplication that failed, and leaves you to work out which argument was the string.
 
 With validation, the error surfaces immediately:
 
@@ -45,13 +45,12 @@ add_tax("42", 0.2)
 
 Check inputs at the boundary, where data enters your function, not in the guts where it is consumed. The principle is short: *fail fast, fail loud, fail clear*\index{defensive programming}.
 
-R has no static types, no compiler, no ahead-of-time guarantees. Every precondition you want enforced must be enforced by code you write. That sounds like a burden, but it has an upside: every assumption is visible in the function body when you revisit it six months later. `if (!is.numeric(price)) stop(...)` is verbose, but it is also impossible to miss.
+R has no static types and no compile-time checks. Every precondition you want enforced must be enforced by code you write. That sounds like a burden, but it has an upside: every assumption is visible in the function body when you revisit it six months later. `if (!is.numeric(price)) stop(...)` is verbose, but it is also impossible to miss, and it forces the caller to deal with the problem before the bad value propagates through fifty lines of downstream code.
 
-The Ariane 5 rocket self-destructed 37 seconds after launch in 1996 because a 64-bit float was silently converted to a 16-bit integer, overflowing without a check. A single `stop()` equivalent would have saved a $370 million rocket.
-
-A 2003 NASA study found that 40% of aerospace software failures came from *missing* code: checks the programmers never wrote. When your function returns `NA` instead of erroring on bad input, you are in the same category of silent failure.
-
-`stop()` with a clear message forces the caller to deal with the problem immediately, before the bad value propagates through fifty lines of downstream code.
+::: {.callout-note collapse="true"}
+## Two missing checks
+On 4 June 1996, 37 seconds into its first flight, the Ariane 5 rocket converted a 64-bit float holding its horizontal velocity into a 16-bit signed integer. Ariane 4 had flown for years with that conversion, and its velocities had always fit. Ariane 5 flew faster; the value overflowed, the guidance computer shut down, and the rocket and its payload, worth about 500 million euros, were destroyed. The conversion had been left unprotected on purpose, to keep the processor load down. A study of seven NASA spacecraft, published in 2004, found the same shape in a quieter setting: most safety-critical software changes after launch added handling for situations the original requirements had never mentioned. The requirements had rarely been wrong; they had been incomplete. When your function returns `NA` instead of stopping on bad input, it is in the same category.
+:::
 
 ::: {.callout-note collapse="true"}
 ## The type theory connection
@@ -61,7 +60,7 @@ A `stop()`\index{assertion} that fires on wrong input is a runtime proof by cont
 
 ## `stop()`, `warning()`, and `message()` {#sec-stop-warning-message}
 
-R gives you three signalling functions, each pitched at a different severity. The differences matter more than you might think.
+R gives you three signalling functions, each pitched at a different severity.
 
 `stop("msg")` halts execution and signals an error\index{error}. Use it when the function cannot produce a correct result.
 
@@ -80,11 +79,14 @@ divide(10, 0)
 ```{r}
 safe_log <- function(x) {
   if (any(x <= 0)) warning("non-positive values replaced with NA")
-  ifelse(x > 0, log(x), NA)
+  x[x <= 0] <- NA
+  log(x)
 }
 
 safe_log(c(1, -2, 3))
 ```
+
+The result comes back, with the warning printed above it. Had the function called `log()` on the original vector, R would have added a second warning of its own, `NaNs produced`, and the caller would have seen two messages for one problem.
 
 `message("msg")`\index{message} prints informational output: progress updates, status reports, diagnostics. `suppressMessages()` silences these, which is why `message()` is better than `cat()` for status output. It respects the caller's wishes.
 
@@ -174,27 +176,30 @@ Named `stopifnot()` gives you the conciseness of assertions with messages you co
 
 ## Common validation patterns {#sec-validation-patterns}
 
-A function that expects a numeric scalar but receives a character vector of length three will fail somewhere. The question is where. These patterns catch the problem at the door.
-
-- **Type checks**: `is.numeric(x)`, `is.character(x)`, `is.logical(x)`, `is.data.frame(x)`, `is.list(x)`.
-- **Length checks**: `length(x) == 1` for scalars, `length(x) > 0` for non-empty inputs.
-- **Range checks**: `x > 0` for positive, `x >= 0 && x <= 1` for probabilities.
-- **NULL and NA handling**: `is.null(x)` and `anyNA(x)`.
+A function that expects a numeric scalar but receives a character vector of length three will fail somewhere. The question is where. This function checks everything it depends on before doing any work:
 
 ```{r}
-#| eval: false
-if (is.null(x)) stop("x must not be NULL")
-if (anyNA(x)) stop("x must not contain NA values")
+#| error: true
+top_n_share <- function(x, n) {
+  if (is.null(x)) stop("x must not be NULL")
+  if (!is.numeric(x)) stop(sprintf("x must be numeric, got %s", class(x)[1]))
+  if (anyNA(x)) stop("x must not contain NA values")
+  if (length(n) != 1 || n < 1) stop("n must be a single positive number")
+  sum(sort(x, decreasing = TRUE)[seq_len(n)]) / sum(x)
+}
+
+top_n_share(c(5, 3, 2), 2)
+top_n_share(c(5, NA, 2), 2)
 ```
 
-**File existence.** `file.exists(path)`.
+The same four kinds of check come up in almost every function: the type (`is.numeric()`, `is.character()`, `is.data.frame()`), the length (`length(x) == 1` for a scalar, `length(x) > 0` for a non-empty input), the range (`x > 0`, or `x >= 0 && x <= 1` for a probability), and the two absences, `is.null(x)` and `anyNA(x)`. A function that reads a file adds `file.exists(path)` before it opens anything:
 
 ```{r}
 #| eval: false
 if (!file.exists(path)) stop(sprintf("file not found: %s", path))
 ```
 
-**Set membership.** This pattern deserves special attention: `match.arg()`.
+One more check comes up so often that base R has a function for it. When an argument is a string chosen from a fixed set of options, list the options in the signature and let `match.arg()` compare against them:
 
 ```{r}
 my_summary <- function(x, method = c("mean", "median", "trimmed")) {
@@ -205,11 +210,7 @@ my_summary <- function(x, method = c("mean", "median", "trimmed")) {
     trimmed = mean(x, trim = 0.1)
   )
 }
-```
 
-`match.arg()` does three things at once. It validates that the argument is one of the allowed choices. It supports partial matching, so `my_summary(1:10, "med")` works. And it picks the first option as the default, so calling `my_summary(1:10)` uses `"mean"`. All of this comes from the function signature, which means the valid choices are visible in the documentation and in `?my_summary`.
-
-```{r}
 my_summary(1:10)
 my_summary(1:10, "median")
 my_summary(1:10, "tri")
@@ -220,7 +221,7 @@ my_summary(1:10, "tri")
 my_summary(1:10, "xyz")
 ```
 
-The error message from `match.arg()` is clear and lists the valid options, which is why it is preferred over manual `%in%` checks for string arguments with fixed options. But all of these patterns share a problem: writing them out by hand, over and over, for every function in a package.
+`match.arg()` did three things. With no `method` supplied it picked the first option, so `my_summary(1:10)` used `"mean"`. It accepted `"tri"` as a partial match for `"trimmed"`. And it rejected `"xyz"` with a message that lists the valid options, which is why it is preferred over a hand-written `%in%` check: the choices live in the function signature, where `?my_summary` shows them, and the error repeats them. But all of these patterns share a problem: writing them out by hand, over and over, for every function in a package.
 
 
 ### Exercises {.unnumbered}
@@ -310,11 +311,17 @@ safe_log(10)
 safe_log("a")
 ```
 
-`purrr::possibly()` is a variation: it returns a default value on failure instead of the `$result`/`$error` list. Together with `tryCatch()`, these form R's condition\index{condition} handling system.
+`purrr::possibly()` is a variation: it returns a default value on failure instead of the `$result`/`$error` list. Errors, warnings and messages are all *conditions*\index{condition}, and `tryCatch()` can take a handler for each.
 
-Erlang (1986, Ericsson) takes this philosophy to its extreme: instead of preventing crashes with validation, Erlang designs *supervisors* that detect and restart failed processes. Ericsson's telecom switches achieved 99.9999999% uptime using this "let it crash" philosophy, and R's `tryCatch()` is a mild version of the same idea. Both philosophies agree on the essential point: silent failures are the real enemy. But what does a disciplined version of "catch and recover" look like as a data structure?
+::: {.callout-note collapse="true"}
+## Let it crash
+In the mid-1980s a team at Ericsson was looking for a language to program telephone switches, machines expected to run for years without a restart. The language they built, Erlang, takes the opposite approach to this chapter: instead of validating inputs so that a process never fails, it lets processes crash and assigns a *supervisor* process to notice the crash and start a clean copy. Ericsson has claimed nine nines of availability, 99.9999999%, for one of its Erlang-based switches, though the figure comes from a customer's report on a single installation rather than a systematic measurement. `tryCatch()` is a mild version of the same idea: the error is expected, and there is a plan for it.
+:::
 
-In functional programming, the answer is the *Either* type (or *Result* in Rust): a computation either succeeds with a value or fails with an error. `tryCatch` runs the expression; if it succeeds, you get the result; if it throws, you get the error handler's output.
+::: {.callout-note collapse="true"}
+## Either and Result
+`tryCatch(expr, error = function(e) NA)` produces one of two shapes: the value of `expr`, or whatever the handler returns. Typed functional languages give that pair a name. Haskell's `Either` holds either an error or a result, Rust's `Result` does the same, and `purrr::safely()` is the R version: a list with a `$result` slot and an `$error` slot, exactly one of them filled.
+:::
 
 ::: callout-tip
 ## Opinion
@@ -381,30 +388,28 @@ If you have ever wondered why tidyverse error messages look so polished, with co
 
 Validation is downstream of design. A well-designed function is hard to misuse in the first place, which means much of your defensive code never needs to exist.
 
-**Required arguments have no defaults. Optional arguments have sensible defaults.** If a function needs a file path to work, don't give `path` a default of `NULL` and then check for it inside the body. Make the caller provide it.
-
-**Use `match.arg()` for string options.** The valid choices are visible in the function signature and in the help page, so the caller doesn't need to read the source code to know what's allowed.
+Two ways of accepting a plot type:
 
 ```{r}
 #| eval: false
-# Good: choices are visible
 my_plot <- function(data, type = c("scatter", "line", "bar")) {
   type <- match.arg(type)
   # ...
 }
 
-# Bad: choices are hidden inside the body
 my_plot <- function(data, type = "scatter") {
   if (!type %in% c("scatter", "line", "bar")) stop("invalid type")
   # ...
 }
 ```
 
-**Put the data first.** This makes the function pipe-friendly (`data |> my_func()`). Modifier arguments come after.
+Both reject `"pie"`. The first version also tells the caller what the options are, in the signature and in the help page, before anything goes wrong. In the second the choices are hidden inside the body, and the caller has to read the source or trigger the error to discover them.
 
-**Use `...` sparingly.** If you use it, document what it accepts and where it gets forwarded. An undocumented `...` is a trap: the caller passes a misspelled argument, `...` absorbs it silently, and no error is raised. (This is one of R's most common sources of invisible bugs.)
+The same logic applies to defaults. If a function needs a file path to work, `path` gets no default; giving it `NULL` and checking for `NULL` inside the body is validation code that a required argument would have made unnecessary. Optional arguments get sensible defaults. The data argument goes first, so the function works in a pipe (`data |> my_func()`), and the modifiers come after.
 
-**Don't overload argument types.** An argument `x` that can be a vector, a data frame, or a formula is hard to validate and hard to use, because each accepted type needs its own validation branch and its own documentation. If you find yourself writing `if (is.data.frame(x)) ... else if (is.numeric(x)) ...`, consider splitting the function or using S3 dispatch.
+Use `...` sparingly. If you use it, document what it accepts and where it gets forwarded, because a misspelled argument name disappears into `...` without an error, and a function that quietly drops `na.rm = TRUE` is one of R's most common sources of invisible bugs.
+
+An argument `x` that can be a vector, a data frame, or a formula is hard to validate and hard to document, because each accepted type needs its own branch. If you find yourself writing `if (is.data.frame(x)) ... else if (is.numeric(x)) ...`, consider splitting the function or using S3 dispatch.
 
 This connects to @sec-s3-and-s7: S7 properties with type declarations are validation built into the class definition. When you declare that a property must be a positive numeric scalar, invalid objects cannot exist. Validation at construction time, enforced by the type system, is the strongest form of defensive programming.
 
