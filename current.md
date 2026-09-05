@@ -166,10 +166,9 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Cross-refs added (none existed): one per paragraph to @sec-curry-howard, @sec-category-connections, @sec-s7, @sec-passing-functions. From an `{.unnumbered}` page Quarto renders every `@sec-` ref as the target's title ("Types as propositions", "7 Functions are values"), not "Chapter 7" or "Section 30.6", so refs in the foreword and afterword have to read as titles: put them in parentheses or after "in", never as a sentence subject. "Chapter 1" stays literal text.
 - A full `quarto render --to html` (the first since the pass began; earlier batches rendered per chapter) also dropped the orphaned ch33 `unnamed-chunk-5-1.png`, changed ch08's two figure divs and `index.html`/`search.json`, and rewrote `docs/cover.svg`, `custom.css`, `favicon.svg`, `turing_vs_church.svg` and `clipboard.min.js` with line-ending-only diffs, which were reverted.
 - Cut: foreword "no `if` keyword — just functions calling functions" (em-dash) and "carries Church's fingerprint"; afterword "The correspondence was not something anyone set out to build", "pushed the question one level deeper", "The vocabulary ... is forbidding, but you have been using the structures since chapter 5" (teacher mode, and `map()` is ch19, not ch05), "the architecture has not needed replacing".
-- Flag still open: ch02 line 86 says functions in S have "lexical scoping, exactly as in the `make_adder` example". The foreword, ch18 and ch30 now all say the opposite. One sentence to fix in ch02.
+- ch02 line 86 ("Functions in S are first-class values with lexical scoping, exactly as in the `make_adder` example") fixed in the same session: S looks free variables up in the top-level workspace, `make_adder(2)` would not remember its 2, and the Auckland paragraph now lists Scheme's lookup rule among what Ihaka and Gentleman changed. This closes the ch02/ch18 discrepancy flagged under ch16-18.
 - Word counts: foreword 247 to 310, afterword 590 to 726 (situations for three name-drops, five cross-refs).
 
 ## Files for the next session
 
-- `chapters/ch02-family-tree.qmd` line 86 (S scoping sentence, see flag above)
-- Then a whole-book read for the flags listed under ch16-18 and ch28-31 (ch09 "every environment is a hash table"; the Norvig attribution in ch18)
+- A whole-book read for the remaining flags: ch09 line 160 "every environment is a hash table" (function frames are unhashed); the ch18 "closures are a poor man's objects" line, which lost its Norvig attribution and may want a named source.
