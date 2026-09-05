@@ -653,18 +653,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>You email <code>analysis.R</code> to a colleague. They run it and get an error because they don’t have the <code>janitor</code> package. They install it, try again, and hit a different wall: your script calls <code>source("helpers.R")</code>, a file they don’t have. You send it. They put it in the wrong directory. Two days later, they give up. The problem isn’t your code; it’s that scripts have no way to declare what they need, no way to carry their own context, no mechanism for self-description. Packages solve all three problems at once, and once you see the structure, you can build one in ten minutes.</p>
+<p>You email <code>analysis.R</code> to a colleague. They run it and get an error because they don’t have the <code>janitor</code> package. They install it, try again, and hit a different wall: your script calls <code>source("helpers.R")</code>, a file they don’t have. You send it. They put it in the wrong directory. Two days later, they give up. A script has no way to say what it needs or to carry its helpers with it. A package does both, and once you see the structure, you can build one in ten minutes.</p>
 <section id="sec-why-packages" class="level2" data-number="32.1">
 <h2 data-number="32.1" class="anchored" data-anchor-id="sec-why-packages"><span class="header-section-number">32.1</span> Why packages</h2>
-<p>A package is the unit of shareable, testable, documented R code. Scripts depend on <code>source()</code> calls, hardcoded paths, and the hope that the right libraries happen to be installed; packages carry their dependencies, their documentation, and their tests as a single installable unit that either works or tells you exactly why it doesn’t.</p>
-<p>Compare the email scenario with what happens when you share a package. Your colleague runs <code>pak::pak("username/mypackage")</code>, and everything installs: functions, documentation, dependencies. They type <code>?my_function</code> and see how to use it. No back-and-forth. No guessing.</p>
-<p>Even if you never publish to CRAN, a package gives you:</p>
-<ul>
-<li><strong>Forced documentation</strong>: you have to describe what your function does.</li>
-<li><strong>Automated testing</strong>: you can prove it works.</li>
-<li><strong>Dependency management</strong>: you declare what you need.</li>
-<li><strong>Namespace control</strong>: your names do not collide with other packages’ names.</li>
-</ul>
+<p>Your colleague runs <code>pak::pak("username/mypackage")</code>, and everything installs: functions, documentation, dependencies. They type <code>?my_function</code> and see how to use it. No back-and-forth. No guessing.</p>
+<p>That is what a package is: the unit of shareable, testable, documented R code. It carries its dependencies, its documentation, and its tests as one installable unit that either works or tells you why it doesn’t. Even if you never publish to CRAN, writing one forces you to describe what each function does, lets you prove it works with automated tests, makes you declare what you depend on, and keeps your names from colliding with other packages’ names.</p>
 <p>In <a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>, you saw that functions are values. A package is a named collection of functions with metadata, and that metadata is what separates “a folder of scripts” from “something someone else can install and use.”</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -694,7 +687,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ├── data/             # included datasets
 ├── .Rbuildignore     # files to exclude from the built package
 └── LICENSE           # license file</code></pre>
-<p><strong>DESCRIPTION</strong> is the most important file. It declares the package name, title, version, authors, license, and dependencies, and every field matters because CRAN checks it, <code>install.packages()</code> reads it, and other packages’ <code>Imports</code> reference it. A minimal example:</p>
+<p><code>DESCRIPTION</code> declares the package name, title, version, authors, license, and dependencies. CRAN checks every field, <code>install.packages()</code> reads it, and other packages’ <code>Imports</code> reference it. A minimal example:</p>
 <pre><code>Package: mypackage
 Title: What My Package Does (One Line, Title Case)
 Version: 0.1.0
@@ -707,9 +700,25 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1</code></pre>
-<p><strong>NAMESPACE</strong> controls what is visible to users (exports) and what you borrow from other packages (imports). Never edit it by hand; let roxygen2 generate it.</p>
-<p>Two hooks, <code>.onLoad()</code> and <code>.onAttach()</code>, let you run code when the package loads; for the details, see R Packages (2e), chapter 10.</p>
-<p>The namespace is an environment (the concept from <a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a>), and <code>NAMESPACE</code> defines what names are visible in that environment. When you call <code>dplyr::filter()</code>, R looks in dplyr’s namespace environment; when you call just <code>filter()</code>, R searches the environment chain, and which <code>filter</code> it finds depends on what is attached. In lambda calculus terms, a package namespace is a closure at the module level: functions inside can reference each other because they share the namespace environment, but the outside world only sees what is explicitly exported. The <code>NAMESPACE</code> file marks the same boundary that a lambda abstraction marks between bound and free variables.</p>
+<p><code>NAMESPACE</code> lists what users can see (exports) and what you borrow from other packages (imports). Never edit it by hand; roxygen2 generates it from comments in your code, as <a href="#sec-roxygen2" class="quarto-xref"><span>Section 32.4</span></a> shows.</p>
+<p>Two hooks, <code>.onLoad()</code> and <code>.onAttach()</code>, let you run code when the package loads; for the details, see R Packages (2e), chapter 6.</p>
+<p>The namespace is an environment (<a href="ch18-closures-and-scope.html#sec-environments" class="quarto-xref"><span>Section 18.1</span></a>), and <code>NAMESPACE</code> defines which names are visible in it. When you call <code>dplyr::filter()</code>, R looks in dplyr’s namespace environment; when you call just <code>filter()</code>, R searches the environment chain, and which <code>filter</code> it finds depends on what is attached.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The lambda calculus connection
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>A package namespace is a closure at the module level. Functions inside can reference each other because they share the namespace environment, and the outside world sees only what is exported. The <code>NAMESPACE</code> file marks the same boundary that a lambda abstraction marks between bound and free variables.</p>
+</div>
+</div>
+</div>
 </section>
 <section id="sec-creating-package" class="level2" data-number="32.3">
 <h2 data-number="32.3" class="anchored" data-anchor-id="sec-creating-package"><span class="header-section-number">32.3</span> Creating a package</h2>
@@ -717,7 +726,7 @@ RoxygenNote: 7.3.1</code></pre>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">create_package</span>(<span class="st">"path/to/mypackage"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This creates the directory, <code>DESCRIPTION</code>, <code>NAMESPACE</code>, <code>R/</code>, <code>.Rbuildignore</code>, and <code>.gitignore</code>. The package is immediately loadable, which means you can start writing functions right away.</p>
+<p>This creates the directory with <code>DESCRIPTION</code>, <code>NAMESPACE</code>, and an empty <code>R/</code>; inside RStudio it also adds an <code>.Rproj</code> file and the <code>.Rbuildignore</code> and <code>.gitignore</code> entries that keep it out of the build. The package is loadable immediately.</p>
 <p>The development loop has four verbs:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">load_all</span>()    <span class="co"># simulate installing the package (Ctrl+Shift+L)</span></span>
@@ -725,7 +734,7 @@ RoxygenNote: 7.3.1</code></pre>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">test</span>()        <span class="co"># run all tests (Ctrl+Shift+T)</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()       <span class="co"># run R CMD check (Ctrl+Shift+E)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>load_all()</code> is the key to fast iteration. It sources all files in <code>R/</code>, makes exports available, and simulates a fresh install without actually installing, so the cycle becomes: edit a function, hit <code>Ctrl+Shift+L</code>, test immediately, repeat. An installed package is immutable: once built, its functions cannot be edited in place. <code>load_all()</code> gives you a mutable development loop on top of that immutable target, so you iterate freely and then freeze the result when you install. Without it, you’d have to rebuild and reinstall the entire package after every change, which is the kind of friction that kills momentum.</p>
+<p><code>load_all()</code> sources every file in <code>R/</code>, makes the exports available, and simulates a fresh install without installing anything, so the cycle becomes: edit a function, hit <code>Ctrl+Shift+L</code>, try it, repeat. An installed package cannot be edited in place; <code>load_all()</code> gives you an editable copy to iterate on, and installing freezes the result. Without it, you would rebuild and reinstall the whole package after every change.</p>
 <p>The <code>usethis::use_*()</code> functions handle setup tasks:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_r</span>(<span class="st">"bmi"</span>)              <span class="co"># create R/bmi.R</span></span>
@@ -735,7 +744,7 @@ RoxygenNote: 7.3.1</code></pre>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_readme_rmd</span>()          <span class="co"># add README.Rmd</span></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_github_action</span>()       <span class="co"># add CI/CD</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Each one does one task correctly. No boilerplate to remember. But the functions you write remain invisible to users until you document them, and documentation has its own conventions.</p>
+<p>Each one does one task and knows the boilerplate, so you do not have to.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -759,7 +768,6 @@ RoxygenNote: 7.3.1</code></pre>
 </section>
 <section id="sec-roxygen2" class="level2" data-number="32.4">
 <h2 data-number="32.4" class="anchored" data-anchor-id="sec-roxygen2"><span class="header-section-number">32.4</span> Writing documentation with roxygen2</h2>
-<p>Pure functions are the easiest to document: their contract is fully specified by inputs and outputs, so <code>@param</code> and <code>@return</code> capture everything a caller needs to know. Functions with side effects need additional prose explaining what state they modify and when.</p>
 <p>Documentation lives above your function as special comments (<code>#'</code>):</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Calculate body mass index</span></span>
@@ -776,15 +784,8 @@ RoxygenNote: 7.3.1</code></pre>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  weight <span class="sc">/</span> height<span class="sc">^</span><span class="dv">2</span></span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Key tags:</p>
-<ul>
-<li><code>@param</code>: describe each argument. Type + meaning + constraints.</li>
-<li><code>@return</code>: what the function returns.</li>
-<li><code>@export</code>: makes the function visible to users. Without it, the function is internal (accessible via the triple-colon operator but not <code>::</code>).</li>
-<li><code>@examples</code>: runnable code. <code>R CMD check</code> executes these.</li>
-<li><code>@seealso</code>, <code>@family</code>: cross-references to related functions.</li>
-<li><code>@inheritParams</code>: borrow parameter documentation from another function.</li>
-</ul>
+<p><code>@param</code> describes each argument: its type, its meaning, and any constraints. <code>@return</code> says what comes back. <code>@export</code> makes the function visible to users; without it, the function is internal, reachable through <code>:::</code> but not <code>::</code>. <code>@examples</code> holds runnable code, and <code>R CMD check</code> runs it. Two more tags earn their keep once a package grows: <code>@seealso</code> and <code>@family</code> cross-reference related functions, and <code>@inheritParams</code> borrows parameter documentation from another function instead of repeating it.</p>
+<p>A pure function is the easiest kind to document: its contract is fully specified by inputs and outputs, so <code>@param</code> and <code>@return</code> capture everything a caller needs to know. A function with side effects needs extra prose about what state it modifies and when.</p>
 <p>Markdown in roxygen is enabled by adding <code>Roxygen: list(markdown = TRUE)</code> to <code>DESCRIPTION</code>, which lets you use <code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>, and <code>[function()]</code> for cross-links.</p>
 <p><code>devtools::document()</code> converts roxygen comments to <code>.Rd</code> files in <code>man/</code> and updates <code>NAMESPACE</code>. You write roxygen; you never touch <code>man/</code> directly.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
@@ -817,7 +818,7 @@ RoxygenNote: 7.3.1</code></pre>
 <span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
 <span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>cube <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x<span class="sc">^</span><span class="dv">3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Both <code>?square</code> and <code>?cube</code> now point to the same help page, which is useful when functions are closely related and easier to understand side by side. But how do you manage the other packages your functions depend on?</p>
+<p>Both <code>?square</code> and <code>?cube</code> now open the same help page, which suits functions that are easier to understand side by side.</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -828,26 +829,16 @@ RoxygenNote: 7.3.1</code></pre>
 </section>
 <section id="sec-dependencies" class="level2" data-number="32.5">
 <h2 data-number="32.5" class="anchored" data-anchor-id="sec-dependencies"><span class="header-section-number">32.5</span> Dependencies</h2>
-<p>Your package will use functions from other packages. How you declare that relationship determines whether your package installs cleanly or collapses into a tangle of missing symbols.</p>
-<p><strong>Imports</strong>: packages your code needs to work. Listed in <code>DESCRIPTION</code>. Use <code>package::function()</code> in your code:</p>
+<p>Your package will use functions from other packages, and how you declare that relationship decides whether it installs cleanly or fails with missing symbols. Start with a call that looks harmless:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: explicit</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>clean_data <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(df, <span class="sc">!</span><span class="fu">is.na</span>(value))</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(data, x <span class="sc">&gt;</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Suggests</strong>: packages needed only for tests, vignettes, or examples. Not installed automatically when a user installs your package.</p>
-<p><strong>Depends</strong>: rarely appropriate. Attaches the package when yours is loaded, meaning <code>library(mypackage)</code> also runs <code>library(dependency)</code>, which pollutes the user’s namespace. Almost always wrong; use <code>Imports</code> instead.</p>
-<p>The rule is simple: use <code>Imports</code> and call functions with <code>::</code>. This makes dependencies explicit and avoids namespace collisions. If typing <code>dplyr::filter()</code> everywhere feels verbose, you can import specific functions into your namespace with the roxygen tag <code>@importFrom dplyr filter</code>, which writes <code>importFrom(dplyr, filter)</code> into <code>NAMESPACE</code> and lets you call <code>filter()</code> without the prefix. Use this sparingly: one or two heavily-used functions per dependency, not every function you call.</p>
+<p>Which <code>filter</code>? <code>stats::filter()</code> and <code>dplyr::filter()</code> both exist, and the answer depends on what the user happens to have attached. Inside a package, write the prefix:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bad: which filter? stats::filter or dplyr::filter?</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(data, x <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Good: unambiguous</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">filter</span>(data, x <span class="sc">&gt;</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">filter</span>(data, x <span class="sc">&gt;</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>usethis::use_package("dplyr")</code> adds the package to <code>Imports</code> in <code>DESCRIPTION</code>. The variant <code>usethis::use_package("ggplot2", type = "Suggests")</code> adds it to <code>Suggests</code> instead.</p>
-<p>When you use a Suggested package in tests or vignettes, guard the code:</p>
+<p>and declare the package in <code>DESCRIPTION</code> under <code>Imports</code>, which <code>usethis::use_package("dplyr")</code> does for you. That is the rule for anything your code needs to run: <code>Imports</code> plus <code>::</code>. Dependencies stay explicit and names never collide. If typing <code>dplyr::filter()</code> everywhere feels verbose, the roxygen tag <code>@importFrom dplyr filter</code> writes <code>importFrom(dplyr, filter)</code> into <code>NAMESPACE</code> and lets you call <code>filter()</code> bare. Use it for one or two heavily used functions per dependency, not for everything you call.</p>
+<p>Packages needed only by tests, vignettes, or examples go under <code>Suggests</code>, with <code>usethis::use_package("ggplot2", type = "Suggests")</code>. They are not installed automatically with your package, so guard the code that uses them:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">test_that</span>(<span class="st">"plotting works"</span>, {</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">skip_if_not_installed</span>(<span class="st">"ggplot2"</span>)</span>
@@ -855,8 +846,9 @@ RoxygenNote: 7.3.1</code></pre>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_s3_class</span>(p, <span class="st">"ggplot"</span>)</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>skip_if_not_installed()</code> prevents the test from failing on machines where the Suggested package is not available.</p>
-<p>Minimize dependencies. Every dependency is a potential breakage point, and if you only need one function from a package, consider whether you can write it yourself. A useful diagnostic: <code>usethis::use_package()</code> will refuse to add a package that is not installed, catching typos early, and <code>devtools::check()</code> will warn if you import a package but never use it. Dependencies declare what your package needs; tests prove that what you built actually works.</p>
+<p><code>skip_if_not_installed()</code> keeps the test from failing on a machine without ggplot2.</p>
+<p>The third field, <code>Depends</code>, attaches the package when yours is loaded, so <code>library(mypackage)</code> also runs <code>library(dependency)</code> and fills the user’s search path with names they did not ask for. It is almost always wrong; use <code>Imports</code>.</p>
+<p>Keep the list short. Every dependency is a place your package can break, and if you need one function from a package, consider writing it yourself. Two checks catch mistakes early: <code>usethis::use_package()</code> refuses to add a package that is not installed, and <code>R CMD check</code> warns when <code>Imports</code> lists a package your code never uses.</p>
 </section>
 <section id="sec-testing-testthat" class="level2" data-number="32.6">
 <h2 data-number="32.6" class="anchored" data-anchor-id="sec-testing-testthat"><span class="header-section-number">32.6</span> Testing with testthat</h2>
@@ -872,15 +864,7 @@ RoxygenNote: 7.3.1</code></pre>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expect_error</span>(<span class="fu">bmi</span>(<span class="st">"a"</span>, <span class="fl">1.75</span>))</span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Key expectations:</p>
-<ul>
-<li><code>expect_equal()</code>: compare with tolerance (good for floating-point results).</li>
-<li><code>expect_identical()</code>: compare exactly (good for integers, strings, logicals).</li>
-<li><code>expect_true()</code>, <code>expect_false()</code>: boolean checks.</li>
-<li><code>expect_error()</code>, <code>expect_warning()</code>, <code>expect_message()</code>: check for conditions.</li>
-<li><code>expect_length()</code>, <code>expect_named()</code>: structural checks.</li>
-<li><code>expect_snapshot()</code>: capture output and compare to a stored reference. Good for complex output that is hard to specify by hand.</li>
-</ul>
+<p><code>expect_equal()</code> compares with a tolerance, which is what you want for floating-point results; <code>expect_identical()</code> compares exactly and suits integers, strings, and logicals. <code>expect_true()</code> and <code>expect_false()</code> check a condition, <code>expect_error()</code>, <code>expect_warning()</code>, and <code>expect_message()</code> check that a condition is signalled, and <code>expect_length()</code> and <code>expect_named()</code> check shape. For output that is hard to specify by hand, <code>expect_snapshot()</code> records it once and compares later runs against the stored copy.</p>
 <p><code>devtools::test()</code> runs all tests. <code>devtools::test_active_file()</code> runs just the file you are editing.</p>
 <p>Pure functions are also the easiest to test: same inputs always produce the same output, so each <code>expect_equal()</code> call is a complete specification of behavior with no setup or teardown required.</p>
 <p>How many tests should you write? Enough to cover the normal case, the edge cases, and the error cases. For a function like <code>bmi()</code>, that means correct output for typical input, correct output for vectorized input, correct behavior for zero or negative values, and an error for non-numeric input. Four or five tests per function is a reasonable starting point, and writing them forces you to think about your function’s contract more carefully than any amount of staring at the implementation would.</p>
@@ -907,7 +891,7 @@ RoxygenNote: 7.3.1</code></pre>
 </section>
 <section id="sec-vignettes" class="level2" data-number="32.7">
 <h2 data-number="32.7" class="anchored" data-anchor-id="sec-vignettes"><span class="header-section-number">32.7</span> Vignettes</h2>
-<p>Function documentation is reference: you look up a specific function when you already know what you’re looking for. Vignettes are the opposite. They show a newcomer how the pieces fit together, walking through a workflow from start to finish, and the difference between the two is the difference between a dictionary and a story.</p>
+<p>Function documentation is reference: you look up a specific function when you already know what you are looking for. A vignette shows a newcomer how the pieces fit together, walking through a workflow from start to finish.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_vignette</span>(<span class="st">"getting-started"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -940,53 +924,34 @@ RoxygenNote: 7.3.1</code></pre>
 <span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">bmi</span>(<span class="dv">70</span>, <span class="fl">1.75</span>)</span>
 <span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>result</span>
 <span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The YAML header is boilerplate. The content is yours. Documentation and vignettes make a package usable, but what makes it <em>reliable</em> is the automated quality gate that catches mistakes you’d never notice yourself.</p>
+<p>The YAML header is boilerplate; the content is yours.</p>
 </section>
 <section id="sec-r-cmd-check" class="level2" data-number="32.8">
 <h2 data-number="32.8" class="anchored" data-anchor-id="sec-r-cmd-check"><span class="header-section-number">32.8</span> R CMD check</h2>
-<p><code>R CMD check</code> runs roughly 50 tests against your package: does the <code>NAMESPACE</code> match the exports? Do all examples run without error? Are all arguments documented? Do the tests pass? Is the package installable?</p>
+<p><code>R CMD check</code> runs more than 50 checks against your package: does the <code>NAMESPACE</code> match the exports? Do all examples run without error? Are all arguments documented? Do the tests pass? Is the package installable?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Three levels of feedback:</p>
-<ul>
-<li><strong>ERROR</strong>: something is broken. Must fix.</li>
-<li><strong>WARNING</strong>: something is wrong. Must fix for CRAN; should fix regardless.</li>
-<li><strong>NOTE</strong>: something is unusual. Fix if you can; explain if you can’t.</li>
-</ul>
-<p>The goal: 0 errors, 0 warnings, 0 notes. Each of those roughly 50 tests exists because someone, somewhere, shipped a broken package, and the strictness reflects the cost of breakage on CRAN, where 20,000+ packages depend on each other.</p>
-<p>Common issues and how to fix them:</p>
-<ul>
-<li><strong>“Undocumented arguments”</strong>: add <code>@param</code> tags in your roxygen comments.</li>
-<li><strong>“Undefined global functions or variables”</strong>: you are calling a function from another package without <code>::</code>. Use <code>dplyr::filter()</code> instead of <code>filter()</code>, or add <code>@importFrom dplyr filter</code> to your roxygen.</li>
-<li><strong>“Non-standard file/directory found”</strong>: add the file to <code>.Rbuildignore</code> with <code>usethis::use_build_ignore("filename")</code>.</li>
-<li><strong>“No visible binding for global variable”</strong>: common with tidyverse code that uses unquoted column names. Fix with <code>utils::globalVariables()</code> or use <code>.data$column</code> from rlang.</li>
-</ul>
-<p>Run <code>check()</code> often during development, not just at the end. Each run should find at most one or two issues; if you wait until the end, you face dozens of notes at once, which is demoralizing and nearly impossible to debug systematically. A clean check means your package is well-formed, but a check that passes on your machine and fails on Linux is still a problem.</p>
+<p>Each finding comes back at one of three levels. An ERROR means something is broken and must be fixed. A WARNING means something is wrong; CRAN will not accept it, and you should fix it anyway. A NOTE means something is unusual: fix it if you can, explain it if you cannot. The goal is 0 errors, 0 warnings, 0 notes. Each check exists because someone, somewhere, shipped a broken package, and the strictness reflects the cost of breakage on CRAN, where close to 25,000 packages depend on each other.</p>
+<p>A few findings account for most first runs. “Undocumented arguments” means a <code>@param</code> tag is missing. “Undefined global functions or variables” usually means you called a function from another package without <code>::</code>; write <code>dplyr::filter()</code> or add <code>@importFrom dplyr filter</code>. The same note appears as “no visible binding for global variable” in tidyverse code that uses bare column names, and the fix is <code>.data$column</code> from rlang or a <code>utils::globalVariables()</code> declaration. “Non-standard file/directory found” means a file belongs in <code>.Rbuildignore</code>, which <code>usethis::use_build_ignore("filename")</code> handles.</p>
+<p>Run <code>check()</code> often during development, not just at the end. Each run should then find at most one or two issues; wait until the end and you face dozens at once. A clean check means the package is well-formed on your machine, and the last section shows how to get the same answer for Linux and macOS.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
-<li>Introduce a deliberate error in your package: remove the <code>@param</code> tag for one argument. Run <code>devtools::check()</code> and find the NOTE. Fix it and re-check.</li>
+<li>Introduce a deliberate error in your package: remove the <code>@param</code> tag for one argument. Run <code>devtools::check()</code> and find the WARNING. Fix it and re-check.</li>
 <li>Add <code>dplyr::filter</code> to a function without adding dplyr to <code>Imports</code>. Run <code>devtools::check()</code>. What feedback do you get?</li>
 </ol>
 </section>
 </section>
 <section id="sec-sharing-package" class="level2" data-number="32.9">
 <h2 data-number="32.9" class="anchored" data-anchor-id="sec-sharing-package"><span class="header-section-number">32.9</span> Sharing your package</h2>
-<p><strong>GitHub</strong>: push your package to GitHub, and users install it with one line, either <code>pak::pak("user/mypackage")</code> or <code>devtools::install_github("user/mypackage")</code>. This is the lowest barrier to sharing.</p>
-<p>Three other options exist:</p>
-<ul>
-<li><strong>pkgdown</strong>: <code>usethis::use_pkgdown_github_pages()</code> builds a website from your documentation, README, and vignettes, with automatic deployment through GitHub Actions.</li>
-<li><strong>CRAN</strong>: the official repository, via <code>devtools::submit_cran()</code>. Strict review: 0 errors, 0 warnings, ideally 0 notes, plus human reviewers who check CRAN policies. Worth the effort for packages with a broad audience.</li>
-<li><strong>R-universe</strong> (<code>r-universe.dev</code>): automated package hosting with a lower barrier than CRAN but still discoverable. Point it at your GitHub repo, and it builds binaries for all platforms automatically.</li>
-</ul>
-<p>Version numbers follow semantic versioning (semver.org): MAJOR.MINOR.PATCH. PATCH for bug fixes, MINOR for new backward-compatible features, MAJOR for breaking changes. The tidyverse follows this strictly: when dplyr goes from 1.0 to 1.1, your code will not break; when it goes to 2.0, check the changelog.</p>
+<p>Push your package to GitHub, and users install it with one line, <code>pak::pak("user/mypackage")</code> or <code>devtools::install_github("user/mypackage")</code>. That is the lowest barrier to sharing, and three more layers sit on top of it. pkgdown builds a website from your documentation, README, and vignettes; <code>usethis::use_pkgdown_github_pages()</code> sets it up with automatic deployment through GitHub Actions. CRAN is the official repository, reached through <code>devtools::submit_cran()</code>; its review requires 0 errors and 0 warnings, ideally 0 notes, and human reviewers check the CRAN policies on top. R-universe (<code>r-universe.dev</code>) sits between the two: point it at your GitHub repository and it builds Windows and macOS binaries with no review step.</p>
+<p>Version numbers follow semantic versioning (semver.org): MAJOR.MINOR.PATCH, where a PATCH release fixes bugs, a MINOR release adds features without breaking existing code, and a MAJOR release may break it. The tidyverse follows a looser version of the same idea and saves breaking changes for major releases where it can, so when dplyr goes from 1.0 to 1.1 your code will usually keep working, and when it goes to 2.0 you read the changelog.</p>
 <p>For GitHub-hosted packages, continuous integration is nearly free:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_github_action</span>(<span class="st">"check-standard"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This adds a GitHub Actions workflow that runs <code>R CMD check</code> on Linux, macOS, and Windows every time you push. If the check fails, GitHub shows a red X next to the commit; if it passes, you get a green checkmark and a badge for your README. The real value is catching platform-specific bugs you would never find on your own machine: path separators (Windows uses <code>\</code>, everything else uses <code>/</code>), case-sensitive file systems (Linux is case-sensitive, macOS and Windows are not), and system library availability.</p>
-<p>A package with CI, documentation, and a one-line install command turns a two-day email chain into a single <code>pak::pak()</code> call.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1100,53 +1065,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

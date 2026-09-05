@@ -661,22 +661,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>You finished an analysis six months ago, and now a reviewer wants you to re-run it with one variable removed. You open the project, hit “Source,” and nothing works: a package updated, a file path points to a folder that no longer exists, and you cannot remember whether you were supposed to run the cleaning script before or after the imputation script. The analysis produced correct results once. It will never produce them again.</p>
-<p>This chapter walks through five tools (<code>here</code>, <code>renv</code>, Quarto, <code>targets</code>, Git) that prevent exactly this situation, giving each one enough coverage to start using it today while pointing to deeper references when you need them. Each layer eliminates a specific way that analyses break.</p>
+<p>Five tools prevent this: <code>here</code>, <code>renv</code>, Quarto, <code>targets</code>, and Git. Each one removes a specific way that analyses break, and this chapter gives each enough coverage to start using it today.</p>
 <section id="sec-what-reproducibility-means" class="level2" data-number="33.1">
 <h2 data-number="33.1" class="anchored" data-anchor-id="sec-what-reproducibility-means"><span class="header-section-number">33.1</span> What reproducibility means</h2>
-<p>Same code plus same data should equal the same results. That is reproducibility, and if you squint, it looks like referential transparency at the project level: your analysis script is an expression, and if that expression is reproducible, you can replace it with its value (the results) without changing meaning. A non-reproducible analysis is a function with hidden side effects; it depends on state you never declared.</p>
-<p>Every tool in this chapter addresses one category of hidden state. <code>here</code> makes file paths explicit, removing the dependency on which directory you happened to open. <code>renv</code> pins package versions to the project, so a colleague installing your code six months from now gets the same library you tested against. Quarto binds code to output in a single document, making it impossible for the prose and the numbers to drift apart. <code>targets</code> declares dependencies between pipeline steps and only reruns what has changed, turning a sequential script into a dependency graph that skips unnecessary work. Git records the reasoning behind each change, not just snapshots. Together these tools enforce the functional principle of referential transparency at the scale of a project: swap one execution for another and get identical results.</p>
-<p>This is not replicability, which asks a bigger question: same research question, new data, similar conclusions. Reproducibility is the lower bar. Most analyses fail it anyway.</p>
-<p>A 2016 Nature survey found that 70% of researchers had tried and failed to reproduce another scientist’s experiment, and a 2019 study found that only 26% of published R-based analyses could be independently reproduced from the provided code. Reproducing work requires infrastructure, and most analysts do not build infrastructure until something has already gone wrong.</p>
-<p>Why it breaks:</p>
-<ul>
-<li>Hardcoded file paths (<code>"C:/Users/me/Desktop/data.csv"</code>).</li>
-<li>Unrecorded package versions (dplyr 1.0 behaves differently from dplyr 1.1).</li>
-<li>Manual steps between scripts (“run this, then open Excel, then paste the table…”).</li>
-<li>Random seeds not set.</li>
-<li>Outputs separated from the code that produced them.</li>
-</ul>
-<p>The fix is structural, not behavioral. Do not rely on discipline (“I will remember to run script 3 first”); build a system that makes the wrong thing hard. Each tool in this chapter eliminates one failure mode, and the first one costs nothing to adopt.</p>
+<p>Same code plus same data should equal the same results. That is reproducibility, and if you squint, it looks like referential transparency at the project level: the analysis is an expression, and if it is reproducible you can replace it with its value, the results, without changing anything. A non-reproducible analysis is a function with hidden side effects; it depends on state you never declared.</p>
+<p>Replicability asks a bigger question: same research question, new data, similar conclusions. Reproducibility is the lower bar, and most analyses fail it anyway. When <em>Nature</em> surveyed 1,576 researchers in 2016, more than 70% had tried and failed to reproduce another scientist’s experiment, and more than half had failed to reproduce their own. In 2022, Ana Trisovic and colleagues took more than 9,000 R files from over 2,000 replication datasets deposited at Harvard Dataverse between 2010 and 2020 and ran them: 74% crashed, and 56% still crashed after automated cleaning of the most common problems.</p>
+<p>The state that never gets declared is the same handful of things every time: a file path hardcoded to <code>"C:/Users/me/Desktop/data.csv"</code>, a package version nobody recorded (dplyr 1.0 behaves differently from dplyr 1.1), a manual step between scripts (“run this, then open Excel, then paste the table”), a random seed never set, and outputs stored apart from the code that produced them. Do not rely on discipline (“I will remember to run script 3 first”); build a system that makes the wrong thing hard. The first fix costs nothing to adopt.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -693,15 +683,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-projects-file-paths" class="level2" data-number="33.2">
 <h2 data-number="33.2" class="anchored" data-anchor-id="sec-projects-file-paths"><span class="header-section-number">33.2</span> Projects and file paths</h2>
-<p>Every path you hardcode is a bet that your directory structure will never change. You will lose that bet. An RStudio project (<code>.Rproj</code> file) defines a working directory so that everything becomes relative to one root, and when you open the project, the working directory is set automatically.</p>
-<p><code>here::here()</code> builds paths relative to that root:</p>
+<p>Every hardcoded path assumes the directory structure will never change. An RStudio project (an <code>.Rproj</code> file) gives the project one root, and <code>here::here()</code> builds paths from it:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Works regardless of where the script lives in the project</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The call <code>here::here("data", "penguins.csv")</code> returns an absolute path on the fly — something like <code>"C:/Users/me/analysis/data/penguins.csv"</code> — but you never type that path yourself. It works on any OS (forward slashes on Windows too), in any subdirectory, in Quarto documents, in test files, and in interactive sessions. It even works when you <code>source()</code> a script from a different directory, because it finds the project root, not the script’s location.</p>
-<p>Avoid <code>setwd()</code>, which creates a hidden dependency on your computer’s directory structure. Avoid absolute paths, which break on every other machine. And never write <code>source("C:/Users/me/Desktop/functions.R")</code>, because that ties your code to one computer and one human’s folder layout.</p>
-<p>The <code>here</code> package detects the project root (the directory containing <code>.Rproj</code>, <code>.here</code>, or <code>.git</code>) and builds every path relative to it. A clean project layout looks like this:</p>
+<p>The call returns an absolute path on the fly, something like <code>"C:/Users/me/analysis/data/penguins.csv"</code>, but you never type that path yourself. <code>here</code> finds the project root (the directory containing <code>.Rproj</code>, <code>.here</code>, or <code>.git</code>) and builds every path relative to it, so the same line works on any OS (forward slashes on Windows too), from any subdirectory, in Quarto documents, in test files, and in interactive sessions. It even works when you <code>source()</code> a script from a different directory, because it looks for the root, not for the script’s location.</p>
+<p><code>setwd()</code> and absolute paths both tie the code to one computer and one person’s folder layout; a <code>source("C:/Users/me/Desktop/functions.R")</code> line breaks on every other machine. A clean project layout looks like this:</p>
 <pre><code>my_analysis/
 ├── my_analysis.Rproj
 ├── data/               # raw data (read-only)
@@ -743,9 +731,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>renv<span class="sc">::</span><span class="fu">snapshot</span>()   <span class="co"># record exact versions in renv.lock</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>renv<span class="sc">::</span><span class="fu">restore</span>()    <span class="co"># install exactly the versions in the lockfile</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>renv::init()</code> creates a private library for this project, isolating your package versions from every other project on your machine. <code>renv::snapshot()</code> writes <code>renv.lock</code>, a JSON file listing every package and its exact version: your dependency manifest. <code>renv::restore()</code> reads that lockfile and installs exactly those versions, so a collaborator who clones your repo and runs <code>renv::restore()</code> gets the same packages you used.</p>
-<p>The workflow: <code>init()</code> once, <code>snapshot()</code> after installing or updating packages, commit <code>renv.lock</code> to Git. That is all.</p>
-<p>renv does not version R itself. If the R version matters, document it; Docker solves this completely (see <a href="#sec-reproducibility-stack" class="quarto-xref"><span>Section 33.8</span></a>), but is beyond this book. The <code>renv/</code> directory itself, which contains the actual installed packages, is typically git-ignored.</p>
+<p><code>init()</code> gives the project a private library, so its package versions are separate from every other project on your machine. <code>snapshot()</code> writes <code>renv.lock</code>, a JSON file listing every package and its exact version. <code>restore()</code> reads that file and installs those versions, so a collaborator who clones your repository and runs it gets the same packages you used.</p>
+<p>The workflow: <code>init()</code> once, <code>snapshot()</code> after installing or updating packages, commit <code>renv.lock</code> to Git. That is all. Switching between projects that use renv needs nothing special: each project has its own library, and renv activates it when you open the project. Packages installed in one project are invisible to another, so updating a package for one analysis cannot break a different one.</p>
+<p>renv does not version R itself. If the R version matters, document it, or pin it with Docker or Nix (<a href="#sec-nix-docker" class="quarto-xref"><span>Section 33.9</span></a>). The <code>renv/</code> directory, which holds the installed packages, is normally git-ignored.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -759,7 +747,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>renv.lock</code> is boring. That is the point. Boring is reproducible.</p>
 </div>
 </div>
-<p>One practical detail worth knowing: when you switch between projects that use renv, you do not need to do anything special, because each project has its own library and renv activates automatically when you open the project. Packages installed in one project are invisible to another, which prevents the classic problem of updating a package for one analysis and breaking a different one.</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
 <ol type="1">
@@ -771,8 +758,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-quarto" class="level2" data-number="33.4">
 <h2 data-number="33.4" class="anchored" data-anchor-id="sec-quarto"><span class="header-section-number">33.4</span> Quarto: code and prose together</h2>
-<p>You have a script that produces three figures. You have a Word document that describes those figures. You update the script, re-run it, forget to update the Word document, and now the text describes figures that no longer exist. The architecture guarantees drift: code and prose live in different files, so they drift apart.</p>
-<p>Quarto documents (<code>.qmd</code>) eliminate the gap by combining narrative text, code chunks, and their output in a single file. When you render the document, the code runs and the results appear inline:</p>
+<p>You have a script that produces three figures. You have a Word document that describes those figures. You update the script, re-run it, forget to update the Word document, and now the text describes figures that no longer exist. Code and prose live in different files, so they drift apart.</p>
+<p>A Quarto document (<code>.qmd</code>) puts narrative text, code chunks, and their output in one file. When you render it, the code runs and the results appear inline:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Penguin Analysis"</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span><span class="co"> html</span></span>
@@ -794,10 +781,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>quarto render analysis.qmd <span class="sc">--</span>to docx</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The <code>format</code> field in the YAML header sets the default (html, pdf, docx, revealjs for slides), and the <code>--to</code> flag overrides it. HTML needs no extra software. PDF requires a LaTeX installation; <code>quarto install tinytex</code> handles that. Word output produces a <code>.docx</code> that collaborators who do not use R can read and comment on. In RStudio, the “Render” button (Ctrl+Shift+K) does the same thing without the terminal.</p>
-<p>Quarto is the successor to R Markdown, and the core idea (literate programming) dates back to Donald Knuth in 1984: write programs as documents where the prose explains the code, not the other way around. The lineage runs from WEB (Pascal/TeX) through Sweave (2002), knitr (2012), R Markdown, and finally Quarto (2022), each generation bringing better tooling and broader language support.</p>
-<p>If you know R Markdown, you already know Quarto. The main differences: Quarto uses <code>#|</code> for chunk options instead of the chunk header, supports Python, Julia, and Observable in addition to R, and has better defaults for academic output (cross-references, citations, callouts).</p>
-<p>Output formats include HTML, PDF, Word, presentations, websites, and books (this book is written in Quarto). The format is flexible, but the real control comes from chunk options, which you place at the top of each chunk with the <code>#|</code> prefix:</p>
-<p><code>echo: false</code> hides the code and shows only the output. <code>eval: false</code> shows the code but does not run it. <code>fig-cap</code> adds a caption. <code>cache: true</code> caches results so unchanged chunks do not re-run. These options give you fine control over what the reader sees versus what runs behind the scenes.</p>
+<p>Quarto is the successor to R Markdown, and if you know one you mostly know the other. Quarto takes chunk options from <code>#|</code> lines instead of the chunk header, runs Python, Julia, and Observable alongside R, and has better defaults for academic output (cross-references, citations, callouts).</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where Quarto comes from
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>A program should be written for a person to read, with the machine’s version extracted from it afterwards. That was the argument a Stanford professor made in 1984, and the system he built to make it, WEB, paired Pascal with TeX so that one source file produced both the compiled program and a typeset explanation of it. The professor was Donald Knuth, whose TeX still typesets the PDF version of this book. His idea, literate programming, reached R as Sweave in 2002; knitr replaced Sweave in 2012 with more output formats and a cache; R Markdown wrapped knitr in a Markdown document; and Quarto (2022) generalized the same design across R, Python, Julia, and Observable.</p>
+</div>
+</div>
+</div>
+<p>Beyond single documents, Quarto renders presentations, websites, and books (this one included). Chunk options, placed at the top of each chunk with the <code>#|</code> prefix, control what the reader sees:</p>
+<p><code>echo: false</code> hides the code and shows only the output. <code>eval: false</code> shows the code but does not run it. <code>fig-cap</code> adds a caption. <code>cache: true</code> caches results so unchanged chunks do not re-run.</p>
 <p>For academic writing, Quarto supports citations natively. Place a <code>.bib</code> file in your project and reference entries with <code>@key</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="sc">---</span></span>
@@ -807,7 +809,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>As shown by <span class="sc">@</span>wickham2019, tidy data principles simplify analysis.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The citation is rendered in the output and a reference list is appended automatically, so there are no more manually typed reference sections drifting from the actual citations. Quarto keeps code and prose in sync within a single document; but when your analysis spans multiple scripts with complex dependencies, a different tool keeps the steps themselves in sync.</p>
+<p>The citation is rendered in the output and a reference list is appended, so the reference section cannot drift from the citations. That keeps one document in sync with itself; an analysis spread over several long-running steps needs the same guarantee between the steps.</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
@@ -819,25 +821,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-targets" class="level2" data-number="33.5">
 <h2 data-number="33.5" class="anchored" data-anchor-id="sec-targets"><span class="header-section-number">33.5</span> targets: pipeline automation</h2>
 <p>Your analysis has five steps: clean data, fit model, run diagnostics, make figures, render report. You run them by hand, in order, every time. One day you change the model but forget to re-run the diagnostics. The figures now describe a model that no longer exists. How long before you notice?</p>
-<p><code>targets</code> prevents this by making you declare the pipeline: each step (target) is a function call with explicit inputs, and <code>targets</code> tracks what changed so it only re-runs what needs re-running.</p>
+<p><code>targets</code> asks you to write each step as a function in <code>R/</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># _targets.R</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(targets)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_option_set</span>(<span class="at">packages =</span> <span class="fu">c</span>(<span class="st">"dplyr"</span>, <span class="st">"ggplot2"</span>))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># R/functions.R</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>clean_penguins <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  data[<span class="sc">!</span><span class="fu">is.na</span>(data<span class="sc">$</span>body_mass_g), ]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(raw_data, <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>))),</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(clean_data, <span class="fu">clean_penguins</span>(raw_data)),</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(model, <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> clean_data)),</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(fig, <span class="fu">plot_results</span>(model))</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>plot_results <span class="ot">&lt;-</span> <span class="cf">function</span>(model) {</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>(model, <span class="at">which =</span> <span class="dv">1</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>tar_make()</code> runs the pipeline. <code>tar_visnetwork()</code> visualizes the dependency graph. <code>tar_read(model)</code> retrieves a cached result.</p>
-<p>Each target is a function call. Functions are the unit of computation (<a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>); targets are the unit of caching. If <code>raw_data</code> has not changed, <code>clean_data</code> does not re-run. If you change <code>plot_results()</code>, only <code>fig</code> re-runs. This matters most when a step is expensive: if a model takes an hour to fit, <code>targets</code> caches the result and re-fits only when the model code or its inputs change, so tweaking a color on a plot re-runs the plot in seconds off the cached model.</p>
-<p>The caching works precisely because the functions are pure: given the same inputs, <code>clean_penguins()</code> returns the same output, so <code>targets</code> can skip it when the inputs have not changed. A function with side effects (one that reads from a database, modifies a global variable, or depends on the current time) would break the caching, because the same inputs would no longer guarantee the same output. <code>targets</code> makes the functional discipline from <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a> pay off at the project level: pure functions compose into pipelines that <code>targets</code> can reason about, cache, and selectively re-execute.</p>
-<p>Not every project needs <code>targets</code>. A single Quarto document handles simple analyses perfectly well. Reach for <code>targets</code> when you have long-running steps, many interdependent outputs, or pipelines that change frequently.</p>
-<p><code>tar_visnetwork()</code> produces a dependency graph showing which targets are up to date (green), outdated (blue), or errored (red), which makes debugging complex pipelines far easier than staring at a collection of numbered scripts.</p>
+<p>and to list the calls, with their inputs, in a file called <code>_targets.R</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># _targets.R</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(targets)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"R/functions.R"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">tar_option_set</span>(<span class="at">packages =</span> <span class="fu">c</span>(<span class="st">"dplyr"</span>, <span class="st">"ggplot2"</span>))</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(raw_data, <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>))),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(clean_data, <span class="fu">clean_penguins</span>(raw_data)),</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(model, <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> clean_data)),</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(fig, <span class="fu">plot_results</span>(model))</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>tar_make()</code> runs the pipeline. <code>tar_read(model)</code> retrieves a cached result. <code>tar_visnetwork()</code> draws the dependency graph, with up-to-date targets in green, outdated ones in blue, and errored ones in red, which makes a stuck pipeline far easier to debug than a folder of numbered scripts.</p>
+<p>Each target is a function call. Functions are the unit of computation (<a href="ch07-functions-are-values.html" class="quarto-xref"><span>Chapter 7</span></a>); targets are the unit of caching. If <code>raw_data</code> has not changed, <code>clean_data</code> does not re-run. If you change <code>plot_results()</code>, only <code>fig</code> re-runs. This matters most when a step is expensive: a model that takes an hour to fit is re-fit only when its code or its inputs change, so tweaking a color on a plot re-runs the plot in seconds off the cached model.</p>
+<p>The caching works because the functions are pure: given the same inputs, <code>clean_penguins()</code> returns the same output, so <code>targets</code> can skip it when the inputs have not changed. A function that reads from a database, modifies a global variable, or depends on the current time would break the caching, because the same inputs would no longer guarantee the same output. Keeping each step in a named function in <code>R/</code>, instead of inline in the target list, also makes the steps testable on their own and lets the pipeline read like a table of contents.</p>
+<p>Not every project needs <code>targets</code>. A single Quarto document handles simple analyses well. Reach for <code>targets</code> when you have long-running steps, many interdependent outputs, or pipelines that change often.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -851,27 +863,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>targets</code> is overkill for a homework assignment and necessary for a thesis chapter. Know where your project falls.</p>
 </div>
 </div>
-<p>One design principle worth internalizing: each target should be defined by a function, not raw code. Instead of writing the transformation inline, write a function in <code>R/</code> and call it from the target. This makes targets testable (you can test the function independently) and readable (the pipeline reads like a table of contents):</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># R/functions.R</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>clean_penguins <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  data[<span class="sc">!</span><span class="fu">is.na</span>(data<span class="sc">$</span>body_mass_g), ]</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>plot_results <span class="ot">&lt;-</span> <span class="cf">function</span>(model) {</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>(model, <span class="at">which =</span> <span class="dv">1</span>)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># _targets.R</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">"R/functions.R"</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(raw, <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>))),</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(clean, <span class="fu">clean_penguins</span>(raw)),</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(model, <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> species, <span class="at">data =</span> clean)),</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tar_target</span>(fig, <span class="fu">plot_results</span>(model))</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -884,23 +875,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="33.6" class="anchored" data-anchor-id="sec-git"><span class="header-section-number">33.6</span> Version control with Git</h2>
 <p>You have a working analysis. You try a new approach, and it breaks everything. You hit Ctrl+Z forty times, but the file is not quite back to where it was, and you are not sure which of the six files you changed. If only you had saved a snapshot before experimenting.</p>
 <p>Git is that snapshot system. Every change is recorded as a <em>commit</em>: a frozen image of your project at one moment, with a message describing what changed and why. You can go back to any previous snapshot, compare any two, and branch your work into parallel lines that merge back together.</p>
-<p>Why Git for data analysis:</p>
-<ul>
-<li><strong>Undo mistakes without losing work.</strong> Every commit is a checkpoint you can return to. Accidentally deleted a function? <code>git checkout -- file.R</code> brings it back. Broke your analysis and cannot figure out what changed? <code>git diff</code> shows exactly which lines differ from the last working state.</li>
-<li><strong>Track the evolution of your analysis.</strong> Three months from now, a reviewer asks why you removed a covariate. <code>git log</code> shows the commit where you removed it, with a message explaining the decision. Without Git, that reasoning is lost.</li>
-<li><strong>Collaborate without emailing files back and forth.</strong> Multiple people can work on the same project, each on their own <em>branch</em>, and Git merges their changes. Conflicts (two people editing the same line) are surfaced explicitly, not silently overwritten.</li>
-<li><strong>Share and cite.</strong> GitHub and GitLab give your project a permanent URL. Zenodo can mint a DOI for a specific release, making your code citable in papers.</li>
-</ul>
+<p>For an analysis, that buys you four things. Every commit is a checkpoint: a deleted function comes back with <code>git checkout -- file.R</code>, and when the analysis breaks, <code>git diff</code> shows exactly which lines differ from the last working state. Three months from now, when a reviewer asks why you removed a covariate, <code>git log</code> shows the commit where you removed it, with a message explaining the decision. Several people can work on the same project, each on their own <em>branch</em>. Git merges their changes and surfaces two edits to the same line as a conflict. A GitHub or GitLab repository also gives the project a permanent URL, and Zenodo can mint a DOI for a release from it, so the code can be cited.</p>
 <section id="the-daily-workflow" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="the-daily-workflow">The daily workflow</h3>
 <p>Git has many commands. You need six:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>git status                              <span class="co"># what has changed?</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>git add file.R                          <span class="co"># stage a file for the next commit</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>git commit <span class="sc">-</span>m <span class="st">"Add bootstrap analysis"</span>  <span class="co"># record the snapshot</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>git log <span class="sc">--</span>oneline                       <span class="co"># see recent history</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>git diff                                <span class="co"># see unstaged changes line by line</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>git push                                <span class="co"># send commits to GitHub</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>git status                              <span class="co"># what has changed?</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>git add file.R                          <span class="co"># stage a file for the next commit</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>git commit <span class="sc">-</span>m <span class="st">"Add bootstrap analysis"</span>  <span class="co"># record the snapshot</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>git log <span class="sc">--</span>oneline                       <span class="co"># see recent history</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>git diff                                <span class="co"># see unstaged changes line by line</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>git push                                <span class="co"># send commits to GitHub</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The mental model: you make changes to files, <code>git add</code> selects which changes to include in the next snapshot, <code>git commit</code> takes the snapshot with a message, and <code>git push</code> sends it to a remote server. <code>git pull</code> does the reverse, fetching commits from the remote and incorporating them into your local copy.</p>
 <p>RStudio has a built-in Git pane that shows modified files, lets you stage changes, write commit messages, and push to GitHub without touching the terminal. For initial setup, <code>usethis::use_git()</code> initializes a repository, and <code>usethis::use_github()</code> creates a remote on GitHub and pushes your code in one step.</p>
@@ -909,27 +894,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="unnumbered anchored" data-anchor-id="branching">Branching</h3>
 <p>Branches let you try something without risking the main line of work:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>git branch try<span class="sc">-</span>new<span class="sc">-</span>model     <span class="co"># create a branch</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>git checkout try<span class="sc">-</span>new<span class="sc">-</span>model   <span class="co"># switch to it</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ... make changes, commit ...</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>git checkout main            <span class="co"># switch back</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>git merge try<span class="sc">-</span>new<span class="sc">-</span>model      <span class="co"># incorporate the branch's changes</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>git branch try<span class="sc">-</span>new<span class="sc">-</span>model     <span class="co"># create a branch</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>git checkout try<span class="sc">-</span>new<span class="sc">-</span>model   <span class="co"># switch to it</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ... make changes, commit ...</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>git checkout main            <span class="co"># switch back</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>git merge try<span class="sc">-</span>new<span class="sc">-</span>model      <span class="co"># incorporate the branch's changes</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>If the experiment works, merge it. If it does not, delete the branch. The main branch is untouched either way, your code stays the same regardless of which experiment succeeded.</p>
+<p>If the experiment works, merge it; if it does not, delete the branch. Either way the main branch is untouched.</p>
 </section>
 <section id="what-belongs-in-git" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="what-belongs-in-git">What belongs in Git</h3>
-<p><strong>Commit</strong>: code, documentation, <code>renv.lock</code>, <code>_targets.R</code>, <code>.gitignore</code>, small data files (under a few MB), Quarto source files.</p>
-<p><strong>Do not commit</strong>: large data files, generated output (figures, HTML reports, <code>_targets/</code> cache), secrets and passwords, <code>.Rhistory</code>, <code>.RData</code>, <code>.DS_Store</code>.</p>
+<p>Commit code, documentation, <code>renv.lock</code>, <code>_targets.R</code>, <code>.gitignore</code>, Quarto source files, and small data files (under a few MB). Leave out large data files, generated output (figures, HTML reports, the <code>_targets/</code> cache), secrets and passwords, and the session litter R leaves behind: <code>.Rhistory</code>, <code>.RData</code>, <code>.DS_Store</code>.</p>
 <p><code>.gitignore</code> tells Git what to skip. A good starting point for R projects:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>.Rhistory</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>.RData</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>.Rproj.user</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>_targets<span class="sc">/</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>docs<span class="sc">/</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="er">*</span>.html</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="sc">*</span>.pdf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>.Rhistory</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>.RData</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>.Rproj.user</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>_targets<span class="sc">/</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>docs<span class="sc">/</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="er">*</span>.html</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="sc">*</span>.pdf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>usethis::use_git_ignore()</code> helps set it up.</p>
 </section>
@@ -948,17 +932,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="33.7" class="anchored" data-anchor-id="sec-seeds-sessions"><span class="header-section-number">33.7</span> set.seed() and session info</h2>
 <p>Any analysis involving randomness (simulation, resampling, train/test splits) needs <code>set.seed()</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, <span class="dv">5</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 49 65 25 74 18</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, <span class="dv">5</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 49 65 25 74 18</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Without <code>set.seed()</code>, every run produces different numbers. With it, the same seed always produces the same sequence. Place it at the top of your script or Quarto document; the specific number does not matter (42, 123, 2024, anything), but it must be fixed and documented.</p>
-<p>One subtlety: R 3.6.0 changed the default random number generator, so code using <code>set.seed()</code> before and after that version may produce different sequences even with the same seed. If exact reproducibility across R versions matters, specify the RNG kind: <code>set.seed(42, kind = "Mersenne-Twister", normal.kind = "Inversion")</code>.</p>
+<p>One subtlety: R 3.6.0 changed how <code>sample()</code> draws from the generator, so a <code>sample()</code> call seeded under R 3.5 gives a different result under any later R with the same seed. To reproduce the old sequence, ask for the old method with <code>set.seed(42, sample.kind = "Rounding")</code>, and record the R version next to the seed in any case.</p>
 <p>At the end of reports, record your environment:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>sessioninfo<span class="sc">::</span><span class="fu">session_info</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>sessioninfo<span class="sc">::</span><span class="fu">session_info</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This captures R version, OS, and package versions. If results differ on another machine, the session info is the first place to look. Small practices, both of them, but they close gaps that the larger tools leave open.</p>
 <section id="exercises-4" class="level3 unnumbered">
@@ -971,16 +955,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-reproducibility-stack" class="level2" data-number="33.8">
 <h2 data-number="33.8" class="anchored" data-anchor-id="sec-reproducibility-stack"><span class="header-section-number">33.8</span> The reproducibility stack</h2>
-<p>Here is when to reach for each tool:</p>
-<ol type="1">
-<li><strong>RStudio projects + here</strong>: always. Zero cost, immediate benefit.</li>
-<li><strong>Git</strong>: always, for anything beyond a one-off exploration.</li>
-<li><strong>renv</strong>: for any project that needs to produce the same results later.</li>
-<li><strong>Quarto</strong>: for any analysis that produces a report or document.</li>
-<li><strong>targets</strong>: for multi-step pipelines with long-running computations.</li>
-<li><strong>Docker</strong>: for complete environment reproducibility (R version, system libraries). Beyond this book, but worth knowing it exists.</li>
-</ol>
-<p>A decision guide:</p>
+<p>An RStudio project with <code>here</code> costs nothing and belongs in everything, and Git belongs in anything that outlives a one-off exploration. The other layers arrive with the project’s needs, and one more sits beneath all of them: Docker or Nix, which pin R itself and the system libraries, and which the next section covers.</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -1020,31 +995,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-nix-docker" class="level2" data-number="33.9">
 <h2 data-number="33.9" class="anchored" data-anchor-id="sec-nix-docker"><span class="header-section-number">33.9</span> Beyond renv: full-stack reproducibility</h2>
 <p><code>renv</code> captures R package versions. It does not capture R itself, system libraries (libcurl, GDAL, libxml2), or the C compiler that built them. When your code depends on any of these (and spatial code, for instance, almost always depends on GDAL), <code>renv</code> alone leaves a gap.</p>
-<p><strong>Docker</strong> fills it by bundling everything into a container: OS, R, system libraries, packages, your code. The Rocker project (rocker-project.org) provides pre-built R images:</p>
+<p>Docker fills it by bundling everything into a container: OS, R, system libraries, packages, your code. The Rocker project (rocker-project.org) provides pre-built R images:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Dockerfile</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>FROM rocker<span class="sc">/</span>r<span class="sc">-</span>ver<span class="sc">:</span><span class="dv">4</span>.<span class="fl">4.0</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>RUN install2.r dplyr ggplot2</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>COPY . <span class="sc">/</span>analysis</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>CMD [<span class="st">"Rscript"</span>, <span class="st">"analysis/main.R"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Dockerfile</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>FROM rocker<span class="sc">/</span>r<span class="sc">-</span>ver<span class="sc">:</span><span class="dv">4</span>.<span class="fl">4.0</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>RUN install2.r dplyr ggplot2</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>COPY . <span class="sc">/</span>analysis</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>CMD [<span class="st">"Rscript"</span>, <span class="st">"analysis/main.R"</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>A Dockerfile is a recipe that always produces the same environment. Build once, run anywhere. The trade-off is complexity: Docker adds a layer of tooling (images, containers, registries) that takes time to learn.</p>
-<p><strong>Nix</strong> takes a different approach. Where Docker isolates by containerization, Nix isolates by functional purity: the Nix package manager treats every package as a pure function from its inputs (source code, dependencies, compiler flags) to its output (the built artifact). Fix all inputs, get a deterministic output. This is referential transparency applied to software builds, the same principle that makes pure functions predictable in R: same inputs, same output, no hidden state.</p>
+<p>Nix, a package manager, treats every package as a pure function from its inputs (source code, dependencies, compiler flags) to its output (the built artifact). Fix all inputs and the output is deterministic, the same referential transparency that makes pure functions predictable in R.</p>
 <p>The <code>rix</code> R package makes Nix accessible from R:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rix)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rix</span>(</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">r_ver =</span> <span class="st">"4.4.0"</span>,</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">r_pkgs =</span> <span class="fu">c</span>(<span class="st">"dplyr"</span>, <span class="st">"ggplot2"</span>, <span class="st">"palmerpenguins"</span>),</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">system_pkgs =</span> <span class="cn">NULL</span>,</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">ide =</span> <span class="st">"rstudio"</span>,</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">project_path =</span> <span class="st">"."</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rix)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rix</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">r_ver =</span> <span class="st">"4.4.0"</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">r_pkgs =</span> <span class="fu">c</span>(<span class="st">"dplyr"</span>, <span class="st">"ggplot2"</span>, <span class="st">"palmerpenguins"</span>),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">system_pkgs =</span> <span class="cn">NULL</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">ide =</span> <span class="st">"rstudio"</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">project_path =</span> <span class="st">"."</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This generates a <code>default.nix</code> file that pins everything: R version, package versions, system libraries, even the C compiler. Running <code>nix-build</code> on any machine with Nix installed produces an identical environment. Where <code>renv.lock</code> captures one layer (R packages), <code>default.nix</code> captures all of them.</p>
-<p>The practical trade-off: Nix has a steep learning curve and limited Windows support (it runs natively on Linux and macOS, or via WSL on Windows), while Docker is more widely adopted and better supported across platforms. Both achieve full-stack reproducibility; they differ in mechanism and philosophy. Docker says “ship the whole machine.” Nix says “describe the machine as a function and let anyone rebuild it.”</p>
-<p>For most R users, <code>renv</code> is sufficient. Add Docker or Nix when your results depend on system-level components, when you need to guarantee reproducibility across operating systems, or when a collaborator reports “it doesn’t work on my machine” and the problem turns out to be something no R package can fix. Which layer you pin depends on how far the reproducibility guarantee needs to reach.</p>
+<p>Nix has a steep learning curve and runs natively only on Linux and macOS (Windows needs WSL); Docker is more widely used and runs everywhere. Both pin the full stack.</p>
+<p>For most R users, <code>renv</code> is sufficient. Add Docker or Nix when your results depend on system-level components, when you need to guarantee reproducibility across operating systems, or when a collaborator reports “it doesn’t work on my machine” and the problem turns out to be something no R package can fix.</p>
 
 
 </section>
@@ -1139,53 +1114,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
