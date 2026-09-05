@@ -681,30 +681,88 @@ window.Quarto = {
 
 
 <p>Your code is too slow. You know this because you ran it, waited, checked your phone, looked back at the screen, and it was still running. The question is: which part?</p>
-<p>Most R code finishes before you notice it started. When something takes too long, the question is where the seconds go, and the answer is almost never where you expect. Profile first. After that, the fix depends on what the profiler shows: sometimes it is a vectorization you missed, sometimes a copy you did not know was happening, sometimes a loop that belongs in C++. The tools in this chapter cover all of those, and <span class="quarto-unresolved-ref">?sec-connecting-to-other-languages</span> covers the compiled-code path in detail.</p>
+<p>Most R code finishes before you notice it started. When something takes too long, the question is where the seconds go, and the answer is almost never where you expect. Profile first. After that, the fix depends on what the profiler shows: sometimes it is a vectorization you missed, sometimes a copy you did not know was happening, sometimes a loop that belongs in C++. The tools in this chapter cover all of those, and <a href="ch31-connecting-to-other-languages.html" class="quarto-xref"><span>Chapter 31</span></a> covers the compiled-code path in detail.</p>
 <section id="sec-profile-first" class="level2" data-number="28.1">
 <h2 data-number="28.1" class="anchored" data-anchor-id="sec-profile-first"><span class="header-section-number">28.1</span> Profile before you optimize</h2>
-<p>The function you suspect is slow is, more often than not, innocent. Some other line, one you barely glanced at while writing, runs a million times while the suspect runs once. Optimization without measurement is guesswork dressed up as engineering. You have to measure.</p>
-<p><strong>Quick timing</strong> with <code>system.time()</code>:</p>
+<p>The function you suspect is slow is, more often than not, innocent. Some other line, one you barely glanced at while writing, runs a million times while the suspect runs once. You have to measure.</p>
+<p>The quickest measurement is <code>system.time()</code>:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>({</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e6</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(x)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.02    0.00    0.01</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.03    0.00    0.02</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The first number (<code>user</code>) is CPU time. The third (<code>elapsed</code>) is wall-clock time. Good enough for ballpark estimates, but ballpark estimates deceive you when differences are small, when the thing you are comparing takes three milliseconds and the noise takes five.</p>
-<p><strong>Precise benchmarking</strong> with <code>bench::mark()</code>:</p>
+<p>For head-to-head comparisons, <code>bench::mark()</code> runs each expression many times:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">sqrt =</span> <span class="fu">sqrt</span>(x),</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">power =</span> x<span class="sc">^</span><span class="fl">0.5</span>,</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">TRUE</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(x): NaNs produced</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   expression      min   median `itr/sec` mem_alloc `gc/sec`</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;bch:expr&gt; &lt;bch:tm&gt; &lt;bch:tm&gt;     &lt;dbl&gt; &lt;bch:byt&gt;    &lt;dbl&gt;</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 sqrt          8.8ms   9.36ms     108.     7.73MB     52.2</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 power        21.3ms  22.12ms      45.5    7.63MB     19.9</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>bench::mark()</code> runs each expression multiple times, reports median time and memory allocation, and checks that all expressions return the same result. Use it for head-to-head comparisons. <code>microbenchmark::microbenchmark()</code> is the older alternative: sub-millisecond accurate, runs expressions 100 times by default, reports summary statistics. Both work well; <code>bench::mark</code> is newer.</p>
-<p><strong>Profiling</strong> with <code>profvis::profvis()</code>:</p>
+<p>It reports the median time and the memory allocated for each expression, and checks that they all return the same result. <code>microbenchmark::microbenchmark()</code> is the older alternative: sub-millisecond accurate, 100 runs by default, summary statistics in the output. Both work well; <code>bench::mark</code> is newer.</p>
+<p>When you do not know where the time goes, <code>profvis::profvis()</code> records the call stack many times a second while your code runs:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>profvis<span class="sc">::</span><span class="fu">profvis</span>({</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"large_file.csv"</span>)</span>
@@ -768,9 +826,7 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 </section>
 <section id="sec-vectorization" class="level2" data-number="28.2">
 <h2 data-number="28.2" class="anchored" data-anchor-id="sec-vectorization"><span class="header-section-number">28.2</span> Vectorization</h2>
-<p>Consider a vector of a million numbers. You want to double each one. You could write a loop that visits each element, multiplies it by two, stores the result. Or you could write <code>x * 2</code> and let R handle the iteration. The second version runs 10 to 100 times faster. Why?</p>
-<p>The answer traces back to 1962, when Kenneth Iverson at Harvard published <em>A Notation as a Tool of Thought</em>, describing APL (A Programming Language). APL’s central insight was that mathematical operations should apply to entire arrays, not individual elements: you do not write a loop to add two vectors; you write <code>A + B</code> and the language handles the rest. Iverson won the Turing Award for this work in 1979, and the idea traveled through S (where Chambers adopted it for statisticians who think in columns, not cells) and into R, where <code>x * 2</code> multiplies every element of <code>x</code> without a loop, an index variable, or any mention of how many elements <code>x</code> contains.</p>
-<p>When you call a vectorized function, R dispatches to optimized C code underneath. The loop still happens, but it happens in compiled machine code rather than stepping through R’s interpreter one element at a time. Think of it as the difference between reading a book aloud word by word and handing the entire manuscript to a speed-reader: the same work gets done, but the overhead per unit collapses.</p>
+<p>Consider a vector of a hundred thousand numbers. You want to double each one. You could write a loop that visits each element, multiplies it by two, and stores the result, or you could write <code>x * 2</code> and let R handle the iteration:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fl">1e5</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -787,10 +843,24 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
 <span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       0       0       0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The difference grows with input size, and part of the speedup has nothing to do with R at all. Vectorized operations work on contiguous memory with sequential access patterns that the CPU prefetcher predicts correctly; <code>sum(x)</code> on a contiguous vector can be 100x faster than summing the same values scattered in a list.</p>
-<p>Martin Thompson, a high-performance computing advocate who borrowed the term from racing driver Jackie Stewart, calls this <em>mechanical sympathy</em>: writing software that works with the hardware rather than against it.</p>
-<p>Common vectorization patterns:</p>
-<p><strong>Replace <code>for</code> + <code>if</code> with <code>ifelse()</code> or <code>dplyr::case_when()</code></strong>:</p>
+<p>On this machine the loop takes about fifty times longer. Both versions visit every element; the difference is where the loop runs. <code>x * 2</code> dispatches to a C routine that walks the block of doubles in compiled code, while the <code>for</code> loop steps through R’s interpreter once per element, paying for a variable lookup, an index computation, and an assignment each time. The gap widens with input size, and part of it is the hardware’s doing: the doubles sit next to each other in memory, so the CPU’s prefetcher loads the next cache line before the loop asks for it (<a href="ch29-r-internals.html#sec-memory-layout" class="quarto-xref"><span>Section 29.4</span></a> shows the layout).</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where vectorization comes from
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In 1962 a mathematician at IBM published a book describing a notation in which operations apply to whole arrays: to add two vectors you write <code>A + B</code>, and the notation says nothing about how many elements there are or in what order they are visited. The notation became the language APL, its author, Kenneth Iverson, received the Turing Award for it in 1979, and his lecture on that occasion, <em>Notation as a Tool of Thought</em>, is still the clearest argument for the idea. S adopted whole-array operations for statisticians who think in columns, and R inherited them (<a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>). The second half of the story, the cache-friendly memory layout, has a name too: Martin Thompson, a high-performance computing advocate, borrowed <em>mechanical sympathy</em> from racing driver Jackie Stewart for software that works with the hardware rather than against it.</p>
+</div>
+</div>
+</div>
+<p>Three loop shapes come up again and again, and each has a vectorized form. A loop that tests each element and assigns one of two values is <code>ifelse()</code>, or <code>dplyr::case_when()</code> when there are more than two branches:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Slow</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">character</span>(<span class="fu">length</span>(x))</span>
@@ -801,7 +871,7 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fast</span></span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(x <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="st">"pos"</span>, <span class="st">"neg"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Replace <code>for</code> + accumulate with <code>cumsum()</code>, <code>cumprod()</code>, <code>cummax()</code></strong>:</p>
+<p>A loop that carries a running total is <code>cumsum()</code>; <code>cumprod()</code> and <code>cummax()</code> cover the running product and running maximum:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Slow</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(x))</span>
@@ -811,7 +881,7 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Fast</span></span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Replace loop-based row/column operations with <code>rowSums()</code>, <code>colMeans()</code>, matrix operations</strong>:</p>
+<p>A loop over the rows or columns of a matrix is usually <code>rowSums()</code>, <code>colMeans()</code>, or a matrix operation:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Slow</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>row_totals <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">nrow</span>(mat))</span>
@@ -821,8 +891,8 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>row_totals <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(mat)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Not everything yields to vectorization. Iterations where each step depends on the previous result (Markov chains, recursive algorithms, some simulations) genuinely need loops, and for those <a href="#sec-compiled-code" class="quarto-xref"><span>Section 28.6</span></a> offers an escape hatch. But before reaching for compiled code, make sure you are not confusing convenience wrappers with the real thing.</p>
-<p><code>sapply()</code> and <code>lapply()</code> look like vectorization. They are not. They are convenient wrappers around loops that still call your R function once per element, no faster than a well-written <code>for</code> loop. True vectorization means the loop runs in C: <code>sum()</code>, <code>cumsum()</code>, <code>ifelse()</code>, <code>pmin()</code>, <code>rowSums()</code>. If the loop is still in R, the speed is still in R.</p>
-<p>The distinction traces back to R’s inheritance. S was designed for interactive data analysis, not for writing loops. When John Chambers built S at Bell Labs, and when R’s creators reimplemented it at Auckland, the assumption was that heavy computation would happen in compiled Fortran or C routines, and the user-facing language would orchestrate those routines at a high level. Functions like <code>sum()</code> and <code>rowSums()</code> exist because they <em>are</em> the compiled routines, exposed directly. When you call <code>sum(x)</code>, a single trip into C walks the memory block in a tight loop and returns the result. <code>sapply(x, f)</code> never leaves the interpreter; it calls your R function once per element, paying the full cost of argument matching, environment creation, and promise evaluation on every iteration. The speed gap between these two paths reflects a design choice that predates R itself: the language was built to orchestrate compiled routines, and code that stays in the interpreter is working against that architecture rather than with it.</p>
+<p><code>sapply()</code> and <code>lapply()</code> look like vectorization, but they are wrappers around a loop that still calls your R function once per element, no faster than a well-written <code>for</code> loop. True vectorization means the loop runs in C: <code>sum()</code>, <code>cumsum()</code>, <code>ifelse()</code>, <code>pmin()</code>, <code>rowSums()</code>. If the loop is still in R, the speed is still in R.</p>
+<p>The distinction goes back to S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>), which assumed that heavy computation would happen in compiled Fortran or C routines and that the language would orchestrate them. <code>sum()</code> and <code>rowSums()</code> are those routines, exposed directly: one trip into C walks the memory block and returns. <code>sapply(x, f)</code> never leaves the interpreter. It calls your R function once per element, paying for argument matching, a new environment, and promise creation on every iteration.</p>
 <p>So what happens when you have a loop that genuinely cannot be vectorized, but it still needs to be fast?</p>
 <section id="exercises-1" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-1">Exercises</h3>
@@ -863,13 +933,12 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 × 6</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   expression      min   median `itr/sec` mem_alloc `gc/sec`</span></span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;bch:expr&gt; &lt;bch:tm&gt; &lt;bch:tm&gt;     &lt;dbl&gt; &lt;bch:byt&gt;    &lt;dbl&gt;</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 growing     422.9µs  477.4µs     1975.    3.88MB   160.  </span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 prealloc     15.6µs   17.4µs    56204.   25.78KB     5.62</span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 vector       1000ns    1.3µs   654918.   11.81KB   197.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 growing       401µs  448.2µs     2126.    3.88MB   174.  </span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 prealloc     14.8µs   17.2µs    57441.   25.78KB     5.74</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 vector        900ns    1.1µs   750915.   11.81KB   225.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each call to <code>c(result, value)</code> allocates a new vector of size <code>length(result) + 1</code> and copies every existing element into it. For <code>n</code> iterations, that totals <span class="math inline">\(1 + 2 + 3 + \cdots + n = O(n^2)\)</span> copies, which means doubling your input size quadruples your runtime. Pre-allocation sidesteps the entire problem: you tell R the final size upfront with <code>numeric(n)</code>, <code>character(n)</code>, <code>logical(n)</code>, or <code>vector("list", n)</code>, and each assignment writes directly into the slot without copying anything.</p>
-<p>But pre-allocation only solves the allocation problem. There is a second performance trap hiding in how R shares memory.</p>
-<p><strong>Copy-on-modify</strong>: R copies an object when you modify it <em>and</em> another name points to it:</p>
+<p>But pre-allocation only solves the allocation problem. There is a second trap in how R shares memory, the copy-on-modify rule from <a href="ch09-complexity-and-algorithms.html#sec-space-complexity" class="quarto-xref"><span>Section 9.4</span></a>: R copies an object when you modify it <em>and</em> another name points to it.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fl">1e6</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x        <span class="co"># y and x share the same memory</span></span>
@@ -879,10 +948,10 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tracemem</span>(x)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "&lt;000002948541E890&gt;"</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "&lt;00000244FEC62578&gt;"</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>y[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span>L    <span class="co"># triggers a copy</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; tracemem[0x000002948541e890 -&gt; 0x000002948c09fae8]: eval eval withVisible withCallingHandlers eval eval with_handlers doWithOneRestart withOneRestart withRestartList doWithOneRestart withOneRestart withRestartList withRestarts &lt;Anonymous&gt; evaluate in_dir in_input_dir eng_r block_exec call_block process_group withCallingHandlers with_options &lt;Anonymous&gt; process_file &lt;Anonymous&gt; &lt;Anonymous&gt; execute .main</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; tracemem[0x00000244fec62578 -&gt; 0x0000024503a6ba58]: eval eval withVisible withCallingHandlers eval eval with_handlers doWithOneRestart withOneRestart withRestartList doWithOneRestart withOneRestart withRestartList withRestarts &lt;Anonymous&gt; evaluate in_dir in_input_dir eng_r block_exec call_block process_group withCallingHandlers with_options &lt;Anonymous&gt; process_file &lt;Anonymous&gt; &lt;Anonymous&gt; execute .main</span></span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="fu">untracemem</span>(x)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>When only one name references an object, R modifies it in place, which is why pre-allocated loops are fast: the result vector has a single reference, so <code>result[i] &lt;- value</code> writes directly without triggering a copy. The subtlety is that functions create references too. When you pass <code>x</code> to a function, the function parameter and the caller’s variable both point to the same object; if the function modifies its copy, R silently allocates a new one. This means helper functions called inside tight loops can trigger copies you never intended. <code>tracemem()</code> is your diagnostic tool here.</p>
@@ -906,7 +975,7 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter, compute, group in one expression</span></span>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>dt[age <span class="sc">&gt;</span> <span class="dv">30</span>, .(<span class="at">mean_income =</span> <span class="fu">mean</span>(income)), by <span class="ot">=</span> region]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The <code>dt[i, j, by]</code> syntax puts row filtering (<code>i</code>), column operations (<code>j</code>), and grouping (<code>by</code>) in a single expression, which lets data.table optimize the entire operation as a single pass. It modifies columns in place, avoiding the copy-on-modify overhead. It also parallelizes grouped operations automatically, uses less memory than equivalent dplyr pipelines, and its <code>fread()</code> reads CSV files much faster than <code>read.csv()</code> and often faster than <code>readr::read_csv()</code>.</p>
+<p>The <code>dt[i, j, by]</code> syntax puts row filtering (<code>i</code>), column operations (<code>j</code>), and grouping (<code>by</code>) in a single expression, which lets data.table optimize the entire operation as a single pass. It modifies columns in place, avoiding the copy-on-modify overhead. It runs several of its internal operations on multiple threads, uses less memory than equivalent dplyr pipelines, and its <code>fread()</code> reads CSV files much faster than <code>read.csv()</code> and often faster than <code>readr::read_csv()</code>.</p>
 <p>The trade-off is a steeper learning curve; the <code>dt[i, j, by]</code> idiom reads differently from dplyr pipes. If you do not want to learn the syntax, <code>dtplyr</code> bridges the gap: write dplyr verbs, get data.table speed. It translates your pipeline behind the scenes.</p>
 <p>A quick comparison:</p>
 <div class="cell">
@@ -937,11 +1006,9 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(revenue)),</span>
 <span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">data.table =</span> dt[, .(<span class="at">total =</span> <span class="fu">sum</span>(revenue)), <span class="at">by =</span> region],</span>
 <span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="co"># data.table is typically 3-10x faster on grouped aggregations at this scale.</span></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co"># The gap widens with more groups and more rows.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Reach for data.table when your data has millions of rows, when you are grouping over many categories, or when the same pipeline runs repeatedly in a loop or a Shiny app. If your data fits comfortably in memory and dplyr finishes in seconds, switching buys you nothing but a syntax change. Both dplyr and data.table operate entirely in memory, loading the whole dataset into RAM before touching a single row.</p>
+<p>On this machine (data.table 1.18.4 on 16 threads, dplyr 1.2.1) the medians were 60 ms and 159 ms: data.table about 2.7 times faster on five million rows and 26 groups. The gap widens with more groups. Reach for data.table when your data has millions of rows, when you are grouping over many categories, or when the same pipeline runs repeatedly in a loop or a Shiny app. If your data fits comfortably in memory and dplyr finishes in seconds, switching buys you nothing but a syntax change. Both dplyr and data.table operate entirely in memory, loading the whole dataset into RAM before touching a single row.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -954,7 +1021,7 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <h2 data-number="28.5" class="anchored" data-anchor-id="sec-columnar-engines"><span class="header-section-number">28.5</span> Columnar engines: Arrow and DuckDB</h2>
 <p>What happens when your data no longer fits in memory, or when it does fit but you want analytics that finish before your coffee cools?</p>
 <p>You have probably already hit the wall. A grouped <code>summarise()</code> on 50 million rows takes minutes and turns your laptop fan into a jet engine. <code>read.csv()</code> on a 10 GB file eats all available RAM and crashes the session without producing a single result. The data is not even big by industry standards; R just was not designed to hold it all at once and churn through it.</p>
-<p><strong>Arrow</strong> (<code>arrow</code> package) reads Parquet and Feather files and processes them with dplyr syntax. Operations are lazy: they build a query plan, then execute it in a single pass, loading only the columns and rows you actually need:</p>
+<p>The <code>arrow</code> package reads Parquet and Feather files and processes them with dplyr syntax. Operations are lazy: they build a query plan, then execute it in a single pass, loading only the columns and rows you actually need:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(arrow)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -964,7 +1031,7 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(revenue)) <span class="sc">|&gt;</span></span>
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">collect</span>()  <span class="co"># only now does data enter R</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>DuckDB</strong> (<code>duckdb</code> package) is an embedded analytical database that reads Parquet, CSV, and data frames, handles data larger than RAM, and supports both SQL and dplyr syntax (via <code>dbplyr</code>):</p>
+<p>DuckDB (the <code>duckdb</code> package) is an embedded analytical database that reads Parquet, CSV, and data frames, handles data larger than RAM, and supports both SQL and dplyr syntax (via <code>dbplyr</code>):</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(duckdb)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="fu">duckdb</span>())</span>
@@ -973,9 +1040,25 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">"SELECT region, SUM(revenue) FROM sales GROUP BY region"</span>)</span>
 <span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>duckplyr</strong> removes the SQL entirely: it is a drop-in replacement for dplyr that routes computation through DuckDB’s engine. Same syntax, faster execution, near-zero transition cost. In June 2025, duckplyr formally joined the tidyverse. Existing dplyr code runs unchanged; duckplyr intercepts the verbs, routes what it can through DuckDB, and falls back to dplyr for anything DuckDB does not support.</p>
-<p>The stack looks like this: Parquet files on disk, Arrow or DuckDB as the engine, dplyr verbs as the interface, results collected into R. Much of that speed comes from <em>query fusion</em>, combining multiple operations into a single pass over the data and eliminating intermediate allocations. In functional programming, this technique is called <em>deforestation</em> (Wadler, 1988): <code>map f . map g</code> creates an intermediate list, but fusion rewrites it as <code>map (f . g)</code>, traversing the data once. data.table and Arrow apply the same principle at scale.</p>
-<p>The dplyr verbs from <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a> were designed as a functional interface: data frame in, data frame out, no mutation of the input. data.table, Arrow, DuckDB, and Polars are all different engines, written in different languages (C, C++, Rust), with different memory layouts and different optimization strategies. <code>filter()</code>, <code>mutate()</code>, <code>summarise()</code> work on a local data frame, on a Parquet file through Arrow, on a DuckDB table through duckplyr. Four engines have appeared since dplyr was designed, and the interface has not changed once.</p>
+<p>duckplyr removes the SQL: it is a drop-in replacement for dplyr that routes computation through DuckDB’s engine. In June 2025 duckplyr formally joined the tidyverse. Existing dplyr code runs unchanged; duckplyr intercepts the verbs, routes what it can through DuckDB, and falls back to dplyr for anything DuckDB does not support.</p>
+<p>The stack looks like this: Parquet files on disk, Arrow or DuckDB as the engine, dplyr verbs as the interface, results collected into R. Much of the speed comes from <em>query fusion</em>, combining several operations into a single pass over the data and eliminating the intermediate allocations.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Deforestation
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Functional programming has had a name for query fusion since 1988, when Philip Wadler called it <em>deforestation</em>: <code>map f . map g</code> builds an intermediate list (a tree, in the general case), and rewriting it as <code>map (f . g)</code> traverses the data once without ever growing that tree. data.table, Arrow, and DuckDB apply the same rewrite to tables.</p>
+</div>
+</div>
+</div>
+<p>The dplyr verbs from <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a> were designed as a functional interface: data frame in, data frame out, no mutation of the input. data.table, Arrow, DuckDB, and Polars are different engines, written in C, C++, and Rust, with different memory layouts and optimization strategies, and the same <code>filter()</code>, <code>mutate()</code>, and <code>summarise()</code> run on a local data frame, on a Parquet file through Arrow, and on a DuckDB table through duckplyr. The engines keep changing underneath an interface that has not.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -999,57 +1082,23 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 </section>
 <section id="sec-compiled-code" class="level2" data-number="28.6">
 <h2 data-number="28.6" class="anchored" data-anchor-id="sec-compiled-code"><span class="header-section-number">28.6</span> When and how to call compiled code</h2>
-<p>Sometimes R is simply the wrong language for the inner loop. You have profiled, vectorized, pre-allocated, tried data.table, and the bottleneck is a tight loop where each iteration depends on the last, where no vectorized function exists, where the work is purely computational and measured in millions of iterations. At that point, the right move is to write the hot loop in a compiled language and call it from R. Three options: C, C++ (via Rcpp), and Rust (via extendr).</p>
-<p><strong>C via <code>.Call()</code></strong>: R’s native foreign function interface. You write C functions that take and return <code>SEXP</code> objects (R’s internal type), managing memory yourself with <code>PROTECT</code>/<code>UNPROTECT</code>:</p>
+<p>Sometimes R is simply the wrong language for the inner loop. You have profiled, vectorized, pre-allocated, tried data.table, and the bottleneck is a tight loop where each iteration depends on the last, where no vectorized function exists, where the work is purely computational and measured in millions of iterations. At that point the right move is to write that loop in a compiled language and call it from R. The most common route is C++ through Rcpp, which handles type conversion and memory management so that the code looks almost like ordinary C++:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="sc">/</span><span class="er">/</span> sum_c.c</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">#include &lt;R.h&gt;</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#include &lt;Rinternals.h&gt;</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="sc">/</span><span class="er">/</span> sum_cpp.cpp</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">#include &lt;Rcpp.h&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>using namespace Rcpp;</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>SEXP <span class="fu">sum_c</span>(SEXP x) {</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    double total <span class="ot">=</span> <span class="dv">0</span>;</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> <span class="fu">length</span>(x); i<span class="sc">++</span>) {</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        total <span class="sc">+</span><span class="er">=</span> <span class="fu">REAL</span>(x)[i];</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    return <span class="fu">ScalarReal</span>(total);</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="sc">/</span><span class="er">/</span> [[Rcpp<span class="sc">::</span>export]]</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>double <span class="fu">sum_cpp</span>(NumericVector x) {</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    double total <span class="ot">=</span> <span class="dv">0</span>;</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> <span class="fu">x.size</span>(); i<span class="sc">++</span>) {</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        total <span class="sc">+</span><span class="er">=</span> x[i];</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    return total;</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The C path is low-level and dependency-free, giving you maximum control; it is used extensively in base R and older packages.</p>
-<p><strong>C++ via Rcpp</strong>: the most popular choice, and for good reason. It handles type conversion and memory management automatically, so you write code that looks almost like normal C++:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="sc">/</span><span class="er">/</span> sum_cpp.cpp</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">#include &lt;Rcpp.h&gt;</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>using namespace Rcpp;</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="sc">/</span><span class="er">/</span> [[Rcpp<span class="sc">::</span>export]]</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>double <span class="fu">sum_cpp</span>(NumericVector x) {</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    double total <span class="ot">=</span> <span class="dv">0</span>;</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (int <span class="at">i =</span> <span class="dv">0</span>; i <span class="sc">&lt;</span> <span class="fu">x.size</span>(); i<span class="sc">++</span>) {</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        total <span class="sc">+</span><span class="er">=</span> x[i];</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    return total;</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><code>Rcpp::sourceCpp("sum_cpp.cpp")</code> compiles and loads the function in one step. Immediate gratification.</p>
-<p><strong>Rust via extendr</strong>: the newest option. Rust provides memory safety without garbage collection; segfaults are, by design, impossible in safe Rust:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="sc">/</span><span class="er">/</span> sum_rust.rs</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>use extendr_api<span class="sc">::</span>prelude<span class="sc">::</span><span class="er">*</span>;</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co">#[extendr]</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>fn <span class="fu">sum_rust</span>(x<span class="sc">:</span> <span class="er">&amp;</span>[f64]) <span class="ot">-&gt;</span> f64 {</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">x.iter</span>()<span class="fu">.sum</span>()</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><code>rextendr::rust_function()</code> for interactive use, <code>rextendr::use_extendr()</code> to set up a Rust-powered package. The ecosystem is young but growing fast.</p>
-<p><strong>When to reach for compiled code</strong>:</p>
-<ul>
-<li>Loops where each iteration depends on the previous one.</li>
-<li>Recursive algorithms (tree traversal, dynamic programming).</li>
-<li>Operations that process each element individually (no vectorization possible).</li>
-<li>Hot loops identified by profiling.</li>
-</ul>
-<p><strong>When not to</strong>: when vectorization solves the problem, when the bottleneck is I/O (more C++ will not make your disk spin faster), when correctness matters more than speed and the compiled code would be complex enough to harbor bugs.</p>
+<p><code>Rcpp::sourceCpp("sum_cpp.cpp")</code> compiles and loads the function in one step. Two other routes exist: C through R’s own <code>.Call()</code> interface, which base R and many older packages use and which gives you full control at the cost of managing memory yourself, and Rust through extendr, whose compiler rejects the memory errors that C and C++ let through. <a href="ch31-connecting-to-other-languages.html" class="quarto-xref"><span>Chapter 31</span></a> walks through all three with complete examples.</p>
+<p>Compiled code pays off for loops where each iteration depends on the previous one, for recursive algorithms such as tree traversal and dynamic programming, for element-by-element work that no vectorized function covers, and for any hot loop the profiler has pointed at. It does not pay off when vectorization solves the problem, when the bottleneck is I/O (more C++ will not make your disk spin faster), or when the compiled version would be complex enough to harbor bugs the R version does not have.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1060,8 +1109,8 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The three options are not interchangeable items on a menu; they sit at different points on a genuine trade-off. Rcpp gives you the deepest ecosystem and the smoothest on-ramp, but nothing stops you from writing a buffer overrun that corrupts memory silently and crashes R ten minutes later. Rust catches those errors at compile time, before your code ever runs, but its R integration is younger and the community smaller, so you will find fewer examples and hit more rough edges. Raw C gives you total control and zero dependencies at the cost of managing every allocation yourself.</p>
-<p>Start with Rcpp. It has the largest community, the most examples, and the gentlest on-ramp. Consider Rust if you want compile-time safety guarantees. Consider raw C only if you need zero dependencies.</p>
+<p>The three routes sit at different points on a trade-off. Rcpp gives you the deepest ecosystem and the smoothest on-ramp, but nothing stops you from writing a buffer overrun that corrupts memory and crashes R ten minutes later. Rust catches those errors at compile time, but its R integration is younger and the community smaller, so you will find fewer examples and hit more rough edges. Raw C gives you total control and zero dependencies at the cost of managing every allocation yourself.</p>
+<p>Start with Rcpp. Consider Rust if you want compile-time safety guarantees. Consider raw C only if you need zero dependencies.</p>
 </div>
 </div>
 </section>
@@ -1069,26 +1118,26 @@ Figure&nbsp;28.1: Flame graph of <code>slow_analysis()</code>: width is time. Th
 <h2 data-number="28.7" class="anchored" data-anchor-id="sec-optimization-checklist"><span class="header-section-number">28.7</span> The optimization checklist</h2>
 <p>When code is too slow, work through this list in order:</p>
 <ol type="1">
-<li><strong>Profile</strong>: find the bottleneck. Do not guess.</li>
-<li><strong>Vectorize</strong>: replace element-wise loops with vectorized operations.</li>
-<li><strong>Pre-allocate</strong>: if you must loop, pre-allocate the result.</li>
-<li><strong>Algorithm</strong>: sometimes the problem is <span class="math inline">\(O(n^2)\)</span> and the fix is <span class="math inline">\(O(n \log n)\)</span>. Better algorithms beat faster languages.</li>
-<li><strong>data.table or DuckDB</strong>: for large data, switch the engine.</li>
-<li><strong>Compiled code</strong> (Rcpp, extendr, <code>.Call()</code>): for tight loops that cannot be vectorized.</li>
-<li><strong>Parallelize</strong>: <code>future.apply</code>, <code>furrr</code>, <code>parallel</code>. Adds concurrency complexity; worth it when the bottleneck is embarrassingly parallel.</li>
+<li>Profile: find the bottleneck. Do not guess.</li>
+<li>Vectorize: replace element-wise loops with vectorized operations.</li>
+<li>Pre-allocate: if you must loop, pre-allocate the result.</li>
+<li>Algorithm: sometimes the problem is <span class="math inline">\(O(n^2)\)</span> and the fix is <span class="math inline">\(O(n \log n)\)</span>. Better algorithms beat faster languages.</li>
+<li>data.table or DuckDB: for large data, switch the engine.</li>
+<li>Compiled code (Rcpp, extendr, <code>.Call()</code>): for tight loops that cannot be vectorized.</li>
+<li>Parallelize: <code>future.apply</code>, <code>furrr</code>, <code>parallel</code>. Adds concurrency complexity; worth it when the bottleneck is embarrassingly parallel.</li>
 </ol>
-<p>Profiling comes first because Amdahl’s law (1967) puts a hard ceiling on what any optimization can gain. If 5% of your code takes 95% of the time, making the other 95% infinitely fast yields only a 5% speedup. The same limit applies to parallelization: if 10% of the work is sequential, you can never exceed a 10x speedup no matter how many cores you throw at it. You need to know which 5% to fix before choosing how to fix it.</p>
+<p>Profiling comes first because of a ceiling that Gene Amdahl worked out in 1967 for parallel machines. If 5% of your code takes 95% of the time, making the other 95% infinitely fast gains you 5%. The same limit applies to parallelization: if 10% of the work is sequential, no number of cores gets you past a 10x speedup. This is Amdahl’s law, and it is why you need to know which 5% to fix before choosing how to fix it.</p>
 <p>R has several frameworks for parallel execution; <code>future.apply</code> is the one to reach for. <code>future.apply::future_lapply()</code> works everywhere and swaps in for <code>lapply()</code> with minimal changes. It carries the usual caveat: parallelization only helps when the work is CPU-bound and divisible. If the bottleneck is reading from disk, more cores will not help. If iterations depend on each other, you cannot split them. And the overhead of spawning workers and collecting results means parallelization only pays off when each unit of work is substantial (milliseconds, not microseconds).</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(future.apply)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(multisession, <span class="at">workers =</span> <span class="dv">4</span>)</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Parallel version of sapply</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">future_sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, <span class="cf">function</span>(i) {</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># some expensive computation</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Sys.sleep</span>(<span class="fl">0.1</span>)</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  i<span class="sc">^</span><span class="dv">2</span></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(future.apply)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(multisession, <span class="at">workers =</span> <span class="dv">4</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Parallel version of sapply</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">future_sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, <span class="cf">function</span>(i) {</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># some expensive computation</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">Sys.sleep</span>(<span class="fl">0.1</span>)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  i<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>So here is where you stand: you can find bottlenecks, eliminate unnecessary copies, hand tight loops to compiled code, and split independent work across cores. But the optimization that matters most is still the one at the top of the list. Measure first, because the profiler catches what intuition misses.</p>
 
@@ -1185,53 +1234,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

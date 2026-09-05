@@ -7,30 +7,30 @@ source(here::here("_common.R"))
 
 What, exactly, is a vector?
 
-You have written thousands of them by now, filtered them, mapped functions over them, watched them copy themselves at surprising moments. But the object itself, the thing sitting in memory when you type `x <- c(1, 2, 3)`, has remained invisible. This chapter opens it up. We are going to look at the C structs that R allocates on the heap, the pointer arithmetic that makes vectorized operations fast, the reference counter that decides when copies happen, and the garbage collector that reclaims everything you abandon. None of this is necessary for writing good R. But it makes the design choices you have seen throughout this book (copy-on-modify, lazy evaluation, lexical scoping) feel less like arbitrary rules and more like consequences of a single engineering blueprint.
+You have written thousands of them by now, filtered them, mapped functions over them, watched them copy themselves at surprising moments. But the object itself, the thing sitting in memory when you type `x <- c(1, 2, 3)`, has remained invisible. This chapter opens it up. We are going to look at the C structs that R allocates on the heap, the pointer arithmetic that makes vectorized operations fast, the reference counter that decides when copies happen, and the garbage collector that reclaims everything you abandon. None of this is necessary for writing good R, but it turns copy-on-modify, lazy evaluation, and lexical scoping from rules into consequences of one design.
 
-R's C implementation descends from S, which John Chambers created at Bell Labs in the 1970s. When Ross Ihaka and Robert Gentleman reimplemented it at the University of Auckland in the early 1990s, they borrowed the evaluation model from Scheme and dressed it in S-compatible syntax. The linked-list environments come from Lisp; the vectorized operations come from S. What holds all of it together is a single data structure.
+The vectorized operations come from S and the evaluation model from Scheme (@sec-family-tree told that story). What holds the two together in the C source is a single data structure.
 
 
 ## Stack and heap {#sec-stack-and-heap}
 
-A running program has two regions of memory. The *stack* is small, fast, and automatic: when you call a function, its local variables go on the stack, and when the function returns, they vanish. The *heap* is large, slow, and manual: objects allocated on the heap survive until something explicitly frees them (in C) or until a garbage collector determines that nothing points to them anymore (in R, Python, Java). The stack holds the bookkeeping (which function called which, where to return); the heap holds the data.
+When you write `x <- c(1, 2, 3)`, R allocates a block of memory, fills it with your three numbers, and stores a pointer to that block in the binding for `x`. When `x` goes out of scope and nothing else references it, R's garbage collector reclaims the block.
 
-Every R object lives on the heap. When you write `x <- c(1, 2, 3)`, R allocates a block of memory on the heap, fills it with your three numbers, and stores a pointer to that block in the binding for `x`. When `x` goes out of scope and nothing else references it, R's garbage collector reclaims the memory.
+The block lives in the *heap*, the large region of memory where objects survive until something frees them: explicitly, in C, or when a garbage collector finds that nothing points to them any more, in R, Python, and Java. The other region is the *stack*: small, fast, and automatic. When you call a function, its bookkeeping (which function called which, where to return) goes on the stack and vanishes when the function returns. Every R object, without exception, lives on the heap; the stack holds only the record of who called whom.
 
 
 ## Every object is a SEXP {#sec-sexp}
 
-In R's C source code, every R object, without exception, is represented as a `SEXP`\index{SEXP}: a pointer to a `SEXPREC`\index{SEXPREC} struct. The name stands for "S expression," inherited from Lisp. That block R allocates for `x <- c(1, 2, 3)` is a `SEXPREC`, holding the data for a three-element numeric vector, with its pointer stored in the binding for `x`.
+R can show you the block. `.Internal(inspect())` dumps the C-level representation of any object:
 
-The `SEXPREC` struct has two parts. The header is the same for every object, and it contains:
+```{r}
+x <- c(1.5, 2.5, 3.5)
+.Internal(inspect(x))
+```
 
-- A **type tag**\index{type tag} (SEXPTYPE): an integer identifying what kind of object this is (integer vector, closure, environment, etc.).
-- **GC information**: flags the garbage collector uses to track whether the object is reachable.
-- **Reference count**\index{reference counting}: how many names point to this object (used to decide whether copy-on-modify needs to copy).
-- **Attributes**: a pointer to a pairlist\index{pairlist}\index{LISTSXP} of attributes (names, class, dim, etc.).
+Read the line left to right: a memory address, a type code (`14`) and its name (`REALSXP`), garbage-collector flags, a reference count (`REF(1)`), the length, and the three values. Every R object prints this way, because in R's C source every object is a `SEXP`\index{SEXP}: a pointer to a `SEXPREC`\index{SEXPREC} struct. The name stands for "S expression," inherited from Lisp.
 
-The payload varies by type. For a numeric vector, it is a contiguous block of C `double` values. For a closure, it is three pointers (formals, body, environment). For an environment, it is a hash table plus a pointer to the parent environment. So every R object, from a humble integer to a deeply nested list of data frames, wears the same uniform; only the payload inside differs.
+The struct has two parts. The header is the same for every object: a type tag\index{type tag} (the SEXPTYPE, an integer saying whether this is an integer vector, a closure, an environment, and so on), the flags the garbage collector uses to track whether the object is reachable, the reference count\index{reference counting} that copy-on-modify consults, and a pointer to a pairlist\index{pairlist}\index{LISTSXP} of attributes (names, class, dim). The payload varies by type. For a numeric vector it is a contiguous block of C `double` values; for a closure it is three pointers (formals, body, environment); for an environment it is a frame of bindings plus a pointer to the parent. Every R object, from a single integer to a nested list of data frames, wears the same header; only the payload differs.
 
 ![The SEXPREC struct: a fixed-size header followed by a contiguous data array. `x + y` walks two arrays in lockstep with no pointer chasing.](../images/sexprec_layout.png){#fig-sexprec width=100%}
 
@@ -62,23 +62,14 @@ typeof(mean)
 | Language object    | `language` | `LANGSXP`  |
 | Symbol (name)      | `symbol`   | `SYMSXP`   |
 
-Some of these are familiar. `CLOSXP` is the closure from @sec-closures. `ENVSXP` is the environment from @sec-environments. `PROMSXP` is the promise from @sec-lazy-evaluation. The new ones, LANGSXP and SYMSXP, are the building blocks of R's metaprogramming system (@sec-metaprogramming), and we will meet them properly there.
+Some of these are familiar. `CLOSXP` is the closure, `ENVSXP` the environment, `PROMSXP` the promise. `LANGSXP` and `SYMSXP` are the calls and symbols you took apart in @sec-metaprogramming.
 
-Notice that `sum` and `mean` have different types. `sum` is a `builtin`, implemented directly in C, evaluating all its arguments before being called. `mean` is a `closure`, a regular R function with formals, a body, and an environment. The distinction matters at the C level but rarely at the R level.
+`sum` and `mean` have different types. `sum` is a `builtin`, implemented directly in C, evaluating all its arguments before being called. `mean` is a `closure`, a regular R function with formals, a body, and an environment. The distinction matters at the C level but rarely at the R level.
 
 
 ## Inspecting objects {#sec-inspect}
 
-R provides a hidden function, `.Internal(inspect())`, that dumps the raw C-level representation of any object:
-
-```{r}
-x <- c(1.5, 2.5, 3.5)
-.Internal(inspect(x))
-```
-
-The output shows the memory address, the SEXPTYPE (`REALSXP`), the reference count, and the actual data values. Terse, but informative.
-
-The `lobstr` package provides friendlier inspection tools:
+The `lobstr` package gives friendlier views of the same information:
 
 ```{r}
 library(lobstr)
@@ -87,9 +78,9 @@ obj_addr(x)
 obj_size(x)
 ```
 
-`obj_addr()` returns the memory address as a string. `obj_size()` reports total memory consumption, including the header, so for a three-element numeric vector you get the SEXPREC header (approximately 64 bytes, implementation-dependent) plus three times 8 bytes for the doubles, plus some alignment padding.
+`obj_addr()` returns the memory address as a string. `obj_size()` reports total memory including the header: for three doubles you get 80 bytes, 48 of header and 32 for the data, because R hands out small vectors in fixed size classes and 24 bytes rounds up to 32.
 
-Where things get interesting is `ref()`, which shows whether two names point to the same underlying object:
+`ref()` shows whether two names point to the same underlying object:
 
 ```{r}
 y <- x
@@ -148,9 +139,7 @@ b <- "hello"
 
 The outer `STRSXP` addresses differ (they are separate character vectors), but the inner `CHARSXP` they point to is the same object. This interning saves memory when the same strings appear repeatedly, as in a factor or a character column with many repeated levels.
 
-A list (`VECSXP`) is a vector of SEXP pointers. Each element can point to any R object of any type, which is why lists are heterogeneous: the list itself is just an array of pointers, and the pointed-to objects can be anything. This pointer-based layout has consequences for how R handles tabular data.
-
-**Data frames and cache friendliness.** A data frame is a list of column vectors, and each column is a contiguous array. Operations that scan down a column (summing, filtering, grouping) touch sequential memory and benefit from cache prefetching. Operations that scan across rows jump between columns, touching non-sequential addresses and thrashing the cache. This is why column-wise operations in R are generally faster than row-wise ones, and why `apply(df, 1, f)` (row-wise) is slower than `lapply(df, f)` (column-wise).
+A list (`VECSXP`) is a vector of SEXP pointers. Each element can point to any R object of any type, which is why lists are heterogeneous: the list itself is an array of pointers, and the pointed-to objects can be anything. This pointer-based layout has consequences for tabular data. A data frame is a list of column vectors, each a contiguous array. Operations that scan down a column (summing, filtering, grouping) touch sequential memory and benefit from prefetching; operations that walk across a row jump between columns, touching addresses far apart. That is one reason column-wise operations in R are faster than row-wise ones.
 
 ### Exercises {.unnumbered}
 
@@ -172,16 +161,20 @@ x <- c(1, 2, 3)
 .Internal(inspect(x))
 ```
 
-The `[MARK,NAM(X)]` in the inspect output shows the reference count. (The exact format varies by R version.)
+`REF(...)` in the inspect output is the reference count.
 
 ```{r}
 y <- x
 .Internal(inspect(x))
 ```
 
-After `y <- x`, the reference count increases but the address stays the same. Both names share the same data.
+After `y <- x`, the count goes up but the address stays the same. Both names share the same data.
 
-**Historical note: the NAMED mechanism.** Before R 4.0, R used a cruder system called NAMED, with only three states: 0 (no references), 1 (one reference), and 2 (multiple references, or "we have lost count"). The problem was that NAMED could never decrease; once an object reached NAMED=2, R always copied it on modification, even if one reference had long since disappeared. The current reference counting system, introduced by Luke Tierney, tracks actual counts and can decrease them when bindings are removed, eliminating a whole class of unnecessary copies.
+::: {.callout-note collapse="true"}
+## Before reference counting
+
+Until R 4.0.0 (2020) the header carried a field called NAMED with three states: 0 for no references, 1 for one, and 2 for "more than one, or we have lost count". NAMED could never decrease, so once an object reached 2, R copied it on every modification for the rest of its life, even after the extra reference was gone. Luke Tierney's reference counter, which replaced it, tracks actual counts and lowers them when bindings disappear, which removed a whole class of unnecessary copies.
+:::
 
 You can observe the practical effect. Modifying a vector inside a function that receives it as an argument triggers a copy, because the caller's binding and the function's parameter both point to the object (reference count of at least 2):
 
@@ -225,7 +218,7 @@ Objects get created; reference counts rise and fall; eventually some objects hav
 
 R uses a tracing garbage collector with a mark-and-sweep\index{mark-and-sweep} algorithm. When R runs low on memory, the collector pauses execution, traces all reachable objects by following pointers from the known roots (the global environment, the call stack, the symbol table), marks them, and sweeps away everything unmarked. If a SEXP has no path back to any root, it ceases to exist.
 
-The collector is *generational*\index{generational garbage collection}, dividing objects into three generations based on how long they have survived. New objects are generation 0; objects that survive one collection get promoted to generation 1, then to generation 2. The insight behind this design is that most objects die young (temporary vectors in a loop, intermediate results in a pipeline), so collecting generation 0 frequently and generation 2 rarely is efficient. It is the same principle behind most modern garbage collectors, from Java's G1 to Go's concurrent collector.
+The collector is *generational*\index{generational garbage collection}, dividing objects into three generations based on how long they have survived. New objects are generation 0; objects that survive one collection get promoted to generation 1, then to generation 2. The bet behind this design is that most objects die young (temporary vectors in a loop, intermediate results in a pipeline), so collecting generation 0 often and generation 2 rarely is efficient. Java's and .NET's collectors make the same bet.
 
 You can trigger collection manually and see the results:
 
@@ -244,7 +237,7 @@ x <- lapply(1:1000, function(i) rnorm(1000))
 gcinfo(FALSE)
 ```
 
-**PROTECT and UNPROTECT at C level.** If you write C code that creates R objects (via `.Call()`), you must tell the garbage collector about them. The collector can run at any allocation point, and if your newly created SEXP is not reachable from any root, it will be swept away while you are still using it. The `PROTECT()` macro adds an object to a protection stack; `UNPROTECT(n)` removes the last `n` entries. Forgetting to PROTECT is the single most common source of bugs in R's C extensions: intermittent segfaults that depend on the exact moment the GC happens to run, which means they almost never reproduce on the developer's machine and almost always reproduce in production.
+The collector has one consequence for anyone who writes C code that creates R objects. It can run at any allocation, and if a SEXP you have just created is not reachable from any root, it will be swept away while you are still using it. The `PROTECT()` macro adds an object to a protection stack; `UNPROTECT(n)` removes the last `n` entries. Forgetting a `PROTECT` is the most common bug in R's C extensions: a segfault that depends on the exact moment the collector happens to run, so it appears intermittently and rarely on the machine where the code was written.
 
 ```c
 /* Example: a C function callable from R via .Call() */
@@ -273,7 +266,7 @@ The `PROTECT(allocVector(...))` call allocates a new vector *and* protects it in
 
 ## The evaluator {#sec-evaluator}
 
-R is an interpreted language, which means something very specific: when you type an expression at the console, R parses it into an internal tree structure (a LANGSXP), then walks that tree in a function called `eval()` in the file `eval.c`. There is no compilation step, no bytecode (well, there is a bytecode compiler now, but the default path is interpretation), just a C function recursively walking a tree of SEXPs.
+When you type an expression at the console, R parses it into a tree (a LANGSXP) and walks that tree in a C function called `eval()`, in the file `eval.c`. Since R 3.4.0 a just-in-time compiler\index{byte compilation} translates closures into bytecode after their first couple of calls (`compiler::enableJIT(-1)` reports the current level, 3 by default), and a second interpreter in the same file runs that bytecode; the tree walk sketched below is what the console, the first calls of any function, and everything the compiler declines to handle go through.
 
 The core of `eval()` is a large switch statement on the SEXPTYPE of the expression:
 
@@ -298,52 +291,31 @@ SEXP eval(SEXP e, SEXP rho) {
 
 When the expression is a symbol (`SYMSXP`), the evaluator looks it up in the environment `rho` by walking the chain of parent environments. When it is a function call (`LANGSXP`), the evaluator finds the function, evaluates the arguments (wrapping them in promises for closures), and calls it. When it is a literal (a number, a string), it returns the value unchanged.
 
-This is why R is slower than compiled languages for tight loops: every iteration goes through this switch statement, every variable access is an environment lookup, and every function call involves promise creation and argument matching. Vectorized code avoids most of this overhead by dropping into C for the inner loop, where none of these costs exist. But the environments that the evaluator searches through are themselves data structures worth understanding.
-
-**Environments as linked frames.** An environment in R is a hash table of bindings (name-to-SEXP mappings) plus a pointer to a parent environment. Variable lookup walks the chain: check the current environment's hash table, then the parent's, then the grandparent's, up to the global environment and then the search path of attached packages.
+This is why an R loop is slower than a compiled one: bytecode or not, every variable access is an environment lookup and every function call builds promises and matches arguments. Vectorized code avoids most of this by dropping into C for the inner loop, where none of these costs exist. The environments the evaluator searches through are data structures of their own: a frame of bindings (name-to-SEXP mappings) plus a pointer to a parent environment. Small frames, such as the execution environment of a function call, are plain lists; the global environment and package namespaces are hash tables (@sec-hash-tables). Lookup walks the chain: check the current frame, then the parent's, then the grandparent's, up to the global environment and then the search path of attached packages.
 
 
 ## Promises at C level {#sec-promise-internals}
 
-In @sec-lazy-evaluation, you learned that function arguments are wrapped in promises. Here is what a promise actually looks like in memory.
-
-At the C level, a promise (`PROMSXP`) is a struct with three fields:
-
-1. **Expression** (`PRCODE`): the unevaluated expression, stored as a LANGSXP or SYMSXP.
-2. **Environment** (`PRENV`): the environment where the expression should be evaluated.
-3. **Value** (`PRVALUE`): initially `R_UnboundValue` (a sentinel). After the promise is forced, this holds the cached result.
-
-When the evaluator encounters a PROMSXP, it checks `PRVALUE`. If it is still `R_UnboundValue`, it evaluates `PRCODE` in `PRENV`, stores the result in `PRVALUE`, and sets `PRENV` to `R_NilValue` (allowing the original environment to be garbage collected). If `PRVALUE` is already set, it returns the cached value immediately. Evaluate once, cache forever.
-
-This three-field structure explains several behaviors you have seen:
-
-- **Default arguments that refer to other arguments work** because the promise's environment is the function's execution environment, where earlier parameters are already bound.
-- **`substitute()` can extract the unevaluated expression** because it reads `PRCODE` without forcing the promise.
-- **The lazy evaluation trap in function factories** (@sec-lazy-eval-trap) happens because the promise captures the expression and the environment at call time, but evaluates them later, when the environment may have changed.
-
-You cannot inspect promises from R without forcing them — a fundamental property of the design, not an oversight:
+In @sec-lazy-evaluation you learned that function arguments arrive as promises. Try to look at one:
 
 ```{r}
 f <- function(x) {
-  # This LOOKS like it checks the type before forcing, but typeof(x)
-  # itself forces the promise. By the time cat() prints, x is already
-  # evaluated. There is no way around this in R.
   cat("typeof x:", typeof(x), "\n")
   x
 }
 f(1 + 1)
 ```
 
-If R provided a way to get the type without forcing, you would see `"promise"`. But calling `typeof(x)` is itself an access of `x`, which forces the promise, so by the time the result is printed, `x` is already `"double"`. The promise is deliberately invisible from R's perspective: any inspection forces evaluation, which is precisely why `substitute()` exists as a separate mechanism to read the expression without triggering it. Closures, the other major abstraction from earlier chapters, have their own three-field structure at the C level.
+`typeof(x)` reports `"double"`, never `"promise"`, because asking for the type of `x` uses `x`, and using a promise forces it. Any inspection from R evaluates the promise first, which is why `substitute()` exists as a separate door: it reads the stored expression without touching it.
+
+At the C level the promise (`PROMSXP`) is a struct with three fields: the expression (`PRCODE`), stored as a LANGSXP or SYMSXP; the environment to evaluate it in (`PRENV`); and the value (`PRVALUE`), initially the sentinel `R_UnboundValue`. When the evaluator meets a PROMSXP it checks `PRVALUE`. If it is still unbound, it evaluates `PRCODE` in `PRENV`, stores the result, and sets `PRENV` to `R_NilValue` so the environment can be collected. If a value is already there, it returns it. Evaluate once, cache forever.
+
+The three fields explain behaviour from earlier chapters. A default argument can refer to another argument because `PRENV` is the function's execution environment, where the earlier parameters are already bound. `substitute()` can hand back the unevaluated expression because it reads `PRCODE` directly. And the lazy evaluation trap in function factories (@sec-lazy-eval-trap) happens because the promise stores the expression and the environment at call time and evaluates them later, after the environment has changed. Closures, the other abstraction those chapters relied on, have their own three-field struct.
 
 
 ## Closures at C level {#sec-closure-internals}
 
-A closure (`CLOSXP`) is a struct with three pointers:
-
-1. **Formals** (`FORMALS`): a pairlist of argument names and default values.
-2. **Body** (`BODY`): the parsed body of the function, stored as a LANGSXP.
-3. **Environment** (`CLOENV`): the environment where the function was defined.
+Take a closure apart from R:
 
 ```{r}
 adder <- function(n) function(x) x + n
@@ -355,7 +327,7 @@ body(add5)
 environment(add5)
 ```
 
-`formals()`, `body()`, and `environment()` are R-level accessors to the three fields of the CLOSXP. The environment of `add5` is the execution environment created when `adder(5)` was called, and it contains the binding `n = 5`. This is lexical scoping made concrete: the closure carries a pointer to the environment where it was born, and that environment stays alive as long as the closure exists, because the GC traces the pointer and keeps the environment reachable.
+`formals()`, `body()`, and `environment()` read the three pointers of a `CLOSXP`: `FORMALS`, a pairlist of argument names and defaults; `BODY`, the parsed function body as a LANGSXP; and `CLOENV`, the environment the function was defined in. The environment of `add5` is the execution environment created when `adder(5)` was called, and it contains the binding `n = 5`. This is lexical scoping made concrete: the closure carries a pointer to the environment where it was born, and that environment stays alive as long as the closure exists, because the GC traces the pointer and keeps the environment reachable.
 
 Every user-defined function in R is a CLOSXP. Even a bare `function(x) x + 1` carries all three fields. The distinction between "function" and "closure" that some languages make does not exist in R's implementation. But not all callable things in R are closures, and the mechanisms for reaching compiled code differ in important ways.
 
@@ -370,7 +342,7 @@ Every user-defined function in R is a CLOSXP. Even a bare `function(x) x + 1` ca
 
 R provides three mechanisms for calling compiled code. They differ in age, safety, and flexibility.
 
-**`.Primitive()`**\index{.Primitive()} is the oldest and most restrictive. Primitive functions are built into the R interpreter itself; you cannot write new ones, because they are defined in a table in `names.c` in the R source. Examples include `+`, `[`, `if`, `for`, `c()`, and `sum()`. Primitives skip normal argument matching (some evaluate arguments before the call, some do not), which is why they are fast but also why their behavior sometimes surprises you.
+The oldest road, `.Primitive()`\index{.Primitive()}, is also the most restrictive. Primitive functions are built into the R interpreter itself; you cannot write new ones, because they are defined in a table in `names.c` in the R source. Examples include `+`, `[`, `if`, `for`, `c()`, and `sum()`. Primitives skip normal argument matching (some evaluate arguments before the call, some do not), which is why they are fast but also why their behavior sometimes surprises you.
 
 ```{r}
 sum
@@ -379,19 +351,15 @@ sum
 
 The `.Primitive("...")` form shows that these functions are entry points into the C code of the interpreter itself.
 
-**`.Internal()`**\index{.Internal()} calls C functions that are registered in R's internal table but not exposed as primitives. They go through normal argument matching first, so many base R functions are thin R wrappers around `.Internal()` calls:
+The second road, `.Internal()`\index{.Internal()}, calls C functions that are registered in R's internal table but not exposed as primitives. They go through normal argument matching first, so many base R functions are thin R wrappers around `.Internal()` calls:
 
 ```{r}
-#| eval: false
-# Not run: just showing the pattern
 body(paste)
-# function (..., sep = " ", collapse = NULL, recycle0 = FALSE)
-#   .Internal(paste(list(...), sep, collapse, recycle0))
 ```
 
 The R-level function handles argument matching, default values, and error messages. The `.Internal()` call does the actual work in C.
 
-**`.Call()`** is the modern interface for R extensions. It passes R objects (SEXPs) directly to a C or C++ function in a shared library (a `.so` or `.dll` file), where the C function receives SEXPs, manipulates them using R's C API, and returns a SEXP. This is what packages like data.table, Rcpp-based packages, and the tidyverse use for performance-critical code. @sec-call-c in @sec-connecting-languages covers the `.Call()` interface in full detail with complete working examples; this section focuses on how it fits into R's internal architecture.
+The third road, `.Call()`, is the modern interface for extensions. It passes R objects (SEXPs) directly to a C or C++ function in a shared library (a `.so` or `.dll` file), where the C function receives SEXPs, manipulates them using R's C API, and returns a SEXP. This is what data.table, Rcpp-based packages, and the tidyverse use for performance-critical code. @sec-call-c covers it with complete working examples.
 
 ```c
 /* A .Call function signature */
@@ -416,22 +384,14 @@ There is also `.C()` and `.Fortran()`, older interfaces that pass raw C arrays (
 
 ## Reading R's source code {#sec-reading-source}
 
-R's source code is available at [https://svn.r-project.org/R/](https://svn.r-project.org/R/) and mirrored on GitHub at [https://github.com/wch/r-source](https://github.com/wch/r-source). The key directories:
+R's source code is available at [https://svn.r-project.org/R/](https://svn.r-project.org/R/) and mirrored on GitHub at [https://github.com/wch/r-source](https://github.com/wch/r-source). The interpreter lives in `src/main/`: `eval.c` is the evaluator, `memory.c` handles allocation and garbage collection, `envir.c` the environment operations, `names.c` the table of primitive and internal functions, and `arithmetic.c` the vectorized arithmetic. The parser grammar, in yacc format, is `src/main/gram.y`; the public C API, with every SEXP macro, type constant, and accessor, is `src/include/Rinternals.h`; and the R-level code for base functions is under `src/library/base/R/`.
 
-- **`src/main/`**: the interpreter. `eval.c` (the evaluator), `memory.c` (allocation and GC), `envir.c` (environment operations), `names.c` (the table of primitive and internal functions), `arithmetic.c` (vectorized arithmetic).
-- **`src/main/gram.y`**: the parser grammar (yacc format). This defines R's syntax.
-- **`src/include/Rinternals.h`**: the public C API. All the SEXP macros, type constants, and accessor functions.
-- **`src/library/base/R/`**: the R-level code for base functions.
-
-A useful technique for finding where something is implemented: search `names.c` for the function name. That file maps R names to C function pointers, so searching for `"cumsum"` will show you it is implemented by `do_cum` in `cum.c`.
+To find where something is implemented, search `names.c` for the function name. That file maps R names to C function pointers, so searching for `"cumsum"` shows you it is implemented by `do_cum` in `cum.c`. The type of a function tells you which table to look in:
 
 ```{r}
-#| eval: false
-# You can also find which functions are .Internal vs .Primitive
-# by checking their type:
-typeof(`if`)       # "special"  - primitive, doesn't evaluate all args
-typeof(`+`)        # "builtin"  - primitive, evaluates all args
-typeof(mean)       # "closure"  - R function, may use .Internal inside
+typeof(`if`)
+typeof(`+`)
+typeof(mean)
 ```
 
 The distinction between `builtin` and `special` is about argument evaluation. Builtins evaluate all arguments before calling the C function (like normal function calls). Specials handle argument evaluation themselves, which is how `if` can avoid evaluating the branch not taken and `&&` can short-circuit.
@@ -441,19 +401,19 @@ The distinction between `builtin` and `special` is about argument evaluation. Bu
 
 When you type `x <- c(1, 2, 3)` at the console, here is everything that happens:
 
-1. The **parser** (gram.y) converts the text into a LANGSXP: a tree with `<-` at the root, `x` (a SYMSXP) on the left, and a call to `c` (another LANGSXP) on the right.
+1. The parser (gram.y) converts the text into a LANGSXP: a tree with `<-` at the root, `x` (a SYMSXP) on the left, and a call to `c` (another LANGSXP) on the right.
 
-2. The **evaluator** (eval.c) processes the LANGSXP. It sees `<-` (a SPECIALSXP), evaluates the right-hand side first. The call to `c` is a BUILTINSXP, so all arguments are evaluated (they are literals, so they evaluate to themselves), and the C function `do_c` builds a REALSXP: a SEXPREC with a header and three contiguous doubles.
+2. The evaluator (eval.c) processes the LANGSXP. It sees `<-` (a SPECIALSXP), evaluates the right-hand side first. The call to `c` is a BUILTINSXP, so all arguments are evaluated (they are literals, so they evaluate to themselves), and the C function `do_c` builds a REALSXP: a SEXPREC with a header and three contiguous doubles.
 
-3. The evaluator binds the name `x` to the new SEXP in the current environment's hash table. The reference count is set to 1.
+3. The evaluator binds the name `x` to the new SEXP in the current environment's frame. The reference count is set to 1.
 
-4. Later, if you write `y <- x`, the evaluator adds a new binding in the hash table pointing to the same SEXP and increments the reference count to 2. No copy.
+4. Later, if you write `y <- x`, the evaluator adds a new binding in the frame pointing to the same SEXP and increments the reference count to 2. No copy.
 
 5. If you then write `y[1] <- 99`, the evaluator sees that the reference count is 2, so it copies the REALSXP, modifies the copy, and points `y` at the copy. `x` still points at the original. Reference count on the original drops to 1; reference count on the copy is 1.
 
-6. If `x` goes out of scope or is removed with `rm()`, its reference count drops to 0. The next time the **garbage collector** runs (triggered when R needs more memory), it finds the original SEXP unreachable and reclaims its memory.
+6. If `x` goes out of scope or is removed with `rm()`, its reference count drops to 0. The next time the garbage collector runs (triggered when R needs more memory), it finds the original SEXP unreachable and reclaims its memory.
 
-This is the full lifecycle: allocation, binding, sharing, copying (if needed), and collection. Every R program, no matter how complex, is just many of these cycles interleaved. And every design decision you have encountered in this book, from copy-on-modify to lexical scoping to lazy evaluation, exists because of how these cycles work. The abstractions are not arbitrary; they are consequences. What remains is to see how R's expression trees become the raw material for metaprogramming, and that is where we turn next.
+This is the full lifecycle: allocation, binding, sharing, copying when needed, and collection. Every R program is many of these cycles interleaved, and copy-on-modify, lexical scoping, and lazy evaluation are what the cycles look like from above. The next chapter goes the other way: instead of the C underneath `function()`, what `function()` alone can build.
 
 ### Exercises {.unnumbered}
 
@@ -463,4 +423,4 @@ This is the full lifecycle: allocation, binding, sharing, copying (if needed), a
 
 3. Look at the R source for a base function you use frequently (e.g., `rev`, `which`, `paste`). Find the `.Internal()` or `.Primitive()` call. Then search `names.c` in the R source mirror to find the corresponding C function name.
 
-4. Ross Ihaka's 2009 talk "R: Past and Future History" discusses design decisions he would change. Find it online and identify one regret related to the topics in this chapter.
+4. Ross Ihaka's 2010 paper "R: Lessons Learned, Directions for the Future" discusses design decisions he would change. Find it online and identify one regret related to the topics in this chapter.

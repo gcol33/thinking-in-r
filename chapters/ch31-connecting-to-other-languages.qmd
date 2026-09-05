@@ -5,16 +5,16 @@
 source(here::here("_common.R"))
 ```
 
-Call `sum()` in R. You are calling C. Call `qr()` and you are calling LAPACK Fortran routines that predate R itself by decades. The entire numerical core of the language, from matrix multiplication to sorting to random number generation, lives in compiled code that R merely orchestrates from above, translating your high-level expressions into fast, low-level operations that crunch numbers the way hardware prefers. R was designed to be a glue language, a thin layer of expressiveness sitting on top of compiled muscle. So what happens when you need muscle of your own?
+Call `sum()` in R and you are calling C. Call `qr()` and you are calling LAPACK Fortran routines that predate R by decades. The numerical core of the language, from matrix multiplication to sorting to random number generation, lives in compiled code that R orchestrates from above. R was designed as a glue language. So what happens when you need compiled code of your own?
 
-This chapter covers the practical interfaces: how to call C, C++, Rust, Python, and Fortran from R, with complete working examples for each. @sec-r-internals introduced the SEXP type system and memory model; @sec-compiled-code in @sec-performance showed when compiled code is worth the trouble. Here we go deeper into each interface, starting with the one that underlies all the others.
+This chapter covers the practical interfaces: how to call C, C++, Rust, Python, and Fortran from R, with a complete working example for each. @sec-compiled-code covered when compiled code is worth the trouble; here the question is how, starting with the interface that underlies all the others.
 
 
 ## C via `.Call()` {#sec-call-c}
 
-`.Call()`\index{.Call interface} is R's native foreign function interface\index{C API}\index{R API}, the bedrock on which every other approach (Rcpp, extendr, all of them) ultimately rests. When Rcpp generates a wrapper or extendr produces a binding, what R actually loads and dispatches is a `.Call()` entry point. @sec-three-roads in @sec-r-internals introduced the three mechanisms for calling compiled code (`.Primitive()`, `.Internal()`, `.Call()`); here we focus on `.Call()` with complete examples.
+`.Call()`\index{.Call interface} is R's native foreign function interface\index{C API}\index{R API}, the third of the three roads in @sec-three-roads and the one every other approach rests on. When Rcpp generates a wrapper or extendr produces a binding, what R loads and dispatches is a `.Call()` entry point.
 
-A C function callable from R takes `SEXP`\index{SEXP!C level} arguments and returns a `SEXP`, where `SEXP` is a pointer to R's internal object representation (see @sec-r-internals). Any R objects you allocate inside the function must be shielded from the garbage collector using `PROTECT`\index{PROTECT()}, then released with `UNPROTECT`\index{UNPROTECT()} before returning. Get the bookkeeping wrong and things go sideways fast.
+A C function callable from R takes `SEXP`\index{SEXP!C level} arguments and returns a `SEXP`, and any R object it allocates has to be shielded from the garbage collector with `PROTECT`\index{PROTECT()} and released with `UNPROTECT`\index{UNPROTECT()} before returning (@sec-gc).
 
 Here is a complete example: a C function that computes the sum of a numeric vector.
 
@@ -46,9 +46,9 @@ dyn.load("sum_c.so")  # sum_c.dll on Windows
 
 `R CMD SHLIB` invokes the system C compiler with the correct flags and include paths, `dyn.load()` loads the shared library into R's process, and `.Call()` dispatches to the function by name.
 
-Notice what happens inside the function. `REAL(x)` extracts the underlying C `double*` array from a numeric SEXP; `ScalarReal()` wraps a C double back into a SEXP. Because this function does not allocate any new R objects, there is nothing to `PROTECT`. If it did allocate (say, a result vector via `allocVector(REALSXP, n)`), you would need to `PROTECT` that allocation and `UNPROTECT(1)` before returning.
+Inside the function, `REAL(x)` extracts the underlying C `double*` array from a numeric SEXP; `ScalarReal()` wraps a C double back into a SEXP. Because this function does not allocate any new R objects, there is nothing to `PROTECT`. If it did allocate (say, a result vector via `allocVector(REALSXP, n)`), you would need to `PROTECT` that allocation and `UNPROTECT(1)` before returning.
 
-That `PROTECT`/`UNPROTECT` protocol is the source of most bugs in hand-written C extensions. Forget a `PROTECT` and the garbage collector frees your object mid-computation, producing a segfault that may not surface until weeks later in someone else's R session. Add a `PROTECT` without a matching `UNPROTECT` and you overflow the protection stack. The count passed to `UNPROTECT` must match the number of `PROTECT` calls exactly, which is precisely the kind of tedious, error-prone bookkeeping that higher-level interfaces were invented to eliminate. But the accessor macros underneath those interfaces are still worth knowing.
+Getting that count wrong is the classic bug in hand-written extensions: one `PROTECT` too few and the collector frees your object mid-computation, one `UNPROTECT` too few and the protection stack overflows. The higher-level interfaces exist to take this bookkeeping away, but the accessor macros underneath them are still worth knowing.
 
 Other accessors follow the same pattern: `INTEGER(x)` for integer vectors, `LOGICAL(x)` for logical vectors, `STRING_ELT(x, i)` for string vectors (which are arrays of `CHARSXP` pointers, not C strings), `VECTOR_ELT(x, i)` for list elements.
 
@@ -65,7 +65,7 @@ Writing raw C against R's API is rarely the right choice for new code. The reaso
 
 ## C++ via Rcpp {#sec-rcpp}
 
-The `PROTECT`/`UNPROTECT` dance is exactly the kind of ceremony that makes writing raw C against R's API feel like defusing a bomb. What if something else handled the wiring? Rcpp\index{Rcpp (package)} wraps R's C API in C++ classes that manage type conversion and memory automatically: no protection macros, no `SEXP` arithmetic, no accessor juggling. You write ordinary C++ and Rcpp translates it into the `.Call()` machinery underneath.
+What if something else handled the `PROTECT` bookkeeping? Rcpp\index{Rcpp (package)} wraps R's C API in C++ classes that manage type conversion and memory: no protection macros, no `SEXP` arithmetic, no accessor juggling. You write ordinary C++ and Rcpp generates the `.Call()` machinery underneath.
 
 The same sum function, rewritten:
 
@@ -98,7 +98,7 @@ One function call compiles, links, loads, and registers the function; the turnar
 
 Rcpp provides wrapper classes for all common R types: `NumericVector`\index{NumericVector}, `IntegerVector`\index{IntegerVector}, `CharacterVector`\index{CharacterVector}, `LogicalVector`, `List`, `DataFrame`, `NumericMatrix`. These proxy the underlying SEXP without copying, so you pay no conversion cost on the way in, and return values are converted back to R objects automatically.
 
-**Sugar expressions** are Rcpp's vectorized operations, mirroring R's vectorized functions in C++:
+Rcpp also mirrors R's vectorized functions in C++, a layer it calls *sugar*:
 
 ```{r}
 #| eval: false
@@ -118,7 +118,7 @@ LogicalVector above_threshold(NumericVector x, double threshold) {
 
 Sugar covers `abs`, `sum`, `mean`, `min`, `max`, `ifelse`, `which`, `any`, `all`, `pow`, `sqrt`, and many more. When sugar is sufficient, your C++ code looks almost identical to R but runs at compiled speed.
 
-**RcppArmadillo** adds the Armadillo linear algebra library:
+For linear algebra, RcppArmadillo adds the Armadillo library:
 
 ```{r}
 #| eval: false
@@ -133,7 +133,7 @@ arma::vec solve_system(arma::mat A, arma::vec b) {
 
 Armadillo provides matrix decompositions (QR, SVD, Cholesky, eigenvalues), sparse matrix support, and an expression template engine that fuses operations to avoid temporaries. If your bottleneck is linear algebra beyond what R's BLAS provides, RcppArmadillo is the natural tool.
 
-**When Rcpp shines**: tight loops over vector elements, element-wise operations that resist vectorization in R, recursive algorithms like tree traversal or dynamic programming, and any situation demanding fine-grained control over iteration. Where Rcpp cannot help is I/O-bound code or code that already calls optimized C internally. You cannot make `sum()` faster by rewriting it in Rcpp, because `sum()` is already C. So what about a language that offers the same low-level performance but catches your memory bugs before they happen?
+Rcpp pays off for tight loops over vector elements, element-wise operations that resist vectorization in R, recursive algorithms like tree traversal or dynamic programming, and anything that needs fine-grained control over iteration. It cannot help with I/O-bound code or with code that already calls optimized C: `sum()` is already C, and rewriting it in Rcpp will not make it faster. So what about a language that offers the same low-level performance but catches your memory bugs before they happen?
 
 ### Exercises {.unnumbered}
 
@@ -185,13 +185,13 @@ fib(10)
 
 No `PROTECT`, no `UNPROTECT`, no `SEXP`. The type conversion between R and Rust is handled by extendr's `#[extendr]` macro (used in source files) or inferred by `rust_function()`.
 
-Rust's ownership model says every value has exactly one owner; when ownership transfers, the old name becomes invalid. R's copy-on-modify semantics (@sec-memory) say an object is shared until someone modifies it, at which point R copies it so the original is preserved. The two mechanisms look different — Rust enforces ownership at compile time; R defers to runtime copying — but they guarantee the same thing: a value will not change while someone else is looking at it. That guarantee is why Rust backends like the Polars data frame library can hand data to R through extendr without defensive copying.
+Rust's ownership model says every value has exactly one owner; when ownership transfers, the old name becomes invalid. R's copy-on-modify (@sec-refcount) shares an object until someone modifies it, then copies. Rust enforces its rule at compile time and R at run time, and both guarantee the same thing: a value will not change while someone else is looking at it. That shared guarantee is why a Rust data frame engine can hand data to R through extendr without defensive copying.
 
 But does the safety justify the ecosystem trade-off?
 
-**Rcpp vs extendr**: Rcpp has over 2,600 reverse dependencies on CRAN and has been battle-tested for 15 years; its documentation, Stack Overflow coverage, and library of examples are unmatched in the R world. extendr is younger, with a smaller ecosystem and fewer production examples. What it buys in return is the compile-time memory safety described earlier, which matters more the larger and more complex the compiled codebase becomes.
+Rcpp has about 3,300 CRAN packages depending on it as of this writing and has been on CRAN since 2008; its documentation, Stack Overflow coverage, and library of examples are unmatched in the R world. extendr is younger, with a smaller ecosystem and fewer production examples. What it buys is the compile-time memory safety described above, which matters more the larger the compiled codebase becomes.
 
-For package development, `rextendr::use_extendr()` sets up the directory structure and build configuration. The `polars` package (R bindings to the Polars data frame library) and `gifski` (GIF encoding) are production examples of extendr-based packages on CRAN.
+For package development, `rextendr::use_extendr()` sets up the directory structure and build configuration. The `polars` package (R bindings to the Polars data frame library, distributed through R-universe) is the largest extendr-based package; `prqlr`, `b64`, and `heck` are smaller ones on CRAN.
 
 ::: callout-tip
 ## Opinion
@@ -206,11 +206,9 @@ If you are starting a new package today and the compiled code is non-trivial (mo
 
 ## Python via reticulate {#sec-reticulate}
 
-Calling Python from R is not about speed. Python's interpreter is slower than R's for numerical work. The reason to call Python is access: scikit-learn, PyTorch, TensorFlow, Hugging Face Transformers, spaCy, and hundreds of other libraries either have no R equivalent or their R equivalents lag behind by months or years. When a new deep learning architecture drops, the Python implementation comes first. Always.
+Calling Python from R is not about speed. Python's interpreter is slower than R's for numerical work. The reason to call Python is access: scikit-learn, PyTorch, TensorFlow, Hugging Face Transformers, spaCy, and hundreds of other libraries either have no R equivalent or their R equivalents lag behind by months or years. When a new deep learning architecture appears, the Python implementation comes first.
 
-The `reticulate`\index{reticulate (package)}\index{Python integration} package embeds a Python interpreter inside R's process, with no inter-process communication overhead; R and Python share the same memory space.
-
-**Importing modules**:
+The `reticulate`\index{reticulate (package)}\index{Python integration} package embeds a Python interpreter inside R's process, with no inter-process communication overhead; R and Python share the same memory space. Importing a module gives you an object whose attributes you reach with `$`:
 
 ```{r}
 #| eval: false
@@ -224,9 +222,7 @@ np$mean(x)
 #> [1] 3
 ```
 
-The `$` operator accesses Python attributes and methods. R vectors convert to NumPy arrays automatically, and NumPy arrays convert back to R vectors.
-
-**Sourcing Python scripts**:
+R vectors convert to NumPy arrays automatically, and NumPy arrays convert back to R vectors. A whole Python file can be sourced:
 
 ```{r}
 #| eval: false
@@ -240,17 +236,7 @@ normalize(c(1, 2, 3, 4, 5))
 
 `source_python()` executes a Python file and makes its top-level functions available in R's global environment as regular R functions.
 
-**Type conversion rules**: these conversions happen automatically in most cases.
-
-- R numeric vectors become NumPy arrays.
-- R data frames become Pandas DataFrames.
-- R lists become Python dicts.
-- R `TRUE`/`FALSE` become Python `True`/`False`.
-- R `NULL` becomes Python `None`.
-
-For large arrays the conversion is zero-copy when the memory layout is compatible (both R and NumPy store doubles as contiguous 64-bit IEEE 754 values).
-
-**Calling scikit-learn from R**:
+The conversions happen automatically: numeric vectors become NumPy arrays, data frames become pandas DataFrames, named lists become dicts and unnamed lists become Python lists, `TRUE`/`FALSE` become `True`/`False`, and `NULL` becomes `None`. A scikit-learn model fits the same way:
 
 ```{r}
 #| eval: false
@@ -268,7 +254,7 @@ model$coef_
 
 The model object lives in Python, but you interact with it from R using `$`. Predictions, coefficients, scores: all accessible through the same operator.
 
-**Managing Python environments**: reticulate can use system Python, virtualenvs, or conda environments. Specify which Python to use before loading reticulate:
+reticulate can use the system Python, a virtualenv, or a conda environment. Say which before importing anything:
 
 ```{r}
 #| eval: false
@@ -332,54 +318,41 @@ You will rarely write new Fortran for R. The interface matters for two reasons: 
 
 The answer depends on why you need another language in the first place.
 
-**You need speed in a tight loop**: profile first (@sec-profile-first). If the bottleneck is a loop that cannot be vectorized, use Rcpp (largest ecosystem, fastest iteration cycle) or Rust via extendr (memory safety, better for large codebases). Raw C via `.Call()` if you want zero dependencies.
+If you need speed in a tight loop, profile first (@sec-profile-first). If the bottleneck is a loop that cannot be vectorized, use Rcpp (largest ecosystem, fastest iteration cycle) or Rust via extendr (memory safety, better for large codebases), or raw C via `.Call()` if you want zero dependencies.
 
-**You need a library that only exists in Python**: use reticulate. This includes deep learning (PyTorch, TensorFlow), NLP (spaCy, Transformers), and computer vision. Do not rewrite Python libraries in R; call them.
+If you need a library that only exists in Python, use reticulate. This includes deep learning (PyTorch, TensorFlow), NLP (spaCy, Transformers), and computer vision. Do not rewrite Python libraries in R; call them.
 
-**You need numerical linear algebra beyond base R**: RcppArmadillo for dense matrices, RcppEigen for sparse matrices. Or call LAPACK directly via `.Fortran()` if you need a specific routine.
+If you need numerical linear algebra beyond base R, RcppArmadillo covers dense matrices and RcppEigen sparse ones, or call LAPACK directly via `.Fortran()` for a specific routine.
 
-**You are building a package with substantial compiled code**: consider Rust if the team knows it, or is willing to learn. The compile-time safety checks catch bugs that would otherwise surface as sporadic segfaults in users' R sessions. For smaller amounts of compiled code, Rcpp is fine.
+If you are building a package with substantial compiled code, consider Rust if the team knows it or is willing to learn. The compile-time checks catch bugs that would otherwise surface as sporadic segfaults in users' R sessions. For smaller amounts of compiled code, Rcpp is fine.
 
-**You have legacy Fortran code**: wrap it with `.Fortran()` or write a thin C wrapper and use `.Call()`.
+If you have legacy Fortran, wrap it with `.Fortran()` or write a thin C wrapper and use `.Call()`.
 
 The ordering from @sec-optimization-checklist still applies: pure R first, vectorize, pre-allocate, switch engines (data.table, Arrow, DuckDB), then compiled code. Calling another language is a cost, one that adds build dependencies, complicates installation, and makes debugging harder. Pay that cost only when the benefit is clear.
 
 ::: callout-tip
 ## Opinion
-R was designed from the start to sit on top of compiled code. The foreign function interface is the architecture, not a feature bolted on later.
+R was designed from the start to sit on top of compiled code. The foreign function interface is the architecture.
 :::
 
 
 ## Packages worth studying {#sec-ffi-packages}
 
-Real-world packages show how these interfaces work at scale, and each of the following is open source; reading their `src/` directory teaches more than any tutorial can.
+Real-world packages show how these interfaces work at scale. Each of the following is open source, and reading its `src/` directory teaches more than any tutorial.
 
-**C backends**:
+Two C backends first. data.table's grouping, joining, and sorting engine is C, and its `fread()` and `fwrite()` are C implementations of CSV reading and writing that outperform most alternatives; the `src/` directory is a course in high-performance C against R's API. stringi wraps the ICU (International Components for Unicode) C library for Unicode normalization, collation, regular expressions, and transliteration.
 
-- `data.table`: the core grouping, joining, and sorting engine is C. The `src/` directory is a masterclass in writing high-performance C against R's API. `fread()` and `fwrite()` are C implementations of CSV reading and writing that outperform most alternatives.
-- `stringi`: wraps the ICU (International Components for Unicode) C library. Provides fast, correct string operations covering Unicode normalization, collation, regex, and transliteration.
+Among C++ backends, arrow binds the Apache Arrow C++ library, a columnar in-memory format for zero-copy exchange between systems; torch binds LibTorch, PyTorch's C++ backend, with no Python dependency; and dplyr's grouped operations run through C++ (via cpp11) on top of vctrs, whose own core is C.
 
-**C++ backends**:
+polars, R bindings to the Polars data frame engine written in Rust, is built with extendr and exposed through generated `.Call()` wrappers. gifski (GIF encoding) calls a Rust crate through a hand-written C interface instead, a small example of the plain FFI route.
 
-- `arrow`: R bindings to the Apache Arrow C++ library. Columnar in-memory format for zero-copy data exchange between systems.
-- `torch`: R bindings to LibTorch (PyTorch's C++ backend). No Python dependency; the C++ library is called directly via `.Call()` with custom binding code.
-- `dplyr`: the core verbs dispatch to C++ for grouped operations via `vctrs` and internal C code.
+The Python bridges include tensorflow and keras3, which use reticulate to call TensorFlow and Keras with an R API that mirrors the Python one, and spacyr, which wraps spaCy.
 
-**Rust backends**:
+The pattern across all of these is the same: R provides the user-facing API (function names, argument handling, documentation, S3 dispatch), while the compiled backend provides the computation. The interface layer is thin.
 
-- `polars`: R bindings to the Polars DataFrame library, built with extendr. A complete data manipulation engine written in Rust, exposed to R through generated `.Call()` wrappers.
-- `gifski`: GIF encoding library, also via extendr. A small, clean example of a Rust-powered R package.
+@sec-two-models described two traditions, Church's expressions and Turing's instructions. R descends from Church and calls into Turing's world every time it invokes C, Fortran, or Rust: you write the logic in R, composing functions, passing closures, piping transformations, and the inner loops run in a language that manipulates memory directly. `.Call()` is the boundary between the two, and R was designed with that boundary in mind.
 
-**Python bridges**:
-
-- `tensorflow` and `keras3`: use reticulate to call TensorFlow/Keras. The R API mirrors the Python API closely.
-- `spacyr`: wraps spaCy for natural language processing.
-
-The pattern across all of these is the same: R provides the user-facing API (function names, argument handling, documentation, S3/S4 dispatch), while the compiled backend provides the computation. The interface layer is thin.
-
-In @sec-two-models, this book described two traditions: Church's lambda calculus (expressions and functions) and Turing's machine (instructions and state). R descends from Church, but it calls into Turing's world every time it invokes C, Fortran, or Rust. You write the logic in R — composing functions, passing closures, piping transformations — and the performance-critical inner loops run in a language that manipulates memory directly. The `.Call()` interface is where Church's abstractions meet Turing's machine, and the fact that R was designed with that boundary in mind is what makes the translation practical rather than painful.
-
-What happens when you apply the same principle not to a single function but to an entire project?
+The next chapter turns from a single compiled function to a whole project: how R code, compiled or not, is packaged so that other people can install it.
 
 
 ## References and sources

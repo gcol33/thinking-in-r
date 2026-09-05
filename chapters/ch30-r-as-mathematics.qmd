@@ -5,31 +5,16 @@
 source(here::here("_common.R"))
 ```
 
-Take R and remove everything except `function()` and the ability to call functions. No numbers. No booleans. No `if`. No `list()`. No `<-` for naming recursive calls. Starting from that barren landscape, try to build integers, conditionals, pairs, lists, and recursion.
+Take R and remove everything except `function()` and the ability to call functions. No numbers. No booleans. No `if`. No `list()`. No `<-` for naming recursive calls. From those two things alone, try to build integers, conditionals, pairs, lists, and recursion.
 
-Surprisingly, it works. Every one of those things can be reconstructed from `function()` alone. The `double <- function(x) x * 2` from @sec-first-function, the recursive descents in @sec-recursion, the closures that captured variables and carried them somewhere new -- all of them are expressions in a formal system that predates computers by decades.
+Surprisingly, it works. Every one of those things can be reconstructed from `function()` alone. The `double <- function(x) x * 2` from @sec-first-function, the recursive descents in @sec-recursion, the closures that captured variables and carried them somewhere new, all of them are expressions in a formal system that predates computers by decades.
 
 This chapter runs the experiment.
 
 
 ## Lambda calculus in one page {#sec-lambda-calculus}
 
-The lambda calculus\index{lambda calculus!in R}, invented by Alonzo Church in 1936, has exactly three things:
-
-1. **Variables**: `x`
-2. **Abstraction** (making a function): `λx. body`
-3. **Application** (calling a function): `(f a)`
-
-That is the entire language. No numbers, no booleans, no `if`, no loops. Church showed that this is enough to express any computation (the same class of functions Turing's machine can compute; see @sec-computability).
-
-In R, abstraction is `function(x) body` and application is `f(a)`. The translation is mechanical:
-
-| Lambda calculus | R |
-|---|---|
-| `λx. x` | `function(x) x` |
-| `λx. x + 1` | `function(x) x + 1` |
-| `(λx. x + 1)(5)` | `(function(x) x + 1)(5)` |
-| `λx. λy. x + y` | `function(x) function(y) x + y` |
+Two expressions to start with:
 
 ```{r}
 (function(x) x + 1)(5)
@@ -39,9 +24,18 @@ In R, abstraction is `function(x) body` and application is `f(a)`. The translati
 (function(x) function(y) x + y)(3)(4)
 ```
 
-The second example is *currying*: a two-argument function rewritten as a function that returns a function.\index{beta reduction!in R} `function(x) function(y) x + y` takes `x`, then returns a new function that takes `y` and adds them. This is the same pattern from @sec-functions-returning-functions and @sec-closures. It has a name and a history.
+The first builds a function and applies it in the same breath. The second builds a function that returns a function, applies it to 3, and applies the result to 4: a two-argument function rewritten as a chain of one-argument functions, the currying from @sec-arguments-defaults. Both use exactly three things: a variable, `function()` to build an abstraction over it, and a call to apply one. Those three are the entire lambda calculus\index{lambda calculus!in R}, the system Alonzo Church published in 1936 and that @sec-two-models introduced. Church wrote `λx. body` where R writes `function(x) body`, and `(f a)` where R writes `f(a)`:
 
-R's `function()` keyword is Church's λ, its function application is beta reduction, and its closures are the scoping discipline that Scheme borrowed from lambda calculus and passed on to R (@sec-family-tree). R can do this because Ihaka and Gentleman gave it Scheme's lexical scoping (@sec-what-r-inherited). When the inner function `function(y) x + y` executes, it looks up `x` in the environment where it was *created*, not where it was called, which is precisely what lambda calculus requires: a variable refers to the nearest enclosing abstraction that binds it. R has had full, unrestricted lambdas since 1993 -- not as an added feature, but as the foundation.
+| Lambda calculus | R |
+|---|---|
+| `λx. x` | `function(x) x` |
+| `λx. x + 1` | `function(x) x + 1` |
+| `(λx. x + 1)(5)` | `(function(x) x + 1)(5)` |
+| `λx. λy. x + y` | `function(x) function(y) x + y` |
+
+No numbers, no booleans, no `if`, no loops, and Church showed that the three are enough to express any computation, the same class of functions Turing's machine computes (@sec-computability).
+
+The translation works because of a decision about scoping.\index{beta reduction!in R} When the inner `function(y) x + y` runs, it looks up `x` in the environment where it was *created*, not where it was called, which is what the lambda calculus requires: a variable refers to the nearest enclosing abstraction that binds it. R has had that rule, and unrestricted anonymous functions, since its first release (@sec-what-r-inherited).
 
 So what can you build on that foundation, using nothing else?
 
@@ -55,23 +49,19 @@ So what can you build on that foundation, using nothing else?
 
 ## Church booleans {#sec-church-booleans}
 
-Suppose all you have is `function()`. How do you represent `TRUE` and `FALSE`?
-
-Church's answer is elegant to the point of disbelief: a boolean\index{Church boolean} is a function that *chooses*. Give it two arguments; `TRUE` picks the first, `FALSE` picks the second.
+Suppose all you have is `function()`. How do you represent `TRUE` and `FALSE`? Start with two curried functions that differ in one letter:
 
 ```{r}
 ch_true  <- function(a) function(b) a
 ch_false <- function(a) function(b) b
 ```
 
-These are curried two-argument functions. `ch_true` takes `a`, returns a function that takes `b` and ignores it, handing back `a`. `ch_false` does the opposite: it ignores the first argument and returns the second.
-
 ```{r}
 ch_true("yes")("no")
 ch_false("yes")("no")
 ```
 
-That is already `if/else`. A Church boolean *is* a conditional: call it with the "then" branch and the "else" branch, and it selects one. No dispatch mechanism, no keyword, no syntax. The boolean itself does the selecting.
+`ch_true` takes `a`, returns a function that takes `b` and ignores it, and hands back `a`. `ch_false` ignores the first argument and returns the second. That is Church's answer: a boolean\index{Church boolean} is a function that *chooses*. Give it two things and `TRUE` picks the first, `FALSE` the second, which is already `if/else`. Call a Church boolean with the "then" branch and the "else" branch and it selects one, with no dispatch mechanism, no keyword, and no syntax.
 
 ```{r}
 ch_if <- function(cond) function(then_val) function(else_val) {
@@ -82,7 +72,7 @@ ch_if(ch_true)("heads")("tails")
 ch_if(ch_false)("heads")("tails")
 ```
 
-`ch_if` does almost nothing; it just applies the boolean to the two branches. The boolean does the work. In a sense, there is no `if` in Church encoding. There are only functions that choose.
+`ch_if` does almost nothing; it applies the boolean to the two branches, and the boolean does the work.
 
 Now the logical connectives:
 
@@ -92,7 +82,7 @@ ch_or  <- function(p) function(q) p(p)(q)
 ch_not <- function(p) function(a) function(b) p(b)(a)
 ```
 
-Watch `ch_and(p)(q)`: if `p` is true, it picks its first argument, which is `q` (so the result depends on whether `q` is also true); if `p` is false, it picks its second argument, which is `p` itself (false). The logic is embedded in the selection behavior of the booleans themselves, not in any external machinery.
+Watch `ch_and(p)(q)`: if `p` is true, it picks its first argument, which is `q` (so the result depends on whether `q` is also true); if `p` is false, it picks its second argument, which is `p` itself (false). The logic lives in the selection behaviour of the booleans themselves.
 
 ```{r}
 # TRUE AND FALSE -> FALSE
@@ -121,7 +111,7 @@ Church booleans make a quiet point about R: `if/else` is redundant. Conditional 
 
 ## Church numerals {#sec-church-numerals}
 
-Numbers are harder to believe. A Church numeral\index{Church numeral} `n` is a function that takes a function `f` and returns `f` composed with itself `n` times.
+Numbers are harder to believe. Here are four of them:
 
 ```{r}
 zero  <- function(f) function(x) x
@@ -130,13 +120,13 @@ two   <- function(f) function(x) f(f(x))
 three <- function(f) function(x) f(f(f(x)))
 ```
 
-To see what a Church numeral "means," pass it a concrete function and a starting value:
+Each takes a function `f` and returns `f` composed with itself some number of times: `zero` never applies it, `three` applies it three times. To see what one of them means, pass it a concrete function and a starting value:
 
 ```{r}
 three(function(x) x + 1)(0)
 ```
 
-Three applications of "add one" to zero gives three. That is the conversion from Church numeral to R integer:
+Three applications of "add one" to zero gives three. That is the conversion from Church numeral\index{Church numeral} to R integer:
 
 ```{r}
 to_int <- function(n) n(function(x) x + 1)(0)
@@ -167,7 +157,7 @@ six  <- succ(five)
 to_int(six)
 ```
 
-Successor is straightforward. You might expect addition to follow the same logic, just doing `succ` repeatedly. But look at how it actually works:
+Addition could be `succ` repeated, but there is a direct form:
 
 ```{r}
 add <- function(m) function(n) function(f) function(x) m(f)(n(f)(x))
@@ -195,7 +185,7 @@ to_int(power(two)(three))   # 2^3 = 8
 to_int(power(three)(two))   # 3^2 = 9
 ```
 
-`power(m)(n)` applies `m` (itself a function-repeater) `n` times. Two applied three times: `2^3`. Sit with this one. The operation that felt most abstract -- exponentiation -- has the shortest definition, because "applying a function-repeater repeatedly" is what exponentiation *means*. But building numbers up is only half the story. Can we inspect them? Can we ask whether a numeral is zero?
+`power(m)(n)` applies `m`, itself a function-repeater, `n` times: two applied three times is `2^3`. The operation that felt most abstract has the shortest definition, because applying a repeater repeatedly is what exponentiation means. Building numbers up is only half the story, though. Can we ask whether a numeral is zero?
 
 The test is short:
 
@@ -208,27 +198,20 @@ is_zero(three)("yes")("no")
 
 `zero` ignores `f` and returns `x`, so it returns `ch_true`. Any nonzero numeral applies `f` at least once, and since `f` always returns `ch_false`, a single application replaces `ch_true` with `ch_false`.
 
-We can also convert R integers to Church numerals:
+We can also convert R integers to Church numerals. A `for` loop that reassigns one variable would fall into the trap from @sec-lazy-eval-trap, because `succ(n)` keeps `n` as a promise and forces it only later, by which time the variable holds the numeral that contains it. Recursion gives each `succ` its own `n`:
 
 ```{r}
-#| eval: false
-from_int <- function(n) {
-  result <- zero
-  for (i in seq_len(n)) result <- succ(result)
-  result
-}
+from_int <- function(n) if (n == 0) zero else succ(from_int(n - 1))
 
 to_int(from_int(5))
-# [1] 5
 to_int(add(from_int(3))(from_int(4)))
-# [1] 7
 ```
 
 
 ### Exercises {.unnumbered}
 
 1. Compute `mult(from_int(4))(from_int(5))` and convert back to an integer.
-2. What does `power(from_int(2))(from_int(10))` give? (This is 2^10 built from nothing but nested function calls.)
+2. Compute `power(from_int(2))(from_int(9))` and convert it back. Then try `from_int(10)` in place of `from_int(9)`. What happens, and why? (`?options`, under `expressions`, is the place to look.)
 3. The predecessor function (subtracting one) is famously tricky in Church encoding. Look it up, implement it in R, and test it. This was hard enough that Church himself struggled with it; his student Kleene figured it out, reportedly while getting anesthesia at the dentist.
 
 
@@ -253,7 +236,6 @@ snd(p)
 From pairs, you can build linked lists\index{linked list!Church encoding}. A list is either empty (nil) or a pair of a head and a tail:
 
 ```{r}
-#| eval: false
 nil     <- function(f) function(x) x   # same shape as zero
 is_nil  <- function(l) l(function(h) function(t) function(x) ch_false)(ch_true)
 cons    <- function(h) function(t) pair(h)(t)
@@ -261,20 +243,16 @@ head_of <- function(l) fst(l)
 tail_of <- function(l) snd(l)
 ```
 
-How does `is_nil` work? Recall that a Church-encoded pair `pair(a)(b)` takes a selector `f` and returns `f(a)(b)`. We pass a selector that ignores both arguments and returns `ch_false`, then pass `ch_true` as the default. If `l` is `nil`, it behaves like `zero`: ignores the selector and returns the default (`ch_true`). If `l` is a `cons` cell, the selector runs, ignoring head and tail, returning `ch_false`. The structure of the data does the dispatching.
+`is_nil` passes a selector that ignores both arguments and returns `ch_false`, then passes `ch_true` as the default. If `l` is `nil`, it behaves like `zero`: it ignores the selector and returns the default. If `l` is a `cons` cell, which is a pair, the selector runs on head and tail, ignores both, and returns `ch_false`. The structure of the data does the dispatching.
 
 Build a list and walk it:
 
 ```{r}
-#| eval: false
 my_list <- cons("a")(cons("b")(cons("c")(nil)))
 
 head_of(my_list)
-# [1] "a"
 head_of(tail_of(my_list))
-# [1] "b"
 head_of(tail_of(tail_of(my_list)))
-# [1] "c"
 ```
 
 Three nested function calls, and you have a linked list. No vectors, no `list()`, no memory allocation beyond closures. But one thing is still missing: none of these structures can refer to themselves.
@@ -289,19 +267,7 @@ Three nested function calls, and you have a linked list. No vectors, no `list()`
 
 ## The Z combinator {#sec-z-combinator}
 
-In @sec-recursion, we previewed fixed-point combinators. Now the full construction.
-
-A recursive function refers to itself by name, but in lambda calculus, there are no names. There is no `<-`. So how do you define factorial? You need a way to express recursion using only anonymous functions.
-
-The trick is the *fixed-point combinator*\index{fixed-point combinator}. A fixed point of a function `g` is a value `x` such that `g(x) = x`. If `g` is a "template" for a recursive function (a function that takes *itself* as an argument and returns the recursive body), then finding its fixed point gives you the recursive function you wanted.
-
-The Y combinator\index{Y combinator} does this in lazy languages like Haskell:
-
-```
-Y = λf. (λx. f(x x))(λx. f(x x))
-```
-
-But R is strict: it evaluates arguments before passing them, so `x(x)` would loop forever. The Z combinator\index{Z combinator} wraps the self-application in a lambda to defer it:
+A recursive function refers to itself by name, but the lambda calculus has no names and no `<-`. @sec-fixed-point-combinators built the way around that: a template that takes the function to recurse on as an argument, and a *fixed-point combinator*\index{fixed-point combinator} that feeds the template to itself. The Y combinator\index{Y combinator} there ran in R only because R hands arguments over as promises. The Z combinator\index{Z combinator} makes the delay explicit by wrapping each self-application in a function of one argument, so it runs in strict languages too, and it is the version this chapter uses:
 
 ```{r}
 Z <- function(f) {
@@ -311,7 +277,7 @@ Z <- function(f) {
 }
 ```
 
-Read it like this: `Z(f)` creates a function `x` that, when called, applies `f` to a delayed version of the recursive call. The `function(v) x(x)(v)` wrapper means "don't call `x(x)` yet; wait until `v` is provided." That delay breaks the infinite loop.
+`Z(f)` builds a function `x` that, when called, applies `f` to a delayed version of the recursive call. `function(v) x(x)(v)` means "do not call `x(x)` yet; wait until `v` is provided."
 
 Use it to define factorial without ever naming the function:
 
@@ -339,8 +305,23 @@ sapply(0:10, fib)
 A recursive list-sum, using nothing but Church-encoded lists and the Z combinator:
 
 ```{r}
-#| eval: false
 church_sum <- Z(function(self) function(lst) {
+  is_nil(lst)(0)(head_of(lst) + self(tail_of(lst)))
+})
+
+nums <- cons(10)(cons(20)(cons(30)(nil)))
+church_sum(nums)
+```
+
+`is_nil(lst)` returns a Church boolean, and the boolean picks one of its two arguments. On the empty list it picks `0`, and the recursive branch, `head_of(lst) + self(tail_of(lst))`, is never evaluated, because it arrived as a promise (@sec-promises) and nothing forced it. That is the only reason the recursion stops.
+
+::: {.callout-note collapse="true"}
+## In a strict language
+
+A language that evaluates every argument before the call would compute both branches, and the recursive one would run on the empty list, forever. The fix is the same one that turns Y into Z: wrap each branch in a function that takes a dummy argument, let the boolean choose a wrapper, and call the winner.
+
+```{r}
+church_sum_strict <- Z(function(self) function(lst) {
   is_nil(lst)(
     function(dummy) 0
   )(
@@ -348,19 +329,18 @@ church_sum <- Z(function(self) function(lst) {
   )("go")
 })
 
-nums <- cons(10)(cons(20)(cons(30)(nil)))
-church_sum(nums)
-# [1] 60
+church_sum_strict(nums)
 ```
 
-The `function(dummy)` wrappers need explaining. `is_nil(lst)` returns a Church boolean, which selects between two arguments, but if we passed `0` and `head_of(lst) + self(tail_of(lst))` directly, R would evaluate *both* branches eagerly (it is a strict language), and the recursive branch would run even on the empty list, looping forever. Wrapping each branch in `function(dummy)` defers evaluation: the Church boolean selects one wrapper, and the `("go")` call at the end forces the selected branch to execute. The `"go"` argument itself is unused; it is just the trigger that makes the chosen `function(dummy)` run. This is the same thunking trick that distinguishes the Z combinator from the Y combinator: in a strict language, you wrap computations in lambdas to delay them until they are actually needed.
+The `"go"` argument is unused; it is the trigger that makes the chosen wrapper run.
+:::
 
-No `for`, no `while`, no `Recall()`, no named recursion. Just `function()`, application, and the Z combinator. The pieces are starting to accumulate.
+No `for`, no `while`, no `Recall()`, no named recursion. Just `function()`, application, and the Z combinator.
 
 ::: callout-tip
 ## Opinion
 
-The Z combinator is not practical R code. Its value is conceptual: it proves that recursion is not a primitive operation. Self-reference can be *derived* from anonymous functions and application alone. That R can express this in working, runnable code -- not as a thought experiment but as something you can paste into a console and run -- is a direct consequence of its Scheme heritage.
+The Z combinator is not practical R code. Its value is conceptual: it proves that recursion is not a primitive operation. Self-reference can be *derived* from anonymous functions and application alone. That R can express this in code you can paste into a console and run is a direct consequence of its Scheme heritage.
 :::
 
 
@@ -368,29 +348,29 @@ The Z combinator is not practical R code. Its value is conceptual: it proves tha
 
 1. Define a recursive `length` function using `Z` that counts the elements of a Church list (without converting to R types).
 2. Use `Z` to write a recursive `map` over Church lists.
-3. Why does the Y combinator not work in R? Write it out and try calling `Y(function(self) function(n) if (n == 0) 1 else n * self(n - 1))(5)`. What happens?
+3. The Y combinator from @sec-fixed-point-combinators also runs in R. Rewrite `church_sum` with `Y` in place of `Z`. Then change `Z` so that it forces the self-application before calling `f` (`function(x) { y <- x(x); f(y) }`) and try again. Which version loops forever, and why?
 
 
 ## The punchline {#sec-the-punchline}
 
 Here is the inventory. Starting from nothing but `function()` and function application\index{Church encoding}:
 
-- **Booleans**: `ch_true`, `ch_false`, `ch_and`, `ch_or`, `ch_not`
-- **Conditionals**: `ch_if` (which turned out to be trivial, because booleans *are* conditionals)
-- **Natural numbers**: `zero`, `succ`, and arithmetic (`add`, `mult`, `power`)
-- **Pairs and lists**: `pair`, `fst`, `snd`, `cons`, `nil`
-- **Recursion**: the Z combinator
+- Booleans: `ch_true`, `ch_false`, `ch_and`, `ch_or`, `ch_not`
+- Conditionals: `ch_if` (which turned out to be trivial, because booleans *are* conditionals)
+- Natural numbers: `zero`, `succ`, and arithmetic (`add`, `mult`, `power`)
+- Pairs and lists: `pair`, `fst`, `snd`, `cons`, `nil`
+- Recursion: the Z combinator
 
 No R integers, no R booleans, no `if`, no `list()`, no named recursive functions. Every one of those features reconstructed from `function()` alone.
 
-This is Church's result from 1936. When @sec-two-models said that R descends from Church's model of computation, this is what that means concretely: `function()` is a universal computational primitive, and everything else is convenience built on top. The requirements are specific: first-class functions, closures, and unrestricted anonymous functions. R has all three, inherited from Scheme. Python's `lambda` is restricted to a single expression, which makes multi-line Church encodings awkward; Java's lambdas cannot close over mutable local variables; C has function pointers but no closures.
+This is Church's result from 1936. When @sec-two-models said that R descends from Church's model of computation, this is what that means concretely: `function()` is a universal computational primitive, and everything else is convenience built on top. The requirements are specific: first-class functions, closures, and anonymous functions with no restriction on their bodies. R has all three from Scheme. A language that restricts any of them (Python's one-expression `lambda`, C's function pointers without closures) can run only part of this chapter.
 
 The connection between R and mathematics extends further, into the type system itself.
 
 
 ## Types as propositions {#sec-curry-howard}
 
-There is a correspondence between logic and programming that is not merely analogy. In 1969, William Howard noticed that the rules of constructive logic map exactly onto the rules of typed lambda calculus\index{Curry-Howard correspondence}:
+In @sec-first-function a logician noticed that the rules for combining function types looked like the rules for combining propositions. Decades later, in 1969, William Howard wrote the correspondence out in full for constructive logic and typed lambda calculus\index{Curry-Howard correspondence}:
 
 | Logic | Programming |
 |---|---|
@@ -404,23 +384,23 @@ There is a correspondence between logic and programming that is not merely analo
 
 When you write a function with signature `A -> B`, you are constructing a proof that if you have an `A`, you can produce a `B`. A function `integer -> character` proves that integers can be converted to characters. If no function of type `A -> B` can be written, the proposition "A implies B" has no proof.
 
-R's type system is too loose to enforce this correspondence strictly (every R function can error, which is like a proof that cheats). Languages like Haskell, Agda, and Coq take it seriously enough to use programs as machine-checked proofs of mathematical theorems. But the connection is there in R. Every function you write is, in a formal sense, a little proof.
+R's type system is too loose to enforce this correspondence strictly (every R function can error, which is like a proof that cheats). Haskell, Agda, and Coq take it seriously enough to use programs as machine-checked proofs of theorems. But the connection is there in R: every function you write is, in a formal sense, a small proof.
 
-The Curry-Howard correspondence (named for Haskell Curry, who noticed the connection earlier, and Howard, who formalized it) reframes types and functions entirely. A type is not a tag that says "this is a number" -- it is a proposition about what values are possible. A function is not a block of code -- it is evidence that a transformation exists. What happens when you start looking at the *structure* of those propositions and transformations?
+Under this reading, named the Curry-Howard correspondence for the two people who saw it, a type is a proposition about which values are possible and a function is evidence that a transformation exists. What happens when you start looking at the *structure* of those propositions and transformations?
 
 
 ## Functors, monoids, and friends {#sec-category-connections}
 
-Three patterns have appeared repeatedly in this book, and they all have names that sound intimidating. Category theory\index{category theory} provides a vocabulary for patterns that recur across different mathematical structures, and once you see the vocabulary, you start noticing that R's functional design has been using these structures all along.
+Two of the patterns in this book already carry names from category theory\index{category theory}: the functor from @sec-purrr-map and the monoid from @sec-no-scalars. This section adds the laws that make them trustworthy, and a third pattern that connects them.
 
-**Functors.**\index{functor} A functor is a mapping between categories that preserves structure. In programming terms: if you have a container and a function, a functor lets you apply the function to the contents without changing the container's shape.
+Run `lapply()` over a list:
 
 ```{r}
 x <- list(1, 4, 9, 16)
 lapply(x, sqrt)
 ```
 
-`lapply()` applied `sqrt` to each element and gave back a list of the same length. The container's shape did not change; only the values inside it did. Strictly, the functor is the list construction itself -- it sends a type `T` to "list of `T`" and sends a function `f` to "apply `f` to each element." `lapply()` (and purrr's `map()`) are the *fmap* of that functor: the part that lifts a function into the container.
+`lapply()` applied `sqrt` to each element and gave back a list of the same length. The container's shape did not change; only the values inside it did. Strictly, the functor\index{functor} is the list construction itself: it sends a type `T` to "list of `T`" and a function `f` to "apply `f` to each element", and `lapply()` (and purrr's `map()`) is the part that lifts the function into the container.
 
 What makes a functor trustworthy is that it obeys two laws. The *identity law* says mapping a do-nothing function changes nothing:
 
@@ -437,27 +417,25 @@ identical(
 )
 ```
 
-A function that mapped elements but scrambled their relationships would break pipelines. `lapply |> lapply |> lapply` chains work reliably because both laws hold. `mutate()` looks similar on the surface, but it does not satisfy these laws in general -- column expressions can reference other columns, introduce side effects, and break composition. It is a useful tool, not a functor.
+A function that mapped elements but scrambled their relationships would break pipelines; chains of `lapply()` work reliably because both laws hold.
 
-**Monoids.**\index{monoid!category theory} A monoid is a set with an associative binary operation and an identity element. Addition on numbers is one: `(a + b) + c` equals `a + (b + c)`, and adding 0 leaves any number unchanged, so 0 is the identity. String concatenation is another, with `""` as identity. `Reduce()` works on any monoid (@sec-reduce-and-accumulate), and that is not an accident; `Reduce()` *is* the monoid pattern.
+A monoid\index{monoid!category theory} is a set with an associative operation and an identity element: addition with 0, string concatenation with `""`. `Reduce()` (@sec-reduce-and-accumulate) is the operation that collapses one:
 
 ```{r}
 Reduce(paste0, c("a", "b", "c"))
 Reduce(`+`, 1:5)
 ```
 
-It needs associativity so the result is the same regardless of how intermediate computations are grouped, and it needs an identity element to handle the empty case. But not every binary operation qualifies. Subtraction is not associative:
+It needs associativity so that the result does not depend on how the intermediate steps are grouped, and an identity element for the empty case. Subtraction fails the first requirement:
 
 ```{r}
 (5 - 3) - 1
 5 - (3 - 1)
 ```
 
-Different answers. The operations that fold cleanly are precisely the monoids, and the operations `Reduce()` fails on are the ones that violate the monoid laws. If you find yourself fighting with `Reduce()`, check whether your operation is actually a monoid. If it is not, the folding direction will matter and the results will surprise you.
+Different answers. The operations that fold cleanly are the monoids, and when `Reduce()` surprises you, check whether the operation is one; if it is not, the folding direction matters (@sec-right-fold).
 
-**Natural transformations.** A natural transformation converts one functor into another while preserving the relationships between elements. The defining property is the *naturality condition*: if you apply a function to the contents and then transform the container, you get the same result as transforming the container first and then applying the function. The transformation commutes with the functor's action.
-
-`as.list()` on an atomic vector is a natural transformation from the vector functor to the list functor:
+The third pattern connects two functors. `as.list()` turns an atomic vector into a list. Map a function before or after the conversion:
 
 ```{r}
 x <- c(1, 4, 9)
@@ -471,11 +449,11 @@ b <- lapply(as.list(x), sqrt)
 identical(a, b)
 ```
 
-The order does not matter. That commutativity is the naturality condition, and it is what makes `as.list()` well-behaved: it changes the container without disturbing the relationship between the function and the data inside.
+The order does not matter. A conversion between containers that commutes with mapping in this way is a *natural transformation*, and the commuting itself is the naturality condition: `as.list()` changes the container without disturbing the relationship between the function and the data inside.
 
-`pivot_longer()` and `pivot_wider()` (@sec-pivot-longer, @sec-pivot-wider) go further: they are invertible, which makes them natural *isomorphisms*. Reversibility is a stronger property than naturality alone; it means no information is lost in the reshaping. You can pivot long and then pivot wide and arrive back where you started, because the transformation preserves everything.
+`pivot_longer()` and `pivot_wider()` (@sec-pivot-longer) go further: they are invertible, which makes them natural *isomorphisms*. Reversibility is a stronger property than naturality alone; it means no information is lost in the reshaping. You can pivot long and then pivot wide and arrive back where you started, because the transformation preserves everything.
 
-None of this requires learning category theory. But these patterns keep showing up because they reflect mathematical structure, and R's functional design makes them visible. Church encodings prove this at the foundational level.
+None of this requires learning category theory. But these patterns keep showing up because they reflect mathematical structure, and R's functional design makes them visible.
 
 
 ### Exercises {.unnumbered}
@@ -489,7 +467,7 @@ None of this requires learning category theory. But these patterns keep showing 
 
 Church encodings prove R can do mathematics from nothing. But can it do mathematics that matters? Symbolic algebra, arbitrary precision, number theory: each requires capabilities that most R users never discover, because the packages that provide them sit outside the usual statistical workflow.
 
-**Symbolic mathematics.** The `Ryacas` package connects R to the Yacas computer algebra system:
+The `Ryacas` package connects R to the Yacas computer algebra system, which works with expressions rather than numbers:
 
 ```{r}
 #| eval: false
@@ -507,7 +485,7 @@ yac_str("Simplify((x^2-1)/(x-1))")  # "x+1"
 
 Where R's floating-point arithmetic gives you `0.1 + 0.2 != 0.3` (@sec-floating-point-traps), symbolic computation works with exact representations. There is no rounding because there are no decimals; expressions stay symbolic until you ask for a numerical result.
 
-**Arbitrary precision.** The `gmp` package provides big integers and big rationals:
+The `gmp` package provides big integers and big rationals:
 
 ```{r}
 #| eval: false
@@ -520,7 +498,7 @@ factorial(as.bigz(100))  # all 158 digits, exact
 as.bigq(1, 3) + as.bigq(1, 6)  # 1/2, exactly
 ```
 
-**Number theory.** The `numbers` package has prime factorization, GCD, modular arithmetic, and related tools:
+The `numbers` package has prime factorization, GCD, modular arithmetic, and related tools:
 
 ```{r}
 #| eval: false
@@ -531,7 +509,7 @@ GCD(48, 36)         # 12
 isPrime(104729)     # TRUE
 ```
 
-**Project Euler.** If you want to sharpen your R skills on mathematical puzzles, [Project Euler](https://projecteuler.net) is an excellent source. The first few problems are approachable with base R:
+If you want to sharpen your R skills on mathematical puzzles, [Project Euler](https://projecteuler.net) is a good source. The first few problems are approachable with base R:
 
 ```{r}
 # Euler problem 1: sum of multiples of 3 or 5 below 1000
@@ -545,7 +523,7 @@ n <- 1:100
 sum(n)^2 - sum(n^2)
 ```
 
-Both solutions are one-liners because R's vectorized operations (@sec-two-models) make arithmetic on sequences natural. The expression-based style that R inherited from lambda calculus maps directly onto mathematical notation. That inheritance has a history worth tracing.
+Both solutions are one-liners because R's vectorized operations (@sec-vectorized-ops) make arithmetic on sequences natural.
 
 
 ### Exercises {.unnumbered}
@@ -559,28 +537,26 @@ Both solutions are one-liners because R's vectorized operations (@sec-two-models
 
 Base R is still absorbing functional idioms, and each addition shrinks the gap between what the language offers and what the lambda calculus requires.
 
-R 4.1 (2021) introduced two changes. The first was `\(x) x + 1` as shorthand for `function(x) x + 1`. The backslash is not decoration. Church wrote λ; R now writes `\`, and the one-character syntax makes anonymous functions cheap enough to use anywhere: inside `lapply()`, inside `Reduce()`, as arguments to `Map()`. Before R 4.1, the nine characters of `function(x)` were a tax on every lambda expression. The shorthand removed it.
+R 4.1 (2021) introduced two changes. The first was `\(x) x + 1` as shorthand for `function(x) x + 1`. Church wrote λ; R now writes `\`, and the one-character form makes anonymous functions cheap enough to use anywhere: inside `lapply()`, inside `Reduce()`, as arguments to `Map()`. Before R 4.1, the eight letters of `function` were a tax on every lambda expression.
 
-The second was the native pipe `|>`. Before R 4.1, the pipe came from the magrittr package (`%>%`), which means it was a function that manipulated the call, not a language primitive. The native pipe is syntax: `x |> f()` is parsed by R's interpreter as `f(x)` before evaluation begins. Function composition is now part of R's grammar, not a library feature.
+The second was the native pipe `|>`. Before R 4.1 the pipe came from the magrittr package (`%>%`), a function that rewrote the call. The native pipe is syntax: `x |> f()` is parsed as `f(x)` before evaluation begins. Function composition is now part of R's grammar.
 
-R 4.4 (2024) moved `%||%` from rlang into base R. `x %||% y` returns `x` if `x` is not `NULL`, otherwise `y`. This is the null-coalescing operator that C# has had since 2003, Swift since 2014, and Kotlin since 2016. In functional terms, it is a default combinator: given a value that might be absent, provide a fallback. It replaces the four-line `if (is.null(x)) y else x` with a single infix operator.
+R 4.4 (2024) added `%||%`, which rlang had provided for years. `x %||% y` returns `x` unless `x` is `NULL`, in which case it returns `y`: a default combinator, the null-coalescing operator of C#, Swift, and Kotlin, and a shorter spelling of `if (is.null(x)) y else x`.
 
-Anonymous functions, composition, and null handling — three operations that appear in every functional language — moved into R's core syntax between 2021 and 2024. The language is still compressing toward its functional core.
+Anonymous functions, composition, and null handling, three operations every functional language has, moved into R's core syntax between 2021 and 2024. The language is still compressing toward its functional core.
 
 
 ## The historical thread {#sec-math-history}
 
 Each idea in this chapter passed through specific hands. The chain is worth tracing because each link solved a problem that the previous link could not.
 
-Could you reduce all of reasoning to calculation? In 1679, a man who had already co-invented calculus thought you could. Gottfried Wilhelm Leibniz\index{Leibniz, Gottfried} imagined a *calculus ratiocinator*, a formal system that would make thinking mechanical. The dream was premature by two and a half centuries. By the 1870s, mathematicians had spent decades making their own foundations rigorous — formalizing limits, infinity, the number line.
+Could you reduce all of reasoning to calculation? In 1679 the man who had just co-invented calculus, Gottfried Wilhelm Leibniz\index{Leibniz, Gottfried}, imagined a *calculus ratiocinator*, a formal system that would make thinking mechanical. The dream was premature by two centuries. By the 1870s mathematicians had spent decades making their own foundations rigorous, formalizing limits, infinity, and the number line, and a mathematician in Jena saw that logic could be next. Gottlob Frege's\index{Frege, Gottlob} *Begriffsschrift* (1879) introduced quantifiers, variables, and functions as logical primitives, the first formal notation for logic itself. Modern mathematical logic begins there. Church's system of the 1930s kept three constructs, variable, abstraction, and application, and the Church numerals and Church booleans in this chapter are his demonstration that everything else can be built from them.
 
-A German mathematician named Gottlob Frege\index{Frege, Gottlob} saw that logic could be next. His *Begriffsschrift* (1879) introduced quantifiers, variables, and functions as logical primitives, the first formal notation for logic itself. Modern mathematical logic begins here, but Frege's system was too heavy. Church stripped it to three constructs (variable, abstraction, application) and showed in 1936 that everything could be built back from those alone. The Church numerals and Church booleans in this chapter are his constructions.
+That was the theory. The question was whether anyone could make it run. McCarthy answered it in 1960 with LISP (@sec-lisp), the first programming language where `(lambda (x) (+ x 1))` was a direct encoding of Church's `λx. x + 1`. But LISP had dynamic scoping, which meant closures did not work the way the theory said they should. Steele and Sussman fixed that in 1975 with Scheme: lexical scoping, first-class closures, and the "Lambda the Ultimate" papers that showed lambda expressions could replace `goto`, assignment, and most control structures.
 
-That was the theory. The question was whether anyone could make it run. McCarthy answered it in 1960 with LISP, the first programming language where `(lambda (x) (+ x 1))` was a direct encoding of Church's `λx. x + 1`. But LISP had dynamic scoping, which meant closures did not work the way the theory said they should. Steele and Sussman fixed that in 1975 with Scheme: lexical scoping, first-class closures, and the "Lambda the Ultimate" papers that showed lambda expressions could replace `goto`, assignment, and most control structures.
+In the 1970s, a statistician at Bell Labs who wanted to run a regression still had to write a Fortran program, compile it, and wait. S (@sec-s-language) let them type an expression and see the result, with functions and expressions at its core and a computational style borrowed from Fortran. When Ihaka and Gentleman reimplemented S in Auckland in 1993, they gave it Scheme's lexical scoping in place of S's rules (@sec-what-r-inherited). That choice is why closures work in R, why function factories work, and why every Church encoding in this chapter runs without modification.
 
-In the 1970s, a statistician at Bell Labs who wanted to run a regression still had to write a Fortran program, compile it, and wait for output. Chambers designed S (1976) to change that: a language for statistical computing where you could type an expression and see the result immediately. It had functions and expressions at its core but borrowed its computational style from Fortran. The statistical vocabulary (data frames, formulas, vectorized operations) was new. When Ihaka and Gentleman reimplemented S at the University of Auckland in 1993, they made one decision that changed everything: they replaced S's scoping rules with Scheme's lexical scoping. That single choice is why closures work in R, why function factories work, why every Church encoding in this chapter runs without modification.
-
-So the experiment worked. Church proved it was possible in 1936. McCarthy made it run in 1960. Ihaka and Gentleman, by choosing Scheme's scoping rules, made it run in R without anyone asking them to. The barren landscape from the opening turned out to have everything buried in it already.
+So the experiment worked. Church showed it was possible, McCarthy made it run, and Ihaka and Gentleman, by choosing Scheme's scoping rules, made it run in R without anyone asking them to.
 
 
 ## References and sources

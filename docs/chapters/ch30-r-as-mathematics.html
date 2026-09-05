@@ -662,19 +662,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Take R and remove everything except <code>function()</code> and the ability to call functions. No numbers. No booleans. No <code>if</code>. No <code>list()</code>. No <code>&lt;-</code> for naming recursive calls. Starting from that barren landscape, try to build integers, conditionals, pairs, lists, and recursion.</p>
-<p>Surprisingly, it works. Every one of those things can be reconstructed from <code>function()</code> alone. The <code>double &lt;- function(x) x * 2</code> from <a href="ch05-first-function.html" class="quarto-xref"><span>Chapter 5</span></a>, the recursive descents in <a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>, the closures that captured variables and carried them somewhere new – all of them are expressions in a formal system that predates computers by decades.</p>
+<p>Take R and remove everything except <code>function()</code> and the ability to call functions. No numbers. No booleans. No <code>if</code>. No <code>list()</code>. No <code>&lt;-</code> for naming recursive calls. From those two things alone, try to build integers, conditionals, pairs, lists, and recursion.</p>
+<p>Surprisingly, it works. Every one of those things can be reconstructed from <code>function()</code> alone. The <code>double &lt;- function(x) x * 2</code> from <a href="ch05-first-function.html" class="quarto-xref"><span>Chapter 5</span></a>, the recursive descents in <a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>, the closures that captured variables and carried them somewhere new, all of them are expressions in a formal system that predates computers by decades.</p>
 <p>This chapter runs the experiment.</p>
 <section id="sec-lambda-calculus" class="level2" data-number="30.1">
 <h2 data-number="30.1" class="anchored" data-anchor-id="sec-lambda-calculus"><span class="header-section-number">30.1</span> Lambda calculus in one page</h2>
-<p>The lambda calculus, invented by Alonzo Church in 1936, has exactly three things:</p>
-<ol type="1">
-<li><strong>Variables</strong>: <code>x</code></li>
-<li><strong>Abstraction</strong> (making a function): <code>λx. body</code></li>
-<li><strong>Application</strong> (calling a function): <code>(f a)</code></li>
-</ol>
-<p>That is the entire language. No numbers, no booleans, no <code>if</code>, no loops. Church showed that this is enough to express any computation (the same class of functions Turing’s machine can compute; see <a href="ch09-complexity-and-algorithms.html#sec-computability" class="quarto-xref"><span>Section 9.6</span></a>).</p>
-<p>In R, abstraction is <code>function(x) body</code> and application is <code>f(a)</code>. The translation is mechanical:</p>
+<p>Two expressions to start with:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>(<span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span>)(<span class="dv">5</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>(<span class="cf">function</span>(x) <span class="cf">function</span>(y) x <span class="sc">+</span> y)(<span class="dv">3</span>)(<span class="dv">4</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The first builds a function and applies it in the same breath. The second builds a function that returns a function, applies it to 3, and applies the result to 4: a two-argument function rewritten as a chain of one-argument functions, the currying from <a href="ch05-first-function.html#sec-arguments-defaults" class="quarto-xref"><span>Section 5.2</span></a>. Both use exactly three things: a variable, <code>function()</code> to build an abstraction over it, and a call to apply one. Those three are the entire lambda calculus, the system Alonzo Church published in 1936 and that <a href="ch01-two-models.html" class="quarto-xref"><span>Chapter 1</span></a> introduced. Church wrote <code>λx. body</code> where R writes <code>function(x) body</code>, and <code>(f a)</code> where R writes <code>f(a)</code>:</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -701,16 +703,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>(<span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span>)(<span class="dv">5</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>(<span class="cf">function</span>(x) <span class="cf">function</span>(y) x <span class="sc">+</span> y)(<span class="dv">3</span>)(<span class="dv">4</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>The second example is <em>currying</em>: a two-argument function rewritten as a function that returns a function. <code>function(x) function(y) x + y</code> takes <code>x</code>, then returns a new function that takes <code>y</code> and adds them. This is the same pattern from <a href="ch07-functions-are-values.html#sec-functions-returning-functions" class="quarto-xref"><span>Section 7.4</span></a> and <a href="ch18-closures-and-scope.html#sec-closures" class="quarto-xref"><span>Section 18.4</span></a>. It has a name and a history.</p>
-<p>R’s <code>function()</code> keyword is Church’s λ, its function application is beta reduction, and its closures are the scoping discipline that Scheme borrowed from lambda calculus and passed on to R (<a href="ch02-family-tree.html" class="quarto-xref"><span>Chapter 2</span></a>). R can do this because Ihaka and Gentleman gave it Scheme’s lexical scoping (<a href="ch02-family-tree.html#sec-what-r-inherited" class="quarto-xref"><span>Section 2.5</span></a>). When the inner function <code>function(y) x + y</code> executes, it looks up <code>x</code> in the environment where it was <em>created</em>, not where it was called, which is precisely what lambda calculus requires: a variable refers to the nearest enclosing abstraction that binds it. R has had full, unrestricted lambdas since 1993 – not as an added feature, but as the foundation.</p>
+<p>No numbers, no booleans, no <code>if</code>, no loops, and Church showed that the three are enough to express any computation, the same class of functions Turing’s machine computes (<a href="ch09-complexity-and-algorithms.html#sec-computability" class="quarto-xref"><span>Section 9.6</span></a>).</p>
+<p>The translation works because of a decision about scoping. When the inner <code>function(y) x + y</code> runs, it looks up <code>x</code> in the environment where it was <em>created</em>, not where it was called, which is what the lambda calculus requires: a variable refers to the nearest enclosing abstraction that binds it. R has had that rule, and unrestricted anonymous functions, since its first release (<a href="ch02-family-tree.html#sec-what-r-inherited" class="quarto-xref"><span>Section 2.5</span></a>).</p>
 <p>So what can you build on that foundation, using nothing else?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
@@ -723,20 +717,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-church-booleans" class="level2" data-number="30.2">
 <h2 data-number="30.2" class="anchored" data-anchor-id="sec-church-booleans"><span class="header-section-number">30.2</span> Church booleans</h2>
-<p>Suppose all you have is <code>function()</code>. How do you represent <code>TRUE</code> and <code>FALSE</code>?</p>
-<p>Church’s answer is elegant to the point of disbelief: a boolean is a function that <em>chooses</em>. Give it two arguments; <code>TRUE</code> picks the first, <code>FALSE</code> picks the second.</p>
+<p>Suppose all you have is <code>function()</code>. How do you represent <code>TRUE</code> and <code>FALSE</code>? Start with two curried functions that differ in one letter:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ch_true  <span class="ot">&lt;-</span> <span class="cf">function</span>(a) <span class="cf">function</span>(b) a</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ch_false <span class="ot">&lt;-</span> <span class="cf">function</span>(a) <span class="cf">function</span>(b) b</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>These are curried two-argument functions. <code>ch_true</code> takes <code>a</code>, returns a function that takes <code>b</code> and ignores it, handing back <code>a</code>. <code>ch_false</code> does the opposite: it ignores the first argument and returns the second.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ch_true</span>(<span class="st">"yes"</span>)(<span class="st">"no"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "yes"</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ch_false</span>(<span class="st">"yes"</span>)(<span class="st">"no"</span>)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "no"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>That is already <code>if/else</code>. A Church boolean <em>is</em> a conditional: call it with the “then” branch and the “else” branch, and it selects one. No dispatch mechanism, no keyword, no syntax. The boolean itself does the selecting.</p>
+<p><code>ch_true</code> takes <code>a</code>, returns a function that takes <code>b</code> and ignores it, and hands back <code>a</code>. <code>ch_false</code> ignores the first argument and returns the second. That is Church’s answer: a boolean is a function that <em>chooses</em>. Give it two things and <code>TRUE</code> picks the first, <code>FALSE</code> the second, which is already <code>if/else</code>. Call a Church boolean with the “then” branch and the “else” branch and it selects one, with no dispatch mechanism, no keyword, and no syntax.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ch_if <span class="ot">&lt;-</span> <span class="cf">function</span>(cond) <span class="cf">function</span>(then_val) <span class="cf">function</span>(else_val) {</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cond</span>(then_val)(else_val)</span>
@@ -747,14 +739,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ch_if</span>(ch_false)(<span class="st">"heads"</span>)(<span class="st">"tails"</span>)</span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "tails"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>ch_if</code> does almost nothing; it just applies the boolean to the two branches. The boolean does the work. In a sense, there is no <code>if</code> in Church encoding. There are only functions that choose.</p>
+<p><code>ch_if</code> does almost nothing; it applies the boolean to the two branches, and the boolean does the work.</p>
 <p>Now the logical connectives:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ch_and <span class="ot">&lt;-</span> <span class="cf">function</span>(p) <span class="cf">function</span>(q) <span class="fu">p</span>(q)(p)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ch_or  <span class="ot">&lt;-</span> <span class="cf">function</span>(p) <span class="cf">function</span>(q) <span class="fu">p</span>(p)(q)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ch_not <span class="ot">&lt;-</span> <span class="cf">function</span>(p) <span class="cf">function</span>(a) <span class="cf">function</span>(b) <span class="fu">p</span>(b)(a)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Watch <code>ch_and(p)(q)</code>: if <code>p</code> is true, it picks its first argument, which is <code>q</code> (so the result depends on whether <code>q</code> is also true); if <code>p</code> is false, it picks its second argument, which is <code>p</code> itself (false). The logic is embedded in the selection behavior of the booleans themselves, not in any external machinery.</p>
+<p>Watch <code>ch_and(p)(q)</code>: if <code>p</code> is true, it picks its first argument, which is <code>q</code> (so the result depends on whether <code>q</code> is also true); if <code>p</code> is false, it picks its second argument, which is <code>p</code> itself (false). The logic lives in the selection behaviour of the booleans themselves.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># TRUE AND FALSE -&gt; FALSE</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ch_and</span>(ch_true)(ch_false)(<span class="st">"yes"</span>)(<span class="st">"no"</span>)</span>
@@ -792,14 +784,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-church-numerals" class="level2" data-number="30.3">
 <h2 data-number="30.3" class="anchored" data-anchor-id="sec-church-numerals"><span class="header-section-number">30.3</span> Church numerals</h2>
-<p>Numbers are harder to believe. A Church numeral <code>n</code> is a function that takes a function <code>f</code> and returns <code>f</code> composed with itself <code>n</code> times.</p>
+<p>Numbers are harder to believe. Here are four of them:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>zero  <span class="ot">&lt;-</span> <span class="cf">function</span>(f) <span class="cf">function</span>(x) x</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>one   <span class="ot">&lt;-</span> <span class="cf">function</span>(f) <span class="cf">function</span>(x) <span class="fu">f</span>(x)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>two   <span class="ot">&lt;-</span> <span class="cf">function</span>(f) <span class="cf">function</span>(x) <span class="fu">f</span>(<span class="fu">f</span>(x))</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>three <span class="ot">&lt;-</span> <span class="cf">function</span>(f) <span class="cf">function</span>(x) <span class="fu">f</span>(<span class="fu">f</span>(<span class="fu">f</span>(x)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>To see what a Church numeral “means,” pass it a concrete function and a starting value:</p>
+<p>Each takes a function <code>f</code> and returns <code>f</code> composed with itself some number of times: <code>zero</code> never applies it, <code>three</code> applies it three times. To see what one of them means, pass it a concrete function and a starting value:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">three</span>(<span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span>)(<span class="dv">0</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -832,7 +824,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">to_int</span>(six)</span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Successor is straightforward. You might expect addition to follow the same logic, just doing <code>succ</code> repeatedly. But look at how it actually works:</p>
+<p>Addition could be <code>succ</code> repeated, but there is a direct form:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>add <span class="ot">&lt;-</span> <span class="cf">function</span>(m) <span class="cf">function</span>(n) <span class="cf">function</span>(f) <span class="cf">function</span>(x) <span class="fu">m</span>(f)(<span class="fu">n</span>(f)(x))</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -858,7 +850,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">to_int</span>(<span class="fu">power</span>(three)(two))   <span class="co"># 3^2 = 9</span></span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 9</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>power(m)(n)</code> applies <code>m</code> (itself a function-repeater) <code>n</code> times. Two applied three times: <code>2^3</code>. Sit with this one. The operation that felt most abstract – exponentiation – has the shortest definition, because “applying a function-repeater repeatedly” is what exponentiation <em>means</em>. But building numbers up is only half the story. Can we inspect them? Can we ask whether a numeral is zero?</p>
+<p><code>power(m)(n)</code> applies <code>m</code>, itself a function-repeater, <code>n</code> times: two applied three times is <code>2^3</code>. The operation that felt most abstract has the shortest definition, because applying a repeater repeatedly is what exponentiation means. Building numbers up is only half the story, though. Can we ask whether a numeral is zero?</p>
 <p>The test is short:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>is_zero <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="fu">n</span>(<span class="cf">function</span>(x) ch_false)(ch_true)</span>
@@ -869,24 +861,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "no"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>zero</code> ignores <code>f</code> and returns <code>x</code>, so it returns <code>ch_true</code>. Any nonzero numeral applies <code>f</code> at least once, and since <code>f</code> always returns <code>ch_false</code>, a single application replaces <code>ch_true</code> with <code>ch_false</code>.</p>
-<p>We can also convert R integers to Church numerals:</p>
+<p>We can also convert R integers to Church numerals. A <code>for</code> loop that reassigns one variable would fall into the trap from <a href="ch20-function-factories.html#sec-lazy-eval-trap" class="quarto-xref"><span>Section 20.2</span></a>, because <code>succ(n)</code> keeps <code>n</code> as a promise and forces it only later, by which time the variable holds the numeral that contains it. Recursion gives each <code>succ</code> its own <code>n</code>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>from_int <span class="ot">&lt;-</span> <span class="cf">function</span>(n) {</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> zero</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(n)) result <span class="ot">&lt;-</span> <span class="fu">succ</span>(result)</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  result</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="fu">to_int</span>(<span class="fu">from_int</span>(<span class="dv">5</span>))</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co"># [1] 5</span></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="fu">to_int</span>(<span class="fu">add</span>(<span class="fu">from_int</span>(<span class="dv">3</span>))(<span class="fu">from_int</span>(<span class="dv">4</span>)))</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co"># [1] 7</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>from_int <span class="ot">&lt;-</span> <span class="cf">function</span>(n) <span class="cf">if</span> (n <span class="sc">==</span> <span class="dv">0</span>) zero <span class="cf">else</span> <span class="fu">succ</span>(<span class="fu">from_int</span>(n <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">to_int</span>(<span class="fu">from_int</span>(<span class="dv">5</span>))</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">to_int</span>(<span class="fu">add</span>(<span class="fu">from_int</span>(<span class="dv">3</span>))(<span class="fu">from_int</span>(<span class="dv">4</span>)))</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 7</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
 <li>Compute <code>mult(from_int(4))(from_int(5))</code> and convert back to an integer.</li>
-<li>What does <code>power(from_int(2))(from_int(10))</code> give? (This is 2^10 built from nothing but nested function calls.)</li>
+<li>Compute <code>power(from_int(2))(from_int(9))</code> and convert it back. Then try <code>from_int(10)</code> in place of <code>from_int(9)</code>. What happens, and why? (<code>?options</code>, under <code>expressions</code>, is the place to look.)</li>
 <li>The predecessor function (subtracting one) is famously tricky in Church encoding. Look it up, implement it in R, and test it. This was hard enough that Church himself struggled with it; his student Kleene figured it out, reportedly while getting anesthesia at the dentist.</li>
 </ol>
 </section>
@@ -915,17 +903,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>head_of <span class="ot">&lt;-</span> <span class="cf">function</span>(l) <span class="fu">fst</span>(l)</span>
 <span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>tail_of <span class="ot">&lt;-</span> <span class="cf">function</span>(l) <span class="fu">snd</span>(l)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>How does <code>is_nil</code> work? Recall that a Church-encoded pair <code>pair(a)(b)</code> takes a selector <code>f</code> and returns <code>f(a)(b)</code>. We pass a selector that ignores both arguments and returns <code>ch_false</code>, then pass <code>ch_true</code> as the default. If <code>l</code> is <code>nil</code>, it behaves like <code>zero</code>: ignores the selector and returns the default (<code>ch_true</code>). If <code>l</code> is a <code>cons</code> cell, the selector runs, ignoring head and tail, returning <code>ch_false</code>. The structure of the data does the dispatching.</p>
+<p><code>is_nil</code> passes a selector that ignores both arguments and returns <code>ch_false</code>, then passes <code>ch_true</code> as the default. If <code>l</code> is <code>nil</code>, it behaves like <code>zero</code>: it ignores the selector and returns the default. If <code>l</code> is a <code>cons</code> cell, which is a pair, the selector runs on head and tail, ignores both, and returns <code>ch_false</code>. The structure of the data does the dispatching.</p>
 <p>Build a list and walk it:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>my_list <span class="ot">&lt;-</span> <span class="fu">cons</span>(<span class="st">"a"</span>)(<span class="fu">cons</span>(<span class="st">"b"</span>)(<span class="fu">cons</span>(<span class="st">"c"</span>)(nil)))</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head_of</span>(my_list)</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># [1] "a"</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "a"</span></span>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head_of</span>(<span class="fu">tail_of</span>(my_list))</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co"># [1] "b"</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "b"</span></span>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head_of</span>(<span class="fu">tail_of</span>(<span class="fu">tail_of</span>(my_list)))</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co"># [1] "c"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "c"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Three nested function calls, and you have a linked list. No vectors, no <code>list()</code>, no memory allocation beyond closures. But one thing is still missing: none of these structures can refer to themselves.</p>
 <section id="exercises-3" class="level3 unnumbered">
@@ -939,44 +927,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-z-combinator" class="level2" data-number="30.5">
 <h2 data-number="30.5" class="anchored" data-anchor-id="sec-z-combinator"><span class="header-section-number">30.5</span> The Z combinator</h2>
-<p>In <a href="ch22-recursion-and-fixed-points.html" class="quarto-xref"><span>Chapter 22</span></a>, we previewed fixed-point combinators. Now the full construction.</p>
-<p>A recursive function refers to itself by name, but in lambda calculus, there are no names. There is no <code>&lt;-</code>. So how do you define factorial? You need a way to express recursion using only anonymous functions.</p>
-<p>The trick is the <em>fixed-point combinator</em>. A fixed point of a function <code>g</code> is a value <code>x</code> such that <code>g(x) = x</code>. If <code>g</code> is a “template” for a recursive function (a function that takes <em>itself</em> as an argument and returns the recursive body), then finding its fixed point gives you the recursive function you wanted.</p>
-<p>The Y combinator does this in lazy languages like Haskell:</p>
-<pre><code>Y = λf. (λx. f(x x))(λx. f(x x))</code></pre>
-<p>But R is strict: it evaluates arguments before passing them, so <code>x(x)</code> would loop forever. The Z combinator wraps the self-application in a lambda to defer it:</p>
+<p>A recursive function refers to itself by name, but the lambda calculus has no names and no <code>&lt;-</code>. <a href="ch22-recursion-and-fixed-points.html#sec-fixed-point-combinators" class="quarto-xref"><span>Section 22.8</span></a> built the way around that: a template that takes the function to recurse on as an argument, and a <em>fixed-point combinator</em> that feeds the template to itself. The Y combinator there ran in R only because R hands arguments over as promises. The Z combinator makes the delay explicit by wrapping each self-application in a function of one argument, so it runs in strict languages too, and it is the version this chapter uses:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>Z <span class="ot">&lt;-</span> <span class="cf">function</span>(f) {</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  (<span class="cf">function</span>(x) <span class="fu">f</span>(<span class="cf">function</span>(v) <span class="fu">x</span>(x)(v)))(</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">function</span>(x) <span class="fu">f</span>(<span class="cf">function</span>(v) <span class="fu">x</span>(x)(v))</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>Z <span class="ot">&lt;-</span> <span class="cf">function</span>(f) {</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  (<span class="cf">function</span>(x) <span class="fu">f</span>(<span class="cf">function</span>(v) <span class="fu">x</span>(x)(v)))(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">function</span>(x) <span class="fu">f</span>(<span class="cf">function</span>(v) <span class="fu">x</span>(x)(v))</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Read it like this: <code>Z(f)</code> creates a function <code>x</code> that, when called, applies <code>f</code> to a delayed version of the recursive call. The <code>function(v) x(x)(v)</code> wrapper means “don’t call <code>x(x)</code> yet; wait until <code>v</code> is provided.” That delay breaks the infinite loop.</p>
+<p><code>Z(f)</code> builds a function <code>x</code> that, when called, applies <code>f</code> to a delayed version of the recursive call. <code>function(v) x(x)(v)</code> means “do not call <code>x(x)</code> yet; wait until <code>v</code> is provided.”</p>
 <p>Use it to define factorial without ever naming the function:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fact <span class="ot">&lt;-</span> <span class="fu">Z</span>(<span class="cf">function</span>(self) <span class="cf">function</span>(n) {</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">==</span> <span class="dv">0</span>) <span class="dv">1</span> <span class="cf">else</span> n <span class="sc">*</span> <span class="fu">self</span>(n <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="fu">fact</span>(<span class="dv">5</span>)</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 120</span></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="fu">fact</span>(<span class="dv">10</span>)</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3628800</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>fact <span class="ot">&lt;-</span> <span class="fu">Z</span>(<span class="cf">function</span>(self) <span class="cf">function</span>(n) {</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">==</span> <span class="dv">0</span>) <span class="dv">1</span> <span class="cf">else</span> n <span class="sc">*</span> <span class="fu">self</span>(n <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="fu">fact</span>(<span class="dv">5</span>)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 120</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="fu">fact</span>(<span class="dv">10</span>)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3628800</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>self</code> is not a name the function gives itself. It is a parameter, injected by <code>Z</code>. The function never refers to <code>fact</code>; it only refers to <code>self</code>, which <code>Z</code> arranges to be the function itself.</p>
 <p>Fibonacci:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>fib <span class="ot">&lt;-</span> <span class="fu">Z</span>(<span class="cf">function</span>(self) <span class="cf">function</span>(n) {</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">&lt;=</span> <span class="dv">1</span>) n <span class="cf">else</span> <span class="fu">self</span>(n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">+</span> <span class="fu">self</span>(n <span class="sc">-</span> <span class="dv">2</span>)</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sapply</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">10</span>, fib)</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1]  0  1  1  2  3  5  8 13 21 34 55</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>fib <span class="ot">&lt;-</span> <span class="fu">Z</span>(<span class="cf">function</span>(self) <span class="cf">function</span>(n) {</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">&lt;=</span> <span class="dv">1</span>) n <span class="cf">else</span> <span class="fu">self</span>(n <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">+</span> <span class="fu">self</span>(n <span class="sc">-</span> <span class="dv">2</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sapply</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">10</span>, fib)</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1]  0  1  1  2  3  5  8 13 21 34 55</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>A recursive list-sum, using nothing but Church-encoded lists and the Z combinator:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>church_sum <span class="ot">&lt;-</span> <span class="fu">Z</span>(<span class="cf">function</span>(self) <span class="cf">function</span>(lst) {</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>church_sum <span class="ot">&lt;-</span> <span class="fu">Z</span>(<span class="cf">function</span>(self) <span class="cf">function</span>(lst) {</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">is_nil</span>(lst)(<span class="dv">0</span>)(<span class="fu">head_of</span>(lst) <span class="sc">+</span> <span class="fu">self</span>(<span class="fu">tail_of</span>(lst)))</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>nums <span class="ot">&lt;-</span> <span class="fu">cons</span>(<span class="dv">10</span>)(<span class="fu">cons</span>(<span class="dv">20</span>)(<span class="fu">cons</span>(<span class="dv">30</span>)(nil)))</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="fu">church_sum</span>(nums)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 60</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>is_nil(lst)</code> returns a Church boolean, and the boolean picks one of its two arguments. On the empty list it picks <code>0</code>, and the recursive branch, <code>head_of(lst) + self(tail_of(lst))</code>, is never evaluated, because it arrived as a promise (<a href="ch23-lazy-evaluation.html#sec-promises" class="quarto-xref"><span>Section 23.1</span></a>) and nothing forced it. That is the only reason the recursion stops.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>In a strict language
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>A language that evaluates every argument before the call would compute both branches, and the recursive one would run on the empty list, forever. The fix is the same one that turns Y into Z: wrap each branch in a function that takes a dummy argument, let the boolean choose a wrapper, and call the winner.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>church_sum_strict <span class="ot">&lt;-</span> <span class="fu">Z</span>(<span class="cf">function</span>(self) <span class="cf">function</span>(lst) {</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">is_nil</span>(lst)(</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">function</span>(dummy) <span class="dv">0</span></span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  )(</span>
@@ -984,12 +990,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  )(<span class="st">"go"</span>)</span>
 <span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>nums <span class="ot">&lt;-</span> <span class="fu">cons</span>(<span class="dv">10</span>)(<span class="fu">cons</span>(<span class="dv">20</span>)(<span class="fu">cons</span>(<span class="dv">30</span>)(nil)))</span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a><span class="fu">church_sum</span>(nums)</span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="co"># [1] 60</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="fu">church_sum_strict</span>(nums)</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 60</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The <code>function(dummy)</code> wrappers need explaining. <code>is_nil(lst)</code> returns a Church boolean, which selects between two arguments, but if we passed <code>0</code> and <code>head_of(lst) + self(tail_of(lst))</code> directly, R would evaluate <em>both</em> branches eagerly (it is a strict language), and the recursive branch would run even on the empty list, looping forever. Wrapping each branch in <code>function(dummy)</code> defers evaluation: the Church boolean selects one wrapper, and the <code>("go")</code> call at the end forces the selected branch to execute. The <code>"go"</code> argument itself is unused; it is just the trigger that makes the chosen <code>function(dummy)</code> run. This is the same thunking trick that distinguishes the Z combinator from the Y combinator: in a strict language, you wrap computations in lambdas to delay them until they are actually needed.</p>
-<p>No <code>for</code>, no <code>while</code>, no <code>Recall()</code>, no named recursion. Just <code>function()</code>, application, and the Z combinator. The pieces are starting to accumulate.</p>
+<p>The <code>"go"</code> argument is unused; it is the trigger that makes the chosen wrapper run.</p>
+</div>
+</div>
+</div>
+<p>No <code>for</code>, no <code>while</code>, no <code>Recall()</code>, no named recursion. Just <code>function()</code>, application, and the Z combinator.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1000,7 +1008,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The Z combinator is not practical R code. Its value is conceptual: it proves that recursion is not a primitive operation. Self-reference can be <em>derived</em> from anonymous functions and application alone. That R can express this in working, runnable code – not as a thought experiment but as something you can paste into a console and run – is a direct consequence of its Scheme heritage.</p>
+<p>The Z combinator is not practical R code. Its value is conceptual: it proves that recursion is not a primitive operation. Self-reference can be <em>derived</em> from anonymous functions and application alone. That R can express this in code you can paste into a console and run is a direct consequence of its Scheme heritage.</p>
 </div>
 </div>
 <section id="exercises-4" class="level3 unnumbered">
@@ -1008,7 +1016,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol type="1">
 <li>Define a recursive <code>length</code> function using <code>Z</code> that counts the elements of a Church list (without converting to R types).</li>
 <li>Use <code>Z</code> to write a recursive <code>map</code> over Church lists.</li>
-<li>Why does the Y combinator not work in R? Write it out and try calling <code>Y(function(self) function(n) if (n == 0) 1 else n * self(n - 1))(5)</code>. What happens?</li>
+<li>The Y combinator from <a href="ch22-recursion-and-fixed-points.html#sec-fixed-point-combinators" class="quarto-xref"><span>Section 22.8</span></a> also runs in R. Rewrite <code>church_sum</code> with <code>Y</code> in place of <code>Z</code>. Then change <code>Z</code> so that it forces the self-application before calling <code>f</code> (<code>function(x) { y &lt;- x(x); f(y) }</code>) and try again. Which version loops forever, and why?</li>
 </ol>
 </section>
 </section>
@@ -1016,19 +1024,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="30.6" class="anchored" data-anchor-id="sec-the-punchline"><span class="header-section-number">30.6</span> The punchline</h2>
 <p>Here is the inventory. Starting from nothing but <code>function()</code> and function application:</p>
 <ul>
-<li><strong>Booleans</strong>: <code>ch_true</code>, <code>ch_false</code>, <code>ch_and</code>, <code>ch_or</code>, <code>ch_not</code></li>
-<li><strong>Conditionals</strong>: <code>ch_if</code> (which turned out to be trivial, because booleans <em>are</em> conditionals)</li>
-<li><strong>Natural numbers</strong>: <code>zero</code>, <code>succ</code>, and arithmetic (<code>add</code>, <code>mult</code>, <code>power</code>)</li>
-<li><strong>Pairs and lists</strong>: <code>pair</code>, <code>fst</code>, <code>snd</code>, <code>cons</code>, <code>nil</code></li>
-<li><strong>Recursion</strong>: the Z combinator</li>
+<li>Booleans: <code>ch_true</code>, <code>ch_false</code>, <code>ch_and</code>, <code>ch_or</code>, <code>ch_not</code></li>
+<li>Conditionals: <code>ch_if</code> (which turned out to be trivial, because booleans <em>are</em> conditionals)</li>
+<li>Natural numbers: <code>zero</code>, <code>succ</code>, and arithmetic (<code>add</code>, <code>mult</code>, <code>power</code>)</li>
+<li>Pairs and lists: <code>pair</code>, <code>fst</code>, <code>snd</code>, <code>cons</code>, <code>nil</code></li>
+<li>Recursion: the Z combinator</li>
 </ul>
 <p>No R integers, no R booleans, no <code>if</code>, no <code>list()</code>, no named recursive functions. Every one of those features reconstructed from <code>function()</code> alone.</p>
-<p>This is Church’s result from 1936. When <a href="ch01-two-models.html" class="quarto-xref"><span>Chapter 1</span></a> said that R descends from Church’s model of computation, this is what that means concretely: <code>function()</code> is a universal computational primitive, and everything else is convenience built on top. The requirements are specific: first-class functions, closures, and unrestricted anonymous functions. R has all three, inherited from Scheme. Python’s <code>lambda</code> is restricted to a single expression, which makes multi-line Church encodings awkward; Java’s lambdas cannot close over mutable local variables; C has function pointers but no closures.</p>
+<p>This is Church’s result from 1936. When <a href="ch01-two-models.html" class="quarto-xref"><span>Chapter 1</span></a> said that R descends from Church’s model of computation, this is what that means concretely: <code>function()</code> is a universal computational primitive, and everything else is convenience built on top. The requirements are specific: first-class functions, closures, and anonymous functions with no restriction on their bodies. R has all three from Scheme. A language that restricts any of them (Python’s one-expression <code>lambda</code>, C’s function pointers without closures) can run only part of this chapter.</p>
 <p>The connection between R and mathematics extends further, into the type system itself.</p>
 </section>
 <section id="sec-curry-howard" class="level2" data-number="30.7">
 <h2 data-number="30.7" class="anchored" data-anchor-id="sec-curry-howard"><span class="header-section-number">30.7</span> Types as propositions</h2>
-<p>There is a correspondence between logic and programming that is not merely analogy. In 1969, William Howard noticed that the rules of constructive logic map exactly onto the rules of typed lambda calculus:</p>
+<p>In <a href="ch05-first-function.html" class="quarto-xref"><span>Chapter 5</span></a> a logician noticed that the rules for combining function types looked like the rules for combining propositions. Decades later, in 1969, William Howard wrote the correspondence out in full for constructive logic and typed lambda calculus:</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -1068,13 +1076,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>When you write a function with signature <code>A -&gt; B</code>, you are constructing a proof that if you have an <code>A</code>, you can produce a <code>B</code>. A function <code>integer -&gt; character</code> proves that integers can be converted to characters. If no function of type <code>A -&gt; B</code> can be written, the proposition “A implies B” has no proof.</p>
-<p>R’s type system is too loose to enforce this correspondence strictly (every R function can error, which is like a proof that cheats). Languages like Haskell, Agda, and Coq take it seriously enough to use programs as machine-checked proofs of mathematical theorems. But the connection is there in R. Every function you write is, in a formal sense, a little proof.</p>
-<p>The Curry-Howard correspondence (named for Haskell Curry, who noticed the connection earlier, and Howard, who formalized it) reframes types and functions entirely. A type is not a tag that says “this is a number” – it is a proposition about what values are possible. A function is not a block of code – it is evidence that a transformation exists. What happens when you start looking at the <em>structure</em> of those propositions and transformations?</p>
+<p>R’s type system is too loose to enforce this correspondence strictly (every R function can error, which is like a proof that cheats). Haskell, Agda, and Coq take it seriously enough to use programs as machine-checked proofs of theorems. But the connection is there in R: every function you write is, in a formal sense, a small proof.</p>
+<p>Under this reading, named the Curry-Howard correspondence for the two people who saw it, a type is a proposition about which values are possible and a function is evidence that a transformation exists. What happens when you start looking at the <em>structure</em> of those propositions and transformations?</p>
 </section>
 <section id="sec-category-connections" class="level2" data-number="30.8">
 <h2 data-number="30.8" class="anchored" data-anchor-id="sec-category-connections"><span class="header-section-number">30.8</span> Functors, monoids, and friends</h2>
-<p>Three patterns have appeared repeatedly in this book, and they all have names that sound intimidating. Category theory provides a vocabulary for patterns that recur across different mathematical structures, and once you see the vocabulary, you start noticing that R’s functional design has been using these structures all along.</p>
-<p><strong>Functors.</strong> A functor is a mapping between categories that preserves structure. In programming terms: if you have a container and a function, a functor lets you apply the function to the contents without changing the container’s shape.</p>
+<p>Two of the patterns in this book already carry names from category theory: the functor from <a href="ch19-iteration-without-loops.html#sec-purrr-map" class="quarto-xref"><span>Section 19.3</span></a> and the monoid from <a href="ch04-vectors.html#sec-no-scalars" class="quarto-xref"><span>Section 4.1</span></a>. This section adds the laws that make them trustworthy, and a third pattern that connects them.</p>
+<p>Run <code>lapply()</code> over a list:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">9</span>, <span class="dv">16</span>)</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(x, sqrt)</span>
@@ -1090,7 +1098,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [[4]]</span></span>
 <span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 4</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>lapply()</code> applied <code>sqrt</code> to each element and gave back a list of the same length. The container’s shape did not change; only the values inside it did. Strictly, the functor is the list construction itself – it sends a type <code>T</code> to “list of <code>T</code>” and sends a function <code>f</code> to “apply <code>f</code> to each element.” <code>lapply()</code> (and purrr’s <code>map()</code>) are the <em>fmap</em> of that functor: the part that lifts a function into the container.</p>
+<p><code>lapply()</code> applied <code>sqrt</code> to each element and gave back a list of the same length. The container’s shape did not change; only the values inside it did. Strictly, the functor is the list construction itself: it sends a type <code>T</code> to “list of <code>T</code>” and a function <code>f</code> to “apply <code>f</code> to each element”, and <code>lapply()</code> (and purrr’s <code>map()</code>) is the part that lifts the function into the container.</p>
 <p>What makes a functor trustworthy is that it obeys two laws. The <em>identity law</em> says mapping a do-nothing function changes nothing:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(<span class="fu">lapply</span>(x, identity), x)</span>
@@ -1104,24 +1112,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>A function that mapped elements but scrambled their relationships would break pipelines. <code>lapply |&gt; lapply |&gt; lapply</code> chains work reliably because both laws hold. <code>mutate()</code> looks similar on the surface, but it does not satisfy these laws in general – column expressions can reference other columns, introduce side effects, and break composition. It is a useful tool, not a functor.</p>
-<p><strong>Monoids.</strong> A monoid is a set with an associative binary operation and an identity element. Addition on numbers is one: <code>(a + b) + c</code> equals <code>a + (b + c)</code>, and adding 0 leaves any number unchanged, so 0 is the identity. String concatenation is another, with <code>""</code> as identity. <code>Reduce()</code> works on any monoid (<a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a>), and that is not an accident; <code>Reduce()</code> <em>is</em> the monoid pattern.</p>
+<p>A function that mapped elements but scrambled their relationships would break pipelines; chains of <code>lapply()</code> work reliably because both laws hold.</p>
+<p>A monoid is a set with an associative operation and an identity element: addition with 0, string concatenation with <code>""</code>. <code>Reduce()</code> (<a href="ch21-reduce-and-accumulate.html" class="quarto-xref"><span>Chapter 21</span></a>) is the operation that collapses one:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(paste0, <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>))</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "abc"</span></span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">Reduce</span>(<span class="st">`</span><span class="at">+</span><span class="st">`</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>)</span>
 <span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 15</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>It needs associativity so the result is the same regardless of how intermediate computations are grouped, and it needs an identity element to handle the empty case. But not every binary operation qualifies. Subtraction is not associative:</p>
+<p>It needs associativity so that the result does not depend on how the intermediate steps are grouped, and an identity element for the empty case. Subtraction fails the first requirement:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>(<span class="dv">5</span> <span class="sc">-</span> <span class="dv">3</span>) <span class="sc">-</span> <span class="dv">1</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="dv">5</span> <span class="sc">-</span> (<span class="dv">3</span> <span class="sc">-</span> <span class="dv">1</span>)</span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Different answers. The operations that fold cleanly are precisely the monoids, and the operations <code>Reduce()</code> fails on are the ones that violate the monoid laws. If you find yourself fighting with <code>Reduce()</code>, check whether your operation is actually a monoid. If it is not, the folding direction will matter and the results will surprise you.</p>
-<p><strong>Natural transformations.</strong> A natural transformation converts one functor into another while preserving the relationships between elements. The defining property is the <em>naturality condition</em>: if you apply a function to the contents and then transform the container, you get the same result as transforming the container first and then applying the function. The transformation commutes with the functor’s action.</p>
-<p><code>as.list()</code> on an atomic vector is a natural transformation from the vector functor to the list functor:</p>
+<p>Different answers. The operations that fold cleanly are the monoids, and when <code>Reduce()</code> surprises you, check whether the operation is one; if it is not, the folding direction matters (<a href="ch21-reduce-and-accumulate.html#sec-right-fold" class="quarto-xref"><span>Section 21.3</span></a>).</p>
+<p>The third pattern connects two functors. <code>as.list()</code> turns an atomic vector into a list. Map a function before or after the conversion:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">9</span>)</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1134,9 +1141,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(a, b)</span>
 <span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The order does not matter. That commutativity is the naturality condition, and it is what makes <code>as.list()</code> well-behaved: it changes the container without disturbing the relationship between the function and the data inside.</p>
-<p><code>pivot_longer()</code> and <code>pivot_wider()</code> (<a href="ch16-tidy-data.html#sec-pivot-longer" class="quarto-xref"><span>Section 16.2</span></a>, <a href="ch16-tidy-data.html#sec-pivot-wider" class="quarto-xref"><span>Section 16.3</span></a>) go further: they are invertible, which makes them natural <em>isomorphisms</em>. Reversibility is a stronger property than naturality alone; it means no information is lost in the reshaping. You can pivot long and then pivot wide and arrive back where you started, because the transformation preserves everything.</p>
-<p>None of this requires learning category theory. But these patterns keep showing up because they reflect mathematical structure, and R’s functional design makes them visible. Church encodings prove this at the foundational level.</p>
+<p>The order does not matter. A conversion between containers that commutes with mapping in this way is a <em>natural transformation</em>, and the commuting itself is the naturality condition: <code>as.list()</code> changes the container without disturbing the relationship between the function and the data inside.</p>
+<p><code>pivot_longer()</code> and <code>pivot_wider()</code> (<a href="ch16-tidy-data.html#sec-pivot-longer" class="quarto-xref"><span>Section 16.2</span></a>) go further: they are invertible, which makes them natural <em>isomorphisms</em>. Reversibility is a stronger property than naturality alone; it means no information is lost in the reshaping. You can pivot long and then pivot wide and arrive back where you started, because the transformation preserves everything.</p>
+<p>None of this requires learning category theory. But these patterns keep showing up because they reflect mathematical structure, and R’s functional design makes them visible.</p>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
@@ -1149,7 +1156,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-practical-math" class="level2" data-number="30.9">
 <h2 data-number="30.9" class="anchored" data-anchor-id="sec-practical-math"><span class="header-section-number">30.9</span> Practical mathematics in R</h2>
 <p>Church encodings prove R can do mathematics from nothing. But can it do mathematics that matters? Symbolic algebra, arbitrary precision, number theory: each requires capabilities that most R users never discover, because the packages that provide them sit outside the usual statistical workflow.</p>
-<p><strong>Symbolic mathematics.</strong> The <code>Ryacas</code> package connects R to the Yacas computer algebra system:</p>
+<p>The <code>Ryacas</code> package connects R to the Yacas computer algebra system, which works with expressions rather than numbers:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Ryacas)</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1163,7 +1170,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a><span class="fu">yac_str</span>(<span class="st">"Simplify((x^2-1)/(x-1))"</span>)  <span class="co"># "x+1"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Where R’s floating-point arithmetic gives you <code>0.1 + 0.2 != 0.3</code> (<a href="ch06-numerical-computing.html#sec-floating-point-traps" class="quarto-xref"><span>Section 6.2</span></a>), symbolic computation works with exact representations. There is no rounding because there are no decimals; expressions stay symbolic until you ask for a numerical result.</p>
-<p><strong>Arbitrary precision.</strong> The <code>gmp</code> package provides big integers and big rationals:</p>
+<p>The <code>gmp</code> package provides big integers and big rationals:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gmp)</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1173,7 +1180,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Big rationals: 1/3 stays 1/3, no floating-point error</span></span>
 <span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="fu">as.bigq</span>(<span class="dv">1</span>, <span class="dv">3</span>) <span class="sc">+</span> <span class="fu">as.bigq</span>(<span class="dv">1</span>, <span class="dv">6</span>)  <span class="co"># 1/2, exactly</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Number theory.</strong> The <code>numbers</code> package has prime factorization, GCD, modular arithmetic, and related tools:</p>
+<p>The <code>numbers</code> package has prime factorization, GCD, modular arithmetic, and related tools:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(numbers)</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1181,7 +1188,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="fu">GCD</span>(<span class="dv">48</span>, <span class="dv">36</span>)         <span class="co"># 12</span></span>
 <span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="fu">isPrime</span>(<span class="dv">104729</span>)     <span class="co"># TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Project Euler.</strong> If you want to sharpen your R skills on mathematical puzzles, <a href="https://projecteuler.net">Project Euler</a> is an excellent source. The first few problems are approachable with base R:</p>
+<p>If you want to sharpen your R skills on mathematical puzzles, <a href="https://projecteuler.net">Project Euler</a> is a good source. The first few problems are approachable with base R:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Euler problem 1: sum of multiples of 3 or 5 below 1000</span></span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">999</span></span>
@@ -1194,7 +1201,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(n)<span class="sc">^</span><span class="dv">2</span> <span class="sc">-</span> <span class="fu">sum</span>(n<span class="sc">^</span><span class="dv">2</span>)</span>
 <span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 25164150</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Both solutions are one-liners because R’s vectorized operations (<a href="ch01-two-models.html" class="quarto-xref"><span>Chapter 1</span></a>) make arithmetic on sequences natural. The expression-based style that R inherited from lambda calculus maps directly onto mathematical notation. That inheritance has a history worth tracing.</p>
+<p>Both solutions are one-liners because R’s vectorized operations (<a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>) make arithmetic on sequences natural.</p>
 <section id="exercises-6" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-6">Exercises</h3>
 <ol type="1">
@@ -1207,19 +1214,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="sec-still-moving" class="level2" data-number="30.10">
 <h2 data-number="30.10" class="anchored" data-anchor-id="sec-still-moving"><span class="header-section-number">30.10</span> The language is still moving</h2>
 <p>Base R is still absorbing functional idioms, and each addition shrinks the gap between what the language offers and what the lambda calculus requires.</p>
-<p>R 4.1 (2021) introduced two changes. The first was <code>\(x) x + 1</code> as shorthand for <code>function(x) x + 1</code>. The backslash is not decoration. Church wrote λ; R now writes <code>\</code>, and the one-character syntax makes anonymous functions cheap enough to use anywhere: inside <code>lapply()</code>, inside <code>Reduce()</code>, as arguments to <code>Map()</code>. Before R 4.1, the nine characters of <code>function(x)</code> were a tax on every lambda expression. The shorthand removed it.</p>
-<p>The second was the native pipe <code>|&gt;</code>. Before R 4.1, the pipe came from the magrittr package (<code>%&gt;%</code>), which means it was a function that manipulated the call, not a language primitive. The native pipe is syntax: <code>x |&gt; f()</code> is parsed by R’s interpreter as <code>f(x)</code> before evaluation begins. Function composition is now part of R’s grammar, not a library feature.</p>
-<p>R 4.4 (2024) moved <code>%||%</code> from rlang into base R. <code>x %||% y</code> returns <code>x</code> if <code>x</code> is not <code>NULL</code>, otherwise <code>y</code>. This is the null-coalescing operator that C# has had since 2003, Swift since 2014, and Kotlin since 2016. In functional terms, it is a default combinator: given a value that might be absent, provide a fallback. It replaces the four-line <code>if (is.null(x)) y else x</code> with a single infix operator.</p>
-<p>Anonymous functions, composition, and null handling — three operations that appear in every functional language — moved into R’s core syntax between 2021 and 2024. The language is still compressing toward its functional core.</p>
+<p>R 4.1 (2021) introduced two changes. The first was <code>\(x) x + 1</code> as shorthand for <code>function(x) x + 1</code>. Church wrote λ; R now writes <code>\</code>, and the one-character form makes anonymous functions cheap enough to use anywhere: inside <code>lapply()</code>, inside <code>Reduce()</code>, as arguments to <code>Map()</code>. Before R 4.1, the eight letters of <code>function</code> were a tax on every lambda expression.</p>
+<p>The second was the native pipe <code>|&gt;</code>. Before R 4.1 the pipe came from the magrittr package (<code>%&gt;%</code>), a function that rewrote the call. The native pipe is syntax: <code>x |&gt; f()</code> is parsed as <code>f(x)</code> before evaluation begins. Function composition is now part of R’s grammar.</p>
+<p>R 4.4 (2024) added <code>%||%</code>, which rlang had provided for years. <code>x %||% y</code> returns <code>x</code> unless <code>x</code> is <code>NULL</code>, in which case it returns <code>y</code>: a default combinator, the null-coalescing operator of C#, Swift, and Kotlin, and a shorter spelling of <code>if (is.null(x)) y else x</code>.</p>
+<p>Anonymous functions, composition, and null handling, three operations every functional language has, moved into R’s core syntax between 2021 and 2024. The language is still compressing toward its functional core.</p>
 </section>
 <section id="sec-math-history" class="level2" data-number="30.11">
 <h2 data-number="30.11" class="anchored" data-anchor-id="sec-math-history"><span class="header-section-number">30.11</span> The historical thread</h2>
 <p>Each idea in this chapter passed through specific hands. The chain is worth tracing because each link solved a problem that the previous link could not.</p>
-<p>Could you reduce all of reasoning to calculation? In 1679, a man who had already co-invented calculus thought you could. Gottfried Wilhelm Leibniz imagined a <em>calculus ratiocinator</em>, a formal system that would make thinking mechanical. The dream was premature by two and a half centuries. By the 1870s, mathematicians had spent decades making their own foundations rigorous — formalizing limits, infinity, the number line.</p>
-<p>A German mathematician named Gottlob Frege saw that logic could be next. His <em>Begriffsschrift</em> (1879) introduced quantifiers, variables, and functions as logical primitives, the first formal notation for logic itself. Modern mathematical logic begins here, but Frege’s system was too heavy. Church stripped it to three constructs (variable, abstraction, application) and showed in 1936 that everything could be built back from those alone. The Church numerals and Church booleans in this chapter are his constructions.</p>
-<p>That was the theory. The question was whether anyone could make it run. McCarthy answered it in 1960 with LISP, the first programming language where <code>(lambda (x) (+ x 1))</code> was a direct encoding of Church’s <code>λx. x + 1</code>. But LISP had dynamic scoping, which meant closures did not work the way the theory said they should. Steele and Sussman fixed that in 1975 with Scheme: lexical scoping, first-class closures, and the “Lambda the Ultimate” papers that showed lambda expressions could replace <code>goto</code>, assignment, and most control structures.</p>
-<p>In the 1970s, a statistician at Bell Labs who wanted to run a regression still had to write a Fortran program, compile it, and wait for output. Chambers designed S (1976) to change that: a language for statistical computing where you could type an expression and see the result immediately. It had functions and expressions at its core but borrowed its computational style from Fortran. The statistical vocabulary (data frames, formulas, vectorized operations) was new. When Ihaka and Gentleman reimplemented S at the University of Auckland in 1993, they made one decision that changed everything: they replaced S’s scoping rules with Scheme’s lexical scoping. That single choice is why closures work in R, why function factories work, why every Church encoding in this chapter runs without modification.</p>
-<p>So the experiment worked. Church proved it was possible in 1936. McCarthy made it run in 1960. Ihaka and Gentleman, by choosing Scheme’s scoping rules, made it run in R without anyone asking them to. The barren landscape from the opening turned out to have everything buried in it already.</p>
+<p>Could you reduce all of reasoning to calculation? In 1679 the man who had just co-invented calculus, Gottfried Wilhelm Leibniz, imagined a <em>calculus ratiocinator</em>, a formal system that would make thinking mechanical. The dream was premature by two centuries. By the 1870s mathematicians had spent decades making their own foundations rigorous, formalizing limits, infinity, and the number line, and a mathematician in Jena saw that logic could be next. Gottlob Frege’s <em>Begriffsschrift</em> (1879) introduced quantifiers, variables, and functions as logical primitives, the first formal notation for logic itself. Modern mathematical logic begins there. Church’s system of the 1930s kept three constructs, variable, abstraction, and application, and the Church numerals and Church booleans in this chapter are his demonstration that everything else can be built from them.</p>
+<p>That was the theory. The question was whether anyone could make it run. McCarthy answered it in 1960 with LISP (<a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>), the first programming language where <code>(lambda (x) (+ x 1))</code> was a direct encoding of Church’s <code>λx. x + 1</code>. But LISP had dynamic scoping, which meant closures did not work the way the theory said they should. Steele and Sussman fixed that in 1975 with Scheme: lexical scoping, first-class closures, and the “Lambda the Ultimate” papers that showed lambda expressions could replace <code>goto</code>, assignment, and most control structures.</p>
+<p>In the 1970s, a statistician at Bell Labs who wanted to run a regression still had to write a Fortran program, compile it, and wait. S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>) let them type an expression and see the result, with functions and expressions at its core and a computational style borrowed from Fortran. When Ihaka and Gentleman reimplemented S in Auckland in 1993, they gave it Scheme’s lexical scoping in place of S’s rules (<a href="ch02-family-tree.html#sec-what-r-inherited" class="quarto-xref"><span>Section 2.5</span></a>). That choice is why closures work in R, why function factories work, and why every Church encoding in this chapter runs without modification.</p>
+<p>So the experiment worked. Church showed it was possible, McCarthy made it run, and Ihaka and Gentleman, by choosing Scheme’s scoping rules, made it run in R without anyone asking them to.</p>
 </section>
 <section id="references-and-sources" class="level2" data-number="30.12">
 <h2 data-number="30.12" class="anchored" data-anchor-id="references-and-sources"><span class="header-section-number">30.12</span> References and sources</h2>
@@ -1352,53 +1358,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
