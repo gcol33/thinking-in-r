@@ -5,7 +5,7 @@
 source(here::here("_common.R"))
 ```
 
-@sec-two-models put four numbers on a table and told two stories about adding them. Mr. State held a running total. Mr. Fold pressed pairs together until one number remained. Both got 18. That split between stepping through state and folding over structure ran through every chapter that followed: `for` loops and `Reduce()`, Turing machines and lambda calculus. Church and Turing proved in 1936 that the two models compute exactly the same class of functions. Any question you can ask of one, you can ask of the other.
+The first chapter put four numbers on a table and told two stories about adding them. Mr. State held a running total. Mr. Fold pressed pairs together until one number remained. Both got 18. That split between stepping through state and folding over structure ran through every chapter that followed: `for` loops and `Reduce()`, Turing machines and lambda calculus. Church and Turing proved in 1936 that the two models compute exactly the same class of functions. Any question you can ask of one, you can ask of the other.
 
 Types turned out to be a third way of looking at the same functions. In 1934 Haskell Curry noticed that the types of his combinators read like the axioms of propositional logic, and in 1969 William Howard wrote the match out in full (@sec-curry-howard). A function of type `A -> B` is a proof that A implies B, a pair of type `(A, B)` is a proof that both hold, and a program that type-checks is a proof of the theorem its type states. A type checker that accepts the program has checked the proof.
 
@@ -15,12 +15,12 @@ Paths that connect points, and paths between paths, are what topologists study w
 
 The habit of asking what two fields share is older than that. In the early 1940s an algebraist and a topologist found that a calculation from each of their fields was the same calculation, and to say what "the same" meant they had to write down what the two settings had in common. The objects mattered less than the maps between them. The framework Samuel Eilenberg and Saunders Mac Lane published for it in 1945 is category theory. Colleagues called it "general abstract nonsense", and Mac Lane went on using the name himself.
 
-The structures appeared in this book before their names did. Mr. Fold's `+` over four numbers, associative with `0` as its identity, is a monoid. `map(x, sqrt)` returns a list of the same length with the shape untouched, a functor. `as.list()`, which gives the same answer whether you map before or after it, is a natural transformation. @sec-category-connections has the laws for all three.
+The structures appeared in this book before their names did. Mr. Fold's `+` over four numbers, associative with `0` as its identity, is a monoid. `map(x, sqrt)` returns a list of the same length with the shape untouched, a functor. `as.list()`, which gives the same answer whether you map before or after it, is a natural transformation. The laws for all three are in @sec-category-connections.
 
 If you go looking you will find more of these connections, between R and Haskell, between type theory and topology, between the code you write on a Tuesday afternoon and mathematics worked out before there were computers to run it on.
 
 The connections are still forming. R 4.1 gave the language a native pipe (`|>`) and a one-character lambda (`\(x)`). R 4.4 added the null-coalescing operator (`%||%`) that rlang had provided for years, and R 4.3 added two generics through which `inherits()` and the arithmetic operators consult other object systems, so that S7, a class system that ships as an ordinary package, can sit on top of base R (@sec-s7).
 
-The tidyverse's packages for language models are built the same way. In ellmer you hand the model an ordinary R function and it decides when to call it; mcptools does the same for a coding agent talking to your R session. A function is a value you can pass to a program you did not write (@sec-functions-are-values-chapter), and now the program on the other end can be a model. Church published the lambda calculus in 1936. Ninety years on, a function is still the unit that gets passed around.
+The tidyverse's packages for language models are built the same way. In ellmer you hand the model an ordinary R function and it decides when to call it; mcptools does the same for a coding agent talking to your R session. A function is a value you can pass to a program you did not write (@sec-passing-functions), and now the program on the other end can be a model. Church published the lambda calculus in 1936. Ninety years on, a function is still the unit that gets passed around.
 
 Thank you for reading.
