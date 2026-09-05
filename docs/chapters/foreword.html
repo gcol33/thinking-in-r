@@ -594,9 +594,9 @@ ul.task-list li input[type="checkbox"] {
 <p>— John Horton Conway</p>
 </blockquote>
 <p>Type <code>TRUE + TRUE</code> into an R console. You get <code>2</code>. Why? R is not doing arithmetic on the word “true.” It converts a logical value to the number <code>1</code>, twice, and adds. That conversion follows a rule, and the rule traces back to a design decision that predates R by sixty years and programming itself by two decades. Where did it come from?</p>
-<p>In 1936, a logician named Alonzo Church defined booleans as functions that choose: TRUE picks the first argument, FALSE picks the second. No special boolean type, no <code>if</code> keyword — just functions calling functions.</p>
-<p>John McCarthy built a programming language from that idea in 1958 and called it Lisp. Guy Steele and Gerald Sussman distilled it into Scheme in 1975. John Chambers designed S at Bell Labs in the 1980s with Scheme’s scoping rules in his head, and two statisticians in Auckland built R from S in the 1990s. Their names were Ross Ihaka and Robert Gentleman, and the language they wrote, given away free with Scheme’s lexical scoping quietly inherited through S, is the one running on your laptop right now.</p>
-<p>The <code>TRUE + TRUE</code> in your console still carries Church’s fingerprint, and so does nearly everything else you type into R.</p>
+<p>In 1936, a logician at Princeton wrote booleans as functions that choose: TRUE takes two arguments and returns the first, FALSE returns the second. His system had no boolean type and no <code>if</code>; a function that picks did the work of both. His name was Alonzo Church, and the notation those booleans were written in, the lambda calculus, is the ancestor of R’s <code>function</code>.</p>
+<p>It took four languages to get there. John McCarthy borrowed Church’s notation for Lisp in 1958. Two researchers at MIT, trying to understand a rival theory of computation, stripped Lisp down to Scheme in 1975 and settled where a function looks for the names it uses. At Bell Labs in 1976, John Chambers built S. A statistician could now type an expression and see the result without writing a Fortran program first. And in the 1990s, two statisticians in Auckland reimplemented S, keeping its syntax and giving it Scheme’s rule for looking up names. Their names were Ross Ihaka and Robert Gentleman, and the language they wrote, given away free, is the one running on your laptop right now.</p>
+<p>The <code>2</code> in your console is the end of that chain, and so is nearly everything else you type into R.</p>
 
 
 
@@ -690,53 +690,38 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-
 (function() {
-
+  var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
+  var SITE = "book";
   var start = Date.now();
-
   var sent = false;
 
   setTimeout(function() {
-
     if (document.hidden) return;
-
     // Deduplicate: one hit per page per 12 hours
-
     var key = "hit:" + location.pathname;
-
     var last = localStorage.getItem(key);
-
     if (last && (Date.now() - parseInt(last, 10)) < 43200000) return;
-
     localStorage.setItem(key, Date.now().toString());
-
-    fetch("https://gcol33-analytics.netlify.app/api/hit?site=book&p=" + encodeURIComponent(location.pathname));
-
+    fetch(ENDPOINT + "/hit?site=" + SITE + "&p=" + encodeURIComponent(location.pathname));
   }, 5000);
 
   function sendDuration() {
-
     if (sent) return;
-
     sent = true;
-
     var secs = Math.round((Date.now() - start) / 1000);
-
     if (secs < 5 || secs > 3600) return;
-
-    navigator.sendBeacon("https://gcol33-analytics.netlify.app/api/duration?site=book&p=" + encodeURIComponent(location.pathname) + "&s=" + secs);
-
+    navigator.sendBeacon(
+      ENDPOINT + "/duration?site=" + SITE +
+      "&p=" + encodeURIComponent(location.pathname) +
+      "&s=" + secs
+    );
   }
 
   document.addEventListener("visibilitychange", function() { if (document.hidden) sendDuration(); });
-
   window.addEventListener("pagehide", sendDuration);
-
 })();
-
 </script>
-
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

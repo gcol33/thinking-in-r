@@ -1,10 +1,10 @@
 # Current work: readability pass
 
-Last updated 2026-09-05 (ch32-33 session).
+Last updated 2026-09-05 (foreword and afterword session).
 
 ## Status
 
-Chapters 1 to 33 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe, ch22-24 in f78a742, ch25-27 in 1571f0d, ch28-31 in e884b58, ch32-33 in fba725f). The foreword and the afterword have not. Next session: foreword and afterword.
+Every chapter plus the foreword and afterword have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe, ch22-24 in f78a742, ch25-27 in 1571f0d, ch28-31 in e884b58, ch32-33 in fba725f, foreword and afterword in the commit after 0849d4e). What remains is the list of cross-chapter flags at the end of this file.
 
 ## The problem
 
@@ -158,7 +158,17 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Tooling: `usethis::create_package()` refuses to run non-interactively anywhere under `C:/` on this box because the drive root is detected as a project ("would be nested inside an existing project 'C://'"); hand-write `DESCRIPTION`/`NAMESPACE`/`R/` for throwaway check packages. Nature article pages redirect to an IdP and cannot be fetched; arXiv and Wikipedia carried the same numbers.
 - Word counts: ch32 2968 to 2821, ch33 4029 to 3626.
 
+## Notes from foreword and afterword
+
+- Factual fixes from checking sources. The foreword said Chambers designed S "with Scheme's scoping rules in his head" and that R's lexical scoping was "inherited through S"; S resolved free variables in the top-level workspace (R FAQ 3.3.1, as ch18 and ch30 say), so the foreword now says Ihaka and Gentleman kept S's syntax and gave it Scheme's rule. It also put S "in the 1980s" (1976, as ch02's table says). The afterword said Howard reached Curry-Howard "without knowing about Curry's work" (Howard's 1969 manuscript opens from the Curry and Feys 1958 observation; Curry's first version is 1934), that Mac Lane coined "abstract nonsense" (Steenrod did; Mac Lane wrote that the subject was "then called general abstract nonsense" and used the phrase himself), that "mathematics predates computers by centuries" (lambda calculus 1936, category theory 1945), that R 4.4 "moved" `%||%` from rlang (NEWS says "newly in base"; now "added ... that rlang had provided", as ch30), that R 4.4 "patched the internal dispatch machinery" for S7 (R 4.3.0 added `nameOfClass()` and `chooseOpsMethod()`, as ch24), that S7 is "built entirely out of functions" (it is a package on top of base R's generics), and that ellmer, ragnar and mcptools are "pure functions composed into pipelines" (ellmer's chat objects are stateful R6, per its site; the checkable connection is tool calling, which hands the model an ordinary R function, and mcptools exposing R functions to a coding agent). Voevodsky's story is now the documented one from the IAS "Origins and Motivations" essay: a wrong lemma in a 1992-93 paper found in 1999 while lecturing at IAS, the repair published 2006, then proof assistants. Conway's cats epigraph checked: BBC broadcast 2004, printed in Masters' *Simon: The Genius in My Basement* (2011).
+- Show-before-name: foreword names Church after the booleans are described and the lambda calculus after Church ("a logician named Alonzo Church" is gone); the afterword introduces Voevodsky, Eilenberg and Mac Lane by situation and names them after.
+- Proper-noun stacking: the foreword's chain of five languages keeps every name (it is the book's promise, restated in ch01's closer) but gives each a situation; the afterword drops ragnar and the `|>`-as-category sentence (ch30 does not teach it) and replaces `pivot_longer()`/`pivot_wider()` "natural isomorphism" with ch30's `as.list()` natural transformation.
+- Cross-refs added (none existed): afterword "Chapter 1" is @sec-two-models; one ref per paragraph to @sec-curry-howard, @sec-category-connections, @sec-s7, @sec-functions-are-values-chapter.
+- Cut: foreword "no `if` keyword — just functions calling functions" (em-dash) and "carries Church's fingerprint"; afterword "The correspondence was not something anyone set out to build", "pushed the question one level deeper", "The vocabulary ... is forbidding, but you have been using the structures since chapter 5" (teacher mode, and `map()` is ch19, not ch05), "the architecture has not needed replacing".
+- Flag still open: ch02 line 86 says functions in S have "lexical scoping, exactly as in the `make_adder` example". The foreword, ch18 and ch30 now all say the opposite. One sentence to fix in ch02.
+- Word counts: foreword 247 to 310, afterword 590 to 726 (situations for three name-drops, five cross-refs).
+
 ## Files for the next session
 
-- `chapters/foreword.qmd`
-- `chapters/afterword.qmd`
+- `chapters/ch02-family-tree.qmd` line 86 (S scoping sentence, see flag above)
+- Then a whole-book read for the flags listed under ch16-18 and ch28-31 (ch09 "every environment is a hash table"; the Norvig attribution in ch18)
