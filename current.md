@@ -1,10 +1,10 @@
 # Current work: readability pass
 
-Last updated 2026-09-05 (ch28-31 session).
+Last updated 2026-09-05 (ch32-33 session).
 
 ## Status
 
-Chapters 1 to 31 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe, ch22-24 in f78a742, ch25-27 in 1571f0d, ch28-31 in e884b58). ch32, ch33, the foreword and the afterword have not. Next session: ch32, ch33, then foreword and afterword.
+Chapters 1 to 33 have had a density pass (ch01-03 in f3bcb2d, ch04-06 in d9491f2, ch07-09 in 051158c, ch10-12 in 1b2c1d6, ch13-15 in b696cc3, ch16-18 in ae1f737, ch19-21 in 93567fe, ch22-24 in f78a742, ch25-27 in 1571f0d, ch28-31 in e884b58, ch32-33 in fba725f). The foreword and the afterword have not. Next session: foreword and afterword.
 
 ## The problem
 
@@ -146,8 +146,19 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - Flag for another session: ch09 line 160 says "Every environment is a hash table mapping names to values"; function execution environments are unhashed frames. ch30's history now says Ihaka and Gentleman "gave it Scheme's lexical scoping in place of S's rules", which sides with ch18 in the ch02/ch18 discrepancy flagged under ch16-18.
 - Word counts: ch28 3760 to 3611 (two duplicated code blocks gone), ch29 4726 to 4343, ch30 4956 to 4457, ch31 3377 to 3141.
 
+## Notes from ch32-33
+
+- Factual fixes from running the code and checking sources. ch32 exercise 1 said a missing `@param` shows up as a NOTE; `R CMD check` reports "Undocumented arguments in Rd file" as a WARNING (verified with rcmdcheck 1.4.0 on a throwaway package under R 4.6.1; an undeclared `dplyr::` call and an unused `Imports` entry are WARNINGs too, a bare column name inside `dplyr::filter()` is the "no visible binding" NOTE). ch32 sent `.onLoad()`/`.onAttach()` to "R Packages (2e), chapter 10" (chapter 6, section 6.5.4). ch32 said `create_package()` writes `.Rbuildignore` and `.gitignore`; its body calls `use_directory("R")`, `proj_desc_create()`, `use_namespace()` and, only with `rstudio = TRUE`, `use_rstudio()`, which is what adds those two, so from plain R you get `R/`, `DESCRIPTION`, `NAMESPACE`. ch32 said the tidyverse follows semver "strictly" (the r-pkgs.org lifecycle chapter: "inspired by ... somewhat less regimented"), "roughly 50 tests" (r-pkgs.org: "over 50 individual checks"), "20,000+ packages" (`available.packages()` had 24,848 on 2026-09-05; now "close to 25,000"), and R-universe "binaries for all platforms" (Windows and macOS). ch33 cited "a 2019 study found that only 26% of published R-based analyses could be independently reproduced"; that is Trisovic, Lau, Pasquier and Crosas 2022 (*Scientific Data*): 9,000+ R files from 2,000+ Harvard Dataverse replication datasets, 2010 to 2020, 74% crashed, 56% after automated cleaning. The Baker 2016 *Nature* survey now carries its numbers (1,576 respondents, more than 70% failed to reproduce someone else's experiment, more than half their own). ch33 said R 3.6.0 "changed the default random number generator" and gave `set.seed(42, kind = "Mersenne-Twister", normal.kind = "Inversion")` as the fix; the change was `sample()`'s discrete-uniform method (`sample.kind`, per `?RNGkind`), and the fix is `set.seed(42, sample.kind = "Rounding")`. ch33's stack section and its renv section both said Docker is "beyond this book" while @sec-nix-docker covers it two sections later; both now point there. The targets graph colours (green up to date, blue outdated, red errored) were checked against `R/class_visual.R` in the targets repository.
+- Re-teaching and duplication removed: ch33's intro paragraph previewing all five tools (each has its own section); `_targets.R` was shown twice with different target names, now `R/functions.R` first and one `_targets.R` that sources it; `tar_visnetwork()` was described twice; the paths section explained project-root detection three times.
+- Show-before-name: ch32 opens Why packages with the `pak::pak()` install scene and defines a package after it; Dependencies opens with the bare `filter(data, x > 0)` ambiguity before `Imports` is named; the pure-function documentation remark moved below the roxygen example. ch33 shows `here::here()` before explaining root detection, and the targets functions before the pipeline that calls them.
+- Callouts added: ch32 "The lambda calculus connection" (namespace as a module-level closure, was main text); ch33 "Where Quarto comes from" (Knuth, WEB, Sweave, knitr, Quarto; situation first, name after, with the TeX-typesets-this-book pull).
+- Bullet-to-prose: ch32 the four package benefits, roxygen tags, testthat expectations, check levels, common check findings, sharing options, and the bold DESCRIPTION/NAMESPACE/Imports/Suggests/Depends/GitHub lead-ins; ch33 "why it breaks", the "why Git" bold bullets, commit/do-not-commit, the numbered stack list (the table stays), and the Docker/Nix lead-ins.
+- Cross-refs: ch32 namespace-as-environment now points at @sec-environments (was @sec-functions-returning-functions), and the anatomy section forward-refs @sec-roxygen2. ch33's targets section dropped the @sec-closures-and-scope sentence.
+- Cut: ch32 "the kind of friction that kills momentum", "a dictionary and a story", "the automated quality gate that catches mistakes you'd never notice yourself", "demoralizing and nearly impossible to debug", the closing "turns a two-day email chain into a single `pak::pak()` call", and three manufactured section-end pulls; ch33 "You will lose that bet", "The architecture guarantees drift", "The fix is structural, not behavioral", "Docker says ... Nix says ...", "Which layer you pin depends on how far the reproducibility guarantee needs to reach".
+- Tooling: `usethis::create_package()` refuses to run non-interactively anywhere under `C:/` on this box because the drive root is detected as a project ("would be nested inside an existing project 'C://'"); hand-write `DESCRIPTION`/`NAMESPACE`/`R/` for throwaway check packages. Nature article pages redirect to an IdP and cannot be fetched; arXiv and Wikipedia carried the same numbers.
+- Word counts: ch32 2968 to 2821, ch33 4029 to 3626.
+
 ## Files for the next session
 
-- `chapters/ch32-building-packages.qmd`
-- `chapters/ch33-reproducibility-and-workflow.qmd`
-- `chapters/foreword.qmd` and `chapters/afterword.qmd` after those
+- `chapters/foreword.qmd`
+- `chapters/afterword.qmd`
