@@ -351,7 +351,7 @@ acct$withdraw(30)
 acct$check()
 ```
 
-Three closures share a single environment containing one private variable, `balance`. From the outside, `acct` behaves like an object with methods; from the inside, it is functions closing over a shared environment. Closures are a poor man's objects, as the old Lisp line goes, and objects are a poor man's closures. R6 objects are built this way: each one is an environment, and its methods are functions whose enclosing environment is that same environment. @sec-s3-and-s7 explores where that equivalence leads.
+Three closures share a single environment containing one private variable, `balance`. From the outside, `acct` behaves like an object with methods; from the inside, it is functions closing over a shared environment. Scheme programmers have been trading the two readings since the early 1990s: Norman Adams is credited with "objects are a poor man's closures", Christian Queinnec's *Lisp in Small Pieces* has the reverse, and in 2003 Anton van Straaten folded both into a koan whose student is enlightened only once he accepts both at the same time. R6 objects work this way: each one is an environment, and its methods are closures that reach it through a variable named `self`.
 
 
 ### Exercises {.unnumbered}

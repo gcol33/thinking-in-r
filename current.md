@@ -169,6 +169,11 @@ Several chapters are dense and hard to read. A previous pass (commit 3d63e77) fi
 - ch02 line 86 ("Functions in S are first-class values with lexical scoping, exactly as in the `make_adder` example") fixed in the same session: S looks free variables up in the top-level workspace, `make_adder(2)` would not remember its 2, and the Auckland paragraph now lists Scheme's lookup rule among what Ihaka and Gentleman changed. This closes the ch02/ch18 discrepancy flagged under ch16-18.
 - Word counts: foreword 247 to 310, afterword 590 to 726 (situations for three name-drops, five cross-refs).
 
+## Notes from the ch09 and ch18 flags
+
+- ch09 line 160 said "Every environment is a hash table". Measured on R 4.6.1: `env.profile()` is `NULL` inside a function's execution environment and non-`NULL` for the global environment, a `new.env()`, and the stats namespace (`new.env(hash = FALSE)` is `NULL`). The paragraph now names the hashed ones and says a function frame is a plain list of bindings scanned in order; the chunk comment "R environments are hash tables" now says `new.env()`.
+- ch18 line 354 attributed "closures are a poor man's objects" to "the old Lisp line" (an earlier session had removed a Norvig attribution). Source read this session: Anton van Straaten's message to ll1-discuss, 4 June 2003 (people.csail.mit.edu/gregs/ll1-discuss-archive-html/msg03277.html), which credits Norman Adams with "objects are a poor man's closures" and Christian Queinnec's *Lisp in Small Pieces* with the reverse, and folds both into the Qc Na koan. The paragraph now says that. Its closing sentence, "@sec-s3-and-s7 explores where that equivalence leads", pointed at a chapter with no mention of closures or R6 and is gone; the R6 sentence now says methods reach the object through `self` (R6 methods' enclosing environment is a separate one holding `self` and `private`, not the object itself).
+
 ## Files for the next session
 
-- A whole-book read for the remaining flags: ch09 line 160 "every environment is a hash table" (function frames are unhashed); the ch18 "closures are a poor man's objects" line, which lost its Norvig attribution and may want a named source.
+- None open. The density pass and its flags are closed; the next pass, if any, is a whole-book read.

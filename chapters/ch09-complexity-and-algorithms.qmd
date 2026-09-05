@@ -157,10 +157,10 @@ lookup_chain(slots2, "missing", 10)
 
 In the worst case, every key hashes to the same slot, the chain has n entries, and lookup degrades to O(n). But a good hash function distributes keys evenly across slots, keeping each chain short: with n keys and n slots, the average chain length is 1, and lookup is O(1) on average.
 
-R uses exactly this mechanism for environments. Every environment is a hash table mapping names to values, so when you write `e$beta`, R hashes the string `"beta"`, jumps to the right slot, and returns the value. This is also why `match()`, `duplicated()`, `%in%`, `unique()`, and `table()` are fast: they build a temporary hash table internally, making membership tests O(1) per query instead of O(n).
+R uses exactly this mechanism for the environments that hold many names. The global environment, every package namespace, and any environment you make with `new.env()` are hash tables mapping names to values, so when you write `e$beta`, R hashes the string `"beta"`, jumps to the right slot, and returns the value. A function's execution environment, which usually holds a handful of names, is a plain list of bindings that R scans in order. This is also why `match()`, `duplicated()`, `%in%`, `unique()`, and `table()` are fast: they build a temporary hash table internally, making membership tests O(1) per query instead of O(n).
 
 ```{r}
-# R environments are hash tables
+# An environment made with new.env() is a hash table
 e <- new.env(hash = TRUE, parent = emptyenv())
 e$alpha <- 1
 e$beta  <- 2
