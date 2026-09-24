@@ -728,7 +728,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>x <span class="sc">*</span> x</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 9</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>It is tempting to think of <code>x</code> as a box that contains 3, and if you have used C or Python, that is exactly the model you carry around: the variable is a container, and assignment puts a value into it. In R, <code>x &lt;- 3</code> does not put 3 into a box; it attaches the label <code>x</code> to a value that already exists. The value 3 is out there. <code>x</code> is just a name for it.</p>
+<p>It is tempting to think of <code>x</code> as a box that contains 3 (especially if you have used C, or learned Python with this picture): the variable is a container, and assignment puts a value into it. In R, a more useful picture is a label attached to a value. When you write <code>x &lt;- 3</code>, you give the value <code>3</code> the name <code>x</code>. The value and its name are separate things. Whenever you use <code>x</code>, R looks up the value it refers to. If you later write <code>x &lt;- 5</code>, the label moves to a different value. The number <code>3</code> has not changed; <code>x</code> is simply a name for <code>5</code> now.</p>
 <p>Why does that distinction matter?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> x</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -837,7 +837,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sqrt</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (x)  .Primitive("sqrt")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>R prints the function itself. <code>sqrt</code> is a value, just like <code>3</code> or <code>"hello"</code>, and the parentheses are what make R run it. Keep the difference between the function and the call in mind; <a href="ch05-first-function.html#sec-functions-are-values" class="quarto-xref"><span>Section 5.4</span></a> is built on it.</p>
+<p>R prints the function itself. Like <code>3</code> or <code>"hello"</code>, a function is a value. Writing <code>sqrt</code> lets you see that value; writing <code>sqrt(9)</code> calls the function and gives it <code>9</code> to work on. The parentheses mark the call. Keep this distinction in mind: a function is something you can refer to by name, and a call asks it to do something. We’ll build on this idea in <a href="ch05-first-function.html#sec-functions-are-values" class="quarto-xref"><span>Section 5.4</span></a>.</p>
 <p>Functions can take multiple arguments. <code>log</code> computes a logarithm, and you can specify the base:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">log</span>(<span class="dv">8</span>, <span class="at">base =</span> <span class="dv">2</span>)</span>
@@ -864,7 +864,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>w</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 99</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Everything that happens in R is a function call. When you write <code>3 + 5</code>, R translates it to <code>`+`(3, 5)</code>: a function called <code>+</code>, applied to two arguments. There is no special syntax for arithmetic, no operators baked into the language at a level below functions. In the lambda calculus, the only thing you can do is apply a function to an argument. R took that idea literally.</p>
+<p>Function calls reach further into R than you might expect. When you write <code>3 + 5</code>, R treats it as a call to a function named <code>+</code>, with <code>3</code> and <code>5</code> as its arguments. You can even write the call directly as <code>`+`(3, 5)</code> and get the same result. The familiar arithmetic notation is special syntax, but underneath it is a function call. This connects to the idea we met in the lambda calculus: computation through applying functions to arguments. R carries that idea into everyday code, so even adding two numbers uses the same mechanism as calling <code>sqrt(9)</code>.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -903,7 +903,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">environment</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>R returns <code>&lt;environment: R_GlobalEnv&gt;</code>. You can pass it to <code>ls.str()</code> and get back every binding in it. The container that holds your names is itself a value with a name.</p>
+<p>R returns <code>&lt;environment: R_GlobalEnv&gt;</code>, which represents your global environment: the place where R keeps the names you have defined and the values they refer to. You can pass this environment to <code>ls.str()</code> to inspect those bindings. The container that holds your names is itself a value, so you can give it a name and pass it to functions too.</p>
 
 
 </section>

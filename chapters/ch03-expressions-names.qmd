@@ -88,7 +88,7 @@ x + 10
 x * x
 ```
 
-It is tempting to think of `x` as a box that contains 3, and if you have used C or Python, that is exactly the model you carry around: the variable is a container, and assignment puts a value into it. In R, `x <- 3` does not put 3 into a box; it attaches the label `x` to a value that already exists. The value 3 is out there. `x` is just a name for it.
+It is tempting to think of `x` as a box that contains 3 (especially if you have used C, or learned Python with this picture): the variable is a container, and assignment puts a value into it. In R, a more useful picture is a label attached to a value. When you write `x <- 3`, you give the value `3` the name `x`. The value and its name are separate things. Whenever you use `x`, R looks up the value it refers to. If you later write `x <- 5`, the label moves to a different value. The number `3` has not changed; `x` is simply a name for `5` now.
 
 Why does that distinction matter?
 
@@ -197,7 +197,7 @@ What happens if you type `sqrt` without parentheses?
 sqrt
 ```
 
-R prints the function itself. `sqrt` is a value, just like `3` or `"hello"`, and the parentheses are what make R run it. Keep the difference between the function and the call in mind; @sec-functions-are-values is built on it.
+R prints the function itself. Like `3` or `"hello"`, a function is a value. Writing `sqrt` lets you see that value; writing `sqrt(9)` calls the function and gives it `9` to work on. The parentheses mark the call. Keep this distinction in mind: a function is something you can refer to by name, and a call asks it to do something. We'll build on this idea in @sec-functions-are-values.
 
 Functions can take multiple arguments. `log` computes a logarithm, and you can specify the base:
 
@@ -233,7 +233,7 @@ So is `<-`:
 w
 ```
 
-Everything that happens in R is a function call. When you write `3 + 5`, R translates it to `` `+`(3, 5) ``: a function called `+`, applied to two arguments. There is no special syntax for arithmetic, no operators baked into the language at a level below functions. In the lambda calculus, the only thing you can do is apply a function to an argument. R took that idea literally.
+Function calls reach further into R than you might expect. When you write `3 + 5`, R treats it as a call to a function named `+`, with `3` and `5` as its arguments. You can even write the call directly as `` `+`(3, 5) `` and get the same result. The familiar arithmetic notation is special syntax, but underneath it is a function call. This connects to the idea we met in the lambda calculus: computation through applying functions to arguments. R carries that idea into everyday code, so even adding two numbers uses the same mechanism as calling `sqrt(9)`.
 
 
 ### Exercises {.unnumbered}
@@ -275,4 +275,4 @@ Try this:
 environment()
 ```
 
-R returns `<environment: R_GlobalEnv>`. You can pass it to `ls.str()` and get back every binding in it. The container that holds your names is itself a value with a name.
+R returns `<environment: R_GlobalEnv>`, which represents your global environment: the place where R keeps the names you have defined and the values they refer to. You can pass this environment to `ls.str()` to inspect those bindings. The container that holds your names is itself a value, so you can give it a name and pass it to functions too.

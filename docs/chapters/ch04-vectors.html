@@ -660,7 +660,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">42</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 42</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>That <code>[1]</code> has been there since Chapter 1, quietly announcing something you probably didn’t notice: you never made a number. You made a vector.</p>
+<p>That <code>[1]</code> has been there since Chapter 1. The <code>[1]</code> tells you that the first value printed on this line is element 1. In R, even a single number is a vector: typing <code>42</code> creates a vector with one element.</p>
 <section id="sec-no-scalars" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="sec-no-scalars"><span class="header-section-number">4.1</span> There are no scalars</h2>
 <p>Ask R how long a number is:</p>
@@ -672,8 +672,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="cn">TRUE</span>)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Each one has a length, and the length is 1. <code>42</code> is a numeric vector with one element, <code>"hello"</code> a character vector with one element, <code>TRUE</code> a logical vector with one element. Most languages keep a single number and a collection of numbers as two different kinds of thing, a scalar and an array. R has only the collection.</p>
-<p>Why would a language erase the distinction between “one thing” and “many things”? Because S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>), the language R descends from, was built for people who work with columns of data. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale, which means every operation you write, from arithmetic to comparison, has to reckon with that choice.</p>
+<p>Each one has a length, and the length is 1. <code>42</code> is a numeric vector with one element, <code>"hello"</code> a character vector with one element, <code>TRUE</code> a logical vector with one element. Most languages keep a single number and a collection of numbers as two different kinds of thing, a scalar and an array. In R, a single number is simply a vector of length 1.</p>
+<p>S (<a href="ch02-family-tree.html#sec-s-language" class="quarto-xref"><span>Section 2.3</span></a>), the language R descends from, was designed for statistical computing, where you often work with whole columns of data. You might have hundreds of temperature readings and want to convert them all from Celsius to Fahrenheit. Vectors let you write that calculation once and apply it to every reading. R inherited this design: arithmetic and comparisons work element by element along a vector.</p>
 <p><code>x * 2</code> works the same whether <code>x</code> has one element or a million, because <code>x</code> is always a vector and R needs no special case for scalars. But how do you build them?</p>
 </section>
 <section id="sec-atomic-vectors" class="level2" data-number="4.2">
@@ -697,8 +697,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 = c(c(58, 62, 55), c(75, 80, 71))
 = c(58, 62, 55, 75, 80, 71)
 = [58, 62, 55, 75, 80, 71]</code></pre>
-<p>Each step replaces a name or function call with its value. <code>morning</code> becomes <code>c(58, 62, 55)</code>, the nested <code>c()</code> calls flatten into one, and at the last step the computer takes over: R allocates a contiguous block of memory and stores six numbers side by side.</p>
-<p>This is the same term replacement that folded <code>add(3, add(5, 10))</code> down to <code>18</code> in <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>. Here, <code>c(morning, afternoon)</code> reduces to a six-element vector. Even building a data structure is a function call that reduces to a value.</p>
+<p>Each step replaces a name or function call with its value. <code>morning</code> becomes <code>c(58, 62, 55)</code>, the nested <code>c()</code> calls flatten into one, and R creates a vector containing all six numbers.</p>
+<p>In <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>, we evaluated <code>add(3, add(5, 10))</code> by replacing each function call with its result until we reached <code>18</code>. The same process applies to <code>c(morning, afternoon)</code>: the function call returns a vector containing the six values.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -740,8 +740,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(<span class="cn">TRUE</span>)</span>
 <span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "logical"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>These are the four atomic types you will use constantly. <code>double</code> is a decimal number (even <code>42</code> is stored as a double by default), while <code>integer</code> needs an <code>L</code> suffix: <code>42L</code>. <code>character</code> is text, <code>logical</code> is <code>TRUE</code> or <code>FALSE</code>. Two more types, <code>complex</code> and <code>raw</code>, exist for specialized work; you can ignore them.</p>
-<p>Every element in a vector must be the same type. But what happens when you try to break that rule?</p>
+<p>These are the four atomic types you will use most often. <code>double</code> stores numbers in floating-point form, including <code>42</code> by default. To write an <code>integer</code>, add an <code>L</code> suffix: <code>42L</code>. <code>character</code> stores text, and <code>logical</code> stores <code>TRUE</code> or <code>FALSE</code>. Two further types, <code>complex</code> and <code>raw</code>, are used for specialized work.</p>
+<p>Every element in an atomic vector must have the same type. What happens if you combine values of different types?</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -782,7 +782,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>R will never warn you about coercion. <code>c(1, 2, "3")</code> quietly becomes all character, and your arithmetic breaks ten lines later with an error message that points nowhere near the real problem. Memorize the hierarchy: logical &lt; integer &lt; double &lt; character. It will save you hours.</p>
+<p>Combining types with <code>c()</code> can change your values without a warning. <code>c(1, 2, "3")</code> produces the character vector <code>c("1", "2", "3")</code>, so trying to add or multiply its elements gives an error. For these four types, coercion follows the order logical &lt; integer &lt; double &lt; character: all elements are converted to the furthest type along that sequence.</p>
 </div>
 </div>
 <div id="fig-coercion" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -806,38 +806,34 @@ Figure&nbsp;4.1: R’s coercion hierarchy: mixing types promotes everything to t
 </section>
 <section id="sec-vectorized-ops" class="level2" data-number="4.4">
 <h2 data-number="4.4" class="anchored" data-anchor-id="sec-vectorized-ops"><span class="header-section-number">4.4</span> Vectorized operations</h2>
-<p>Say you have five temperatures in Fahrenheit and want Celsius. In most languages, you write a loop: go through each element, apply the formula, store the result. In R:</p>
+<p>Say you have five temperatures in Fahrenheit and want to convert them to Celsius:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>temperatures <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">61</span>, <span class="dv">90</span>, <span class="dv">78</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>(temperatures <span class="sc">-</span> <span class="dv">32</span>) <span class="sc">*</span> <span class="dv">5</span><span class="sc">/</span><span class="dv">9</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>(temperatures <span class="sc">-</span> <span class="dv">32</span>) <span class="sc">*</span> <span class="dv">5</span> <span class="sc">/</span> <span class="dv">9</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 22.22222 29.44444 16.11111 32.22222 25.55556</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>One expression, no loop. The subtraction, multiplication, and division each apply to every element at once. This is a <em>vectorized operation</em>, and it is the default way of working in R.</p>
-<p>Comparisons are vectorized too:</p>
+<p>R subtracts 32 from each temperature, multiplies each result by 5, and divides by 9. An operation that works element by element on a vector is called a <em>vectorized operation</em>.</p>
+<p>Comparisons work element by element too:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>temperatures <span class="sc">&gt;</span> <span class="dv">75</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE  TRUE FALSE  TRUE  TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The result is a logical vector of the same length: <code>TRUE</code> where the condition holds, <code>FALSE</code> where it doesn’t.</p>
-<p>You can combine comparisons with <code>&amp;</code> (and) and <code>|</code> (or):</p>
+<p>The result is a logical vector with one value for each temperature: <code>TRUE</code> where the condition holds, <code>FALSE</code> where it doesn’t.</p>
+<p>You can combine comparisons with <code>&amp;</code> (and) and <code>|</code> (or). To check which temperatures are above 60 and below 85:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>temperatures <span class="sc">&gt;</span> <span class="dv">60</span> <span class="sc">&amp;</span> temperatures <span class="sc">&lt;</span> <span class="dv">85</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  TRUE FALSE  TRUE FALSE  TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Arithmetic, comparisons, and most built-in functions all work this way, returning a vector of the same length for each input vector. <code>sqrt()</code>, <code>log()</code>, <code>round()</code>, <code>abs()</code>: give them a vector and they return a vector.</p>
+<p>Functions such as <code>sqrt()</code>, <code>log()</code>, <code>round()</code>, and <code>abs()</code> also return one result for each input element:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">9</span>, <span class="dv">16</span>, <span class="dv">25</span>))</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1 2 3 4 5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Written as term replacement, with <code>f</code> standing for <code>sqrt</code>, the call unfolds like this:</p>
-<pre><code>f = λx. √x
-
-f(c(1, 4, 9, 16, 25))
-= c(f(1), f(4), f(9), f(16), f(25))          # distribute f over the vector
-= c((λx. √x)(1), (λx. √x)(4), ..., (λx. √x)(25))  # replace f with its definition
-= c(√1, √4, √9, √16, √25)                   # substitute each x
+<p>We can describe this element-by-element calculation using the notation from <a href="ch01-two-models.html#sec-church" class="quarto-xref"><span>Section 1.2</span></a>. Let <code>f = λx. √x</code>, a function that takes one number and returns its square root:</p>
+<pre class="text"><code>c(f(1), f(4), f(9), f(16), f(25))
+= c(√1, √4, √9, √16, √25)
 = c(1, 2, 3, 4, 5)</code></pre>
-<p>R distributes the function over the vector automatically; you write one application, R performs five. This is Church’s model extended to collections: a function applied to a vector produces a vector of results. <code>sqrt(c(1, 4, 9, 16, 25))</code> is a single function applied to a single argument, and the fact that the argument contains five numbers is R’s business, not yours.</p>
+<p>Each call to <code>f</code> reduces to a value, and those values form the result vector. R’s <code>sqrt()</code> implements this calculation for a whole vector in a single call. Vectorization is a property of the function: when you write your own functions, their behavior on vectors depends on the operations you use inside them.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -914,7 +910,7 @@ f(c(1, 4, 9, 16, 25))
 </section>
 <section id="sec-indexing" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="sec-indexing"><span class="header-section-number">4.5</span> Indexing</h2>
-<p>You often need specific elements from a vector, and the <code>[</code> operator extracts them. The simplest way is by position:</p>
+<p>Use <code>[</code> to extract elements from a vector by their position:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>temperatures <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">61</span>, <span class="dv">90</span>, <span class="dv">78</span>)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>temperatures[<span class="dv">1</span>]</span>
@@ -932,7 +928,7 @@ f(c(1, 4, 9, 16, 25))
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>temperatures[temperatures <span class="sc">&gt;</span> <span class="dv">75</span>]</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 85 90 78</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>temperatures &gt; 75</code> produces <code>c(FALSE, TRUE, FALSE, TRUE, TRUE)</code>, and <code>[</code> keeps only the <code>TRUE</code> elements. You’re asking a yes/no question of every element and keeping the ones that pass. This is filtering, and it will come back in a more powerful form when you learn <code>dplyr::filter()</code> (<a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>).</p>
+<p><code>temperatures &gt; 75</code> produces <code>c(FALSE, TRUE, FALSE, TRUE, TRUE)</code>. Used inside <code>[</code>, this logical vector selects the temperatures at positions marked <code>TRUE</code>: 85, 90, and 78. This is called filtering. In <a href="ch14-data-transformation.html" class="quarto-xref"><span>Chapter 14</span></a>, you’ll use <code>dplyr::filter()</code> to select rows from a data frame using conditions.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>hot <span class="ot">&lt;-</span> temperatures <span class="sc">&gt;</span> <span class="dv">75</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>temperatures[hot]</span>
@@ -955,7 +951,7 @@ f(c(1, 4, 9, 16, 25))
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>x</span>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10 99 30</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This looks like it’s changing the vector in place, but R is actually making a copy with the new value and pointing the name <code>x</code> at the copy. The old vector (with 20 in position 2) is gone. This is copy-on-modify, the same idea from <a href="ch03-expressions-names.html#sec-names-binding" class="quarto-xref"><span>Section 3.2</span></a>: values in R don’t change; names get moved to point at new values. So far, every element in our vectors has been present and accounted for, but real data has gaps.</p>
+<p>The assignment updates the second element of <code>x</code>. If another name refers to the same vector, R copies it before making the change, so the other name retains the original values. This is copy-on-modify, introduced in <a href="ch03-expressions-names.html#sec-names-binding" class="quarto-xref"><span>Section 3.2</span></a>. When R can safely modify a vector in place, it may avoid the copy. Next, we’ll look at vectors with missing values.</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -1004,7 +1000,7 @@ f(c(1, 4, 9, 16, 25))
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This returns <code>NA</code>, not <code>TRUE</code>. Think about it: if you don’t know what <code>x</code> is and you don’t know what <code>y</code> is, you can’t know whether they’re equal. Always use <code>is.na()</code>.</p>
-<p>Behind every one of these results is a single rule: a value is either present or absent, and any operation on an absent value produces absence. R threads that rule through every arithmetic and comparison operation automatically, which is why <code>NA</code> feels contagious. It is. That’s the point.</p>
+<p><code>NA</code> represents a missing value. Adding a number to it or comparing it with another value usually returns <code>NA</code>, because the result depends on information you don’t have. Some operations can still give a definite answer: <code>FALSE &amp; NA</code> returns <code>FALSE</code>, whatever the missing value might be.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -1023,7 +1019,7 @@ f(c(1, 4, 9, 16, 25))
 </div>
 </div>
 </div>
-<p>The question is what this contagion looks like when you have 344 measurements and a handful of gaps.</p>
+<p>What happens when we apply these operations to 344 measurements, some of which are missing?</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1035,13 +1031,13 @@ f(c(1, 4, 9, 16, 25))
 </section>
 <section id="sec-meet-penguins" class="level2" data-number="4.7">
 <h2 data-number="4.7" class="anchored" data-anchor-id="sec-meet-penguins"><span class="header-section-number">4.7</span> Meet penguins</h2>
-<p>R 4.5 and later includes a dataset called <code>penguins</code> (from the Palmer Archipelago in Antarctica), and it’s a good place to see everything from this chapter working on real measurements. If you’re running an older version, install it with <code>install.packages("palmerpenguins")</code> and load it with <code>library(palmerpenguins)</code>.</p>
+<p>The <code>penguins</code> dataset contains measurements of penguins from the Palmer Archipelago in Antarctica. We’ll use it to apply what you’ve learned in this chapter. It is part of the <code>datasets</code> package, which is attached in every R session from version 4.5 on, so this chapter needs R 4.5 or later.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(penguins)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>penguins</code> is a data frame (a table), and we’ll learn about those properly in <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>. For now, the important thing is that you can pull out a single column with <code>$</code>, and that column is a vector:</p>
+<p><code>penguins</code> is a data frame, R’s way of storing a table. We’ll cover data frames in <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>. For now, use <code>$</code> to extract a column as a vector:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>bill <span class="ot">&lt;-</span> penguins<span class="sc">$</span>bill_length_mm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>bill <span class="ot">&lt;-</span> penguins<span class="sc">$</span>bill_len</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Now you have a numeric vector of 344 bill length measurements, with some <code>NA</code>s mixed in. Everything from this chapter applies:</p>
 <div class="cell">
@@ -1059,12 +1055,12 @@ f(c(1, 4, 9, 16, 25))
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>long_bills <span class="ot">&lt;-</span> bill[bill <span class="sc">&gt;</span> <span class="dv">50</span> <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(bill)]</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(long_bills)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>How many penguins have a bill longer than 50 mm? Logical indexing filters the values, <code>is.na()</code> handles missing data, and <code>length()</code> counts the result. One line each, no loops. You wrote five operations in this chapter that would each require explicit iteration in most languages; in R, the vector carried the iteration for you. Data frames (<a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>) are built from exactly these vectors, stacked side by side like columns in a spreadsheet.</p>
+<p>How many penguins have a bill longer than 50 mm? Use <code>is.na()</code> to identify missing measurements, logical indexing to select bills longer than 50 mm, and <code>length()</code> to count them. Each operation works on a vector, so you can combine them to answer a question about the measurements. In <a href="ch11-data-frames.html" class="quarto-xref"><span>Chapter 11</span></a>, we’ll work with data frames, which organize vectors of equal length into columns.</p>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
-<li>What is the mean body mass (<code>penguins$body_mass_g</code>) of the penguins? Don’t forget the <code>NA</code>s.</li>
-<li>How many penguins have a flipper length (<code>penguins$flipper_length_mm</code>) greater than 200?</li>
+<li>What is the mean body mass (<code>penguins$body_mass</code>) of the penguins? Don’t forget the <code>NA</code>s.</li>
+<li>How many penguins have a flipper length (<code>penguins$flipper_len</code>) greater than 200?</li>
 <li>What is the shortest bill in the dataset? (Hint: <code>min()</code> with <code>na.rm = TRUE</code>.)</li>
 </ol>
 

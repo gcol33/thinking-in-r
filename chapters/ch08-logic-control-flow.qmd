@@ -434,7 +434,7 @@ Prefer `dplyr::case_when()` over nested `ifelse()`. Nesting `ifelse()` calls cre
 ### Exercises {.unnumbered}
 
 1. Use `ifelse()` to replace negative values in `c(-3, 5, -1, 8, 0)` with zero.
-2. Use `dplyr::case_when()` to classify `penguins$body_mass_g` into `"light"` (under 3500), `"medium"` (3500-5000), and `"heavy"` (over 5000). Don't forget `NA`s.
+2. Use `dplyr::case_when()` to classify `penguins$body_mass` into `"light"` (under 3500), `"medium"` (3500-5000), and `"heavy"` (over 5000). Don't forget `NA`s.
 3. What happens if no condition matches in `case_when()`? Test it.
 
 

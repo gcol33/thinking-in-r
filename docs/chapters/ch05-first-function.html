@@ -113,6 +113,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../custom.css">
 </head>
@@ -658,14 +687,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p><code>sqrt(9)</code>, <code>c(1, 2, 3)</code>, <code>sum(x &gt; 70)</code>: every piece of R code so far has relied on functions that someone else wrote. This chapter shows you how to write your own.</p>
+<p>So far, the functions you have called, including <code>sqrt()</code>, <code>c()</code>, and <code>sum()</code>, were written by someone else. You can write functions of your own and use them in the same way.</p>
 <section id="sec-anatomy-function" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="sec-anatomy-function"><span class="header-section-number">5.1</span> Anatomy of a function</h2>
 <p>Here is a function that doubles its input:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>double <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">*</span> <span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Three parts. <code>function(x)</code> declares one parameter called <code>x</code>; the body, <code>x * 2</code>, is the expression R evaluates when you call the function; and <code>double</code> is the name you are binding this function to, the same way <code>x &lt;- 3</code> binds a name to a number. What you pass in when you call it is the argument.</p>
+<p><code>function(x)</code> creates a function with one parameter, <code>x</code>. Its body, <code>x * 2</code>, tells R what to calculate when you call it. The assignment binds the name <code>double</code> to the function, just as <code>x &lt;- 3</code> binds the name <code>x</code> to a number. When you call <code>double(5)</code>, the value <code>5</code> is the argument supplied to the parameter <code>x</code>.</p>
 <p>Call it:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">double</span>(<span class="dv">5</span>)</span>
@@ -675,8 +704,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">double</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>))</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2 4 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The second call works because <code>*</code> is vectorized (<a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>): the body <code>x * 2</code> already operates element by element, so <code>double</code> handles vectors without a loop, without any extra effort on your part. But what happens when the body grows beyond a single expression?</p>
-<p>A function with a longer body uses curly braces:</p>
+<p>The second call works because <code>*</code> is vectorized (<a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>): <code>x * 2</code> multiplies each element by two. A function’s body can also contain several expressions, enclosed in curly braces:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>describe <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(x)</span>
@@ -687,7 +715,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="fu">c</span>(<span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">61</span>, <span class="dv">90</span>, <span class="dv">78</span>))</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "n = 5 , mean = 77.2"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The body is a block of expressions that R evaluates in order, returning the value of the last one. This is the same rule from <a href="ch03-expressions-names.html#sec-expressions-all-the-way" class="quarto-xref"><span>Section 3.3</span></a>: a block in curly braces is itself an expression, and its value is whatever the final line produces.</p>
+<p>R evaluates the expressions in order: it assigns the length of <code>x</code> to <code>n</code>, assigns the mean to <code>m</code>, and then combines them into a string. That string is the function’s return value. The rule is the same as in <a href="ch03-expressions-names.html#sec-expressions-all-the-way" class="quarto-xref"><span>Section 3.3</span></a>: a block in curly braces is itself an expression whose value comes from the last expression evaluated.</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -719,8 +747,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(<span class="at">greeting =</span> <span class="st">"Bonjour"</span>, <span class="at">name =</span> <span class="st">"R"</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Bonjour R"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>This is the same positional-versus-named distinction from <a href="ch03-expressions-names.html#sec-calling-functions" class="quarto-xref"><span>Section 3.4</span></a>, when we used <code>log(8, base = 2)</code>. The rule is uniform across R because function calls all work the same way, whether you wrote the function or someone at R Core did.</p>
-<p>Some functions accept a variable number of arguments using <code>...</code> (pronounced “dot-dot-dot”):</p>
+<p>Arguments match by position or name, just as they did in <code>log(8, base = 2)</code> in <a href="ch03-expressions-names.html#sec-calling-functions" class="quarto-xref"><span>Section 3.4</span></a>. You use the same calling syntax for your own functions and those supplied with R.</p>
+<p>A function can also accept a variable number of arguments through <code>...</code> (pronounced “dot-dot-dot”):</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>shout <span class="ot">&lt;-</span> <span class="cf">function</span>(...) {</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  words <span class="ot">&lt;-</span> <span class="fu">c</span>(...)</span>
@@ -760,27 +788,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="sec-return-values" class="level2" data-number="5.3">
 <h2 data-number="5.3" class="anchored" data-anchor-id="sec-return-values"><span class="header-section-number">5.3</span> Return values</h2>
-<p>R returns the value of the last expression in the body. No keyword needed:</p>
+<p>R returns the value of the last expression evaluated in a function’s body:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>add_one <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">add_one</span>(<span class="dv">10</span>)</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The body is <code>x + 1</code>. R evaluates it and returns the result. A function call is an expression that evaluates to a value, like every other expression in R (<a href="ch03-expressions-names.html#sec-expressions-all-the-way" class="quarto-xref"><span>Section 3.3</span></a>).</p>
-<p>When you call <code>add_one(10)</code>, R substitutes <code>10</code> for <code>x</code> in the body, turning <code>x + 1</code> into <code>10 + 1</code>, then evaluates it. The lambda calculus calls this <em>beta reduction</em>: <code>(λx. x + 1)(10)</code> reduces to <code>10 + 1</code>. Every function call in R is a beta reduction.</p>
-<p>R does have a <code>return()</code> function, and it is useful for early exits:</p>
+<p>The body contains one expression, <code>x + 1</code>, so its value becomes the result of the call. You can assign that result to a name or use it in another calculation:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>safe_log <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">any</span>(x <span class="sc">&lt;=</span> <span class="dv">0</span>)) <span class="fu">return</span>(<span class="cn">NA</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">log</span>(x)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="dv">5</span>)</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 1.609438</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="fu">safe_log</span>(<span class="sc">-</span><span class="dv">1</span>)</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>answer <span class="ot">&lt;-</span> <span class="fu">add_one</span>(<span class="dv">10</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>answer <span class="sc">*</span> <span class="dv">2</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 22</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">add_one</span>(<span class="dv">8</span>))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>If <code>x</code> has any non-positive values, the function exits immediately and returns <code>NA</code>. Otherwise, it falls through to <code>log(x)</code>.</p>
+<p>In <code>sqrt(add_one(8))</code>, <code>add_one(8)</code> produces <code>9</code>, which <code>sqrt()</code> uses to calculate <code>3</code>. This follows the idea from <a href="ch03-expressions-names.html#sec-expressions-all-the-way" class="quarto-xref"><span>Section 3.3</span></a>: a function call is an expression, and its value can become part of a larger expression.</p>
+<p>The same rule applies to a body with several expressions:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>add_one <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  result</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The assignment creates a local name, <code>result</code>. The final expression retrieves its value, which the function returns. You choose what comes back by choosing what the function evaluates last.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The lambda calculus connection
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In the lambda calculus, applying a function replaces its parameter with the supplied argument. For this example,</p>
+<p><span class="math display">\[
+(\lambda x.\, x + 1)(10) \;\longrightarrow\; 10 + 1 \;\longrightarrow\; 11.
+\]</span></p>
+<p>The first step is called <em>beta reduction</em>. It gives us a mathematical way to follow the calculation: substitute the argument, then evaluate the resulting expression.</p>
+<p>R carries out the call through an evaluation environment where the parameter <code>x</code> is bound to the supplied argument. The body remains <code>x + 1</code>; evaluating <code>x</code> provides the value needed for the calculation. We will examine these environments and R’s lazy evaluation in later chapters.</p>
+</div>
+</div>
+</div>
+<p>You can also use <code>return()</code> to finish a function at a particular point. When R reaches it, the call ends immediately with the supplied value:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>first_value <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(x) <span class="sc">==</span> <span class="dv">0</span>) {</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="cn">NA</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  x[<span class="dv">1</span>]</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">first_value</span>(<span class="fu">c</span>(<span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">61</span>))</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 72</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="fu">first_value</span>(<span class="fu">numeric</span>(<span class="dv">0</span>))</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>For an empty vector, <code>return(NA)</code> ends the call inside the <code>if</code> block. For a vector with elements, evaluation continues to <code>x[1]</code>, whose value the function returns. This is an <em>early return</em>: it handles a case before execution reaches the end of the body.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -791,73 +859,71 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Use <code>return()</code> only for early exits like <code>safe_log</code> above. If the function runs to the end, let the last expression be the return value; writing <code>return(x)</code> on the last line adds nothing but noise.</p>
+<p>Use <code>return()</code> only for early exits like the one in <code>first_value</code> above. If the function runs to the end, let the last expression be the return value; writing <code>return(x)</code> on the last line adds nothing but noise.</p>
 </div>
 </div>
 <p>One subtlety: assignment returns its value invisibly. When a function’s last line is an assignment, R returns the value but does not print it:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>quiet <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">quiet</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>quiet <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">quiet</span>(<span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Nothing printed. The function returned 6, but invisibly. If you want to see it:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>(<span class="fu">quiet</span>(<span class="dv">5</span>))</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>(<span class="fu">quiet</span>(<span class="dv">5</span>))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Or store it:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">quiet</span>(<span class="dv">5</span>)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>y</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>stored <span class="ot">&lt;-</span> <span class="fu">quiet</span>(<span class="dv">5</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>stored</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The general rule: if you want your function to show a result, make sure the last expression is the value itself, not an assignment. But there is a deeper question lurking here: if a function is just a value, can you treat it the way you treat a number or a string?</p>
 <section id="exercises-2" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-2">Exercises</h3>
 <ol type="1">
 <li><p>What does this function return? Predict, then check:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>mystery <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> a <span class="sc">*</span> <span class="dv">2</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  b</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mystery</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>mystery <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> a <span class="sc">*</span> <span class="dv">2</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  b</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="fu">mystery</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>What about this one?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>mystery2 <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> a <span class="sc">*</span> <span class="dv">2</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mystery2</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>mystery2 <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">&lt;-</span> x <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> a <span class="sc">*</span> <span class="dv">2</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mystery2</span>(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 <li><p>Write a function <code>clamp</code> that takes a value <code>x</code>, a <code>lo</code>, and a <code>hi</code>, and returns <code>lo</code> if <code>x &lt; lo</code>, <code>hi</code> if <code>x &gt; hi</code>, and <code>x</code> otherwise. Use <code>return()</code> for the early exits.</p></li>
 </ol>
 </section>
 </section>
 <section id="sec-functions-are-values" class="level2" data-number="5.4">
 <h2 data-number="5.4" class="anchored" data-anchor-id="sec-functions-are-values"><span class="header-section-number">5.4</span> Functions are just values</h2>
-<p>Type <code>sqrt</code> without parentheses and R prints the function itself, not a result. A function is a value, the same kind of thing as a number or a string: you can assign it, put it in a list, or interrogate its type.</p>
+<p>Type <code>sqrt</code> without parentheses and R prints the function itself. Functions are values: you can assign them to names, store them in lists, and inspect their types.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> double</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>(<span class="dv">5</span>)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> double</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>(<span class="dv">5</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">is.function</span>(double)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(double)</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "closure"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">is.function</span>(double)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(double)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "closure"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><code>double</code> is a name bound to a value, and that value happens to be a function. <code>f &lt;- double</code> gives the same function a second name, which is exactly what happened in <a href="ch03-expressions-names.html#sec-names-binding" class="quarto-xref"><span>Section 3.2</span></a> when <code>y &lt;- x</code> gave the number 3 a second name.</p>
-<p>You can even create a function without giving it a name at all:</p>
+<p><code>double</code> is a name bound to a function. The assignment <code>f &lt;- double</code> binds a second name to that same function, just as <code>y &lt;- x</code> in <a href="ch03-expressions-names.html#sec-names-binding" class="quarto-xref"><span>Section 3.2</span></a> bound a second name to the number <code>3</code>. The type <code>"closure"</code> describes a function together with the environment in which it was created. We will look at what that environment does shortly.</p>
+<p>You can also create a function and call it without assigning it a name:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>(<span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span>)(<span class="dv">10</span>)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>function(x) x + 1</code> creates a function; the parentheses around it and <code>(10)</code> immediately call it with the argument <code>10</code>. This is an <em>anonymous function</em>, <code>λx. x + 1</code> applied to <code>10</code>, and <a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a> uses them heavily.</p>
-<p>You can do anything with a function that you can do with a number: store it in a variable, pass it to another function, return it as a result. This is what McCarthy built into Lisp in 1958 (<a href="ch02-family-tree.html#sec-lisp" class="quarto-xref"><span>Section 2.1</span></a>), and R inherits it directly. So functions are values, and values live somewhere. Where do the variables inside a function live?</p>
+<p>The expression <code>function(x) x + 1</code> creates the function. The surrounding parentheses group that expression, and the following <code>(10)</code> calls the resulting function with the argument <code>10</code>. A function used without a name is called an <em>anonymous function</em>. This example corresponds to applying <code>λx. x + 1</code> to <code>10</code>; in <a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a>, we will pass anonymous functions to other functions.</p>
+<p>Functions can also be returned as results. Together, these uses make functions <em>first-class values</em>: they can be stored, passed, and returned just like numbers or strings. When a function runs, its parameters and local variables need bindings of their own. Where are those bindings kept?</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">
@@ -882,7 +948,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>y</code> was created inside <code>add_ten</code>. Can you access it from outside?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>y</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! object 'y' not found</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>No.&nbsp;Variables created inside a function live in the function’s own local environment and vanish when the function finishes. This is what makes functions safe: they do not leak their internal state into your workspace. But the boundary is not symmetric.</p>
 <div class="cell">
@@ -895,8 +962,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="fu">scale</span>(<span class="dv">10</span>)</span>
 <span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 30</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>scale</code> found <code>multiplier</code> in the workspace because it was not defined inside the function body. R looks for names first in the local environment, then in the environment where the function was defined, a strategy called lexical scoping that R inherited from Scheme (<a href="ch02-family-tree.html#sec-scheme" class="quarto-xref"><span>Section 2.2</span></a>).</p>
-<p>If a function can read outer variables, can it change them?</p>
+<p>When <code>scale</code> uses <code>multiplier</code>, R first looks for a local binding inside the running function. It then searches the environment where <code>scale</code> was defined and continues through enclosing environments until it finds the name. Here, it finds <code>multiplier</code> in the workspace. This lookup rule is called <em>lexical scoping</em>, which R inherited from Scheme (<a href="ch02-family-tree.html#sec-scheme" class="quarto-xref"><span>Section 2.2</span></a>). What happens when a function assigns to a name that already exists in the workspace?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -986,8 +1052,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="fu">factorial</span>(<span class="dv">5</span>)</span>
 <span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 120</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>factorial(5)</code> calls <code>factorial(4)</code>, which calls <code>factorial(3)</code>, and so on, until <code>factorial(0)</code> returns 1 and the whole chain collapses back:</p>
-<pre><code>factorial(5)
+<p><code>factorial(5)</code> calls <code>factorial(4)</code>, which calls <code>factorial(3)</code>, and so on, until <code>factorial(0)</code> returns <code>1</code>. Each call waits for the next to return before completing its multiplication:</p>
+<pre class="text"><code>factorial(5)
 = 5 * factorial(4)
 = 5 * 4 * factorial(3)
 = 5 * 4 * 3 * factorial(2)
@@ -995,20 +1061,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 = 5 * 4 * 3 * 2 * 1 * factorial(0)
 = 5 * 4 * 3 * 2 * 1 * 1
 = 120</code></pre>
-<p>This is <em>recursion</em>: a function defined in terms of itself. Look at the unfolding carefully. Each line replaces a function call with its value, the same term replacement from <a href="ch04-vectors.html#sec-atomic-vectors" class="quarto-xref"><span>Section 4.2</span></a>, and no variable is being updated, no counter is ticking. The answer was implicit in the original expression <code>factorial(5)</code>; evaluation simply made it explicit.</p>
+<p>A function calling itself is called <em>recursion</em>. Each call has its own local environment and its own binding for <code>n</code>. The call with <code>n = 5</code> waits for the result of the call with <code>n = 4</code>, which waits for the next. At <code>n = 0</code>, the function returns <code>1</code> directly. This is the <em>base case</em>, where the recursive calls stop. The waiting calls then finish their multiplications in reverse order, returning <code>1</code>, <code>2</code>, <code>6</code>, <code>24</code>, and finally <code>120</code>.</p>
 <div id="fig-factorial-stack" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-factorial-stack-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="../images/factorial_stack.png" class="img-fluid figure-img" style="width:100.0%">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-factorial-stack-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;5.1: Recursive call stack for <code>factorial(5)</code>: each frame waits for the one below it. No variable changes; each frame holds its own <code>n</code>.
+Figure&nbsp;5.1: Recursive calls for <code>factorial(5)</code>. Each call holds its own <code>n</code> and waits for the next call to return.
 </figcaption>
 </figure>
 </div>
-<p>This is how the lambda calculus handles repetition. There is no loop counter; the function calls itself with a smaller argument until it stops.</p>
+<p>The expansion above lets us follow the calculation by replacing each call with the expression its body computes. Recursion also expresses repetition in the lambda calculus; we will explore that connection further when we reach fixed points.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1017,7 +1083,7 @@ Figure&nbsp;5.1: Recursive call stack for <code>factorial(5)</code>: each frame 
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>In lambda calculus notation, factorial looks like this:</p>
 <pre><code>fact = λn. if n = 0 then 1 else n * fact(n - 1)</code></pre>
@@ -1026,7 +1092,7 @@ Figure&nbsp;5.1: Recursive call stack for <code>factorial(5)</code>: each frame 
 FALSE = λx. λy. y      # a function that takes two arguments and returns the second
 IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 <p><code>IF</code> hands both options to the condition and lets it choose, so <code>IF(TRUE)(1)(2)</code> becomes <code>TRUE(1)(2)</code> becomes <code>(λx. λy. x)(1)(2)</code> becomes <code>1</code>. <a href="ch30-r-as-mathematics.html#sec-church-booleans" class="quarto-xref"><span>Section 30.2</span></a> builds these in R.</p>
-<p>With the shorthand in place, the reduction works as before, one substitution at a time:</p>
+<p>With the shorthand in place, we can unfold the definition and substitute the argument, one step at a time:</p>
 <pre><code>fact(3)                                     # apply fact with n = 3
 = (λn. if n=0 then 1 else n * fact(n-1))(3) # replace fact with its definition
 = if 3=0 then 1 else 3 * fact(3-1)          # substitute n = 3
@@ -1039,6 +1105,7 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 </div>
 </div>
 </div>
+<p>For factorial, each call makes one recursive call. The Fibonacci sequence gives us an example where each call makes two:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>fibonacci <span class="ot">&lt;-</span> <span class="cf">function</span>(n) {</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">&lt;=</span> <span class="dv">1</span>) <span class="fu">return</span>(n)</span>
@@ -1048,8 +1115,9 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 <span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="fu">fibonacci</span>(<span class="dv">10</span>)</span>
 <span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 55</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>fibonacci(30)</code> is already slow, because the function recomputes the same values over and over: <code>fibonacci(10)</code> calls <code>fibonacci(9)</code> and <code>fibonacci(8)</code>, but <code>fibonacci(9)</code> also calls <code>fibonacci(8)</code>, so that subtree gets computed twice. Further down, <code>fibonacci(7)</code> gets computed three times, <code>fibonacci(6)</code> five times, and the work grows exponentially. Is there a way to keep the recursive structure without paying the exponential cost?</p>
-<p>A smarter version avoids this by carrying the last two values forward as arguments:</p>
+<p>Each Fibonacci number is the sum of the preceding two, starting with <code>0</code> and <code>1</code>. The function follows this definition directly. To calculate <code>fibonacci(10)</code>, it calculates <code>fibonacci(9)</code> and <code>fibonacci(8)</code>. Calculating <code>fibonacci(9)</code> requires another calculation of <code>fibonacci(8)</code>, repeating all the work that call involves.</p>
+<p>These repetitions multiply: <code>fibonacci(8)</code> is computed twice, <code>fibonacci(7)</code> three times, and <code>fibonacci(6)</code> five times. The number of calls grows exponentially with <code>n</code>, so even a modest increase in the input can make the calculation much slower.</p>
+<p>We can calculate each value once by carrying the two most recent Fibonacci numbers forward as arguments:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>fibonacci_fast <span class="ot">&lt;-</span> <span class="cf">function</span>(n, <span class="at">a =</span> <span class="dv">0</span>, <span class="at">b =</span> <span class="dv">1</span>) {</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">==</span> <span class="dv">0</span>) <span class="fu">return</span>(a)</span>
@@ -1061,21 +1129,21 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 <span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="fu">fibonacci_fast</span>(<span class="dv">50</span>)</span>
 <span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 12586269025</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The naive version cannot compute <code>fibonacci(50)</code> in any reasonable time; this one handles it instantly. Instead of branching into two recursive calls, <code>fibonacci_fast</code> makes one call per step, passing the accumulated values along. Watch the reduction:</p>
+<p>The naive version needs an exponential number of calls, so <code>fibonacci(50)</code> would not finish in any reasonable time. <code>fibonacci_fast(50)</code> returns immediately, because each call makes a single recursive call. Here is <code>fibonacci_fast(4)</code> expanded:</p>
 <pre><code>fibonacci_fast(4, 0, 1)
 = fibonacci_fast(3, 1, 1)    # n=4→3, a=0→1, b=1→0+1=1
 = fibonacci_fast(2, 1, 2)    # n=3→2, a=1→1, b=1→1+1=2
 = fibonacci_fast(1, 2, 3)    # n=2→1, a=1→2, b=2→1+2=3
 = fibonacci_fast(0, 3, 5)    # n=1→0, a=2→3, b=3→2+3=5
 = 3                           # n=0, return a</code></pre>
-<p>No variable is being mutated; each call just substitutes new values for <code>n</code>, <code>a</code>, and <code>b</code> and hands them to the next call. This form is called <em>tail recursion</em> because the recursive call is the last thing the function does.</p>
-<p>Any function with multiple recursive calls can be rewritten as a single recursive call with extra arguments that carry the intermediate results. For Fibonacci, the state to pass forward is the last two numbers; for a tree traversal, it might be an accumulator list.</p>
-<p>R has a limit on how deep recursion can go (around 1000 calls by default), and for most day-to-day R work, vectorized operations and functions like <code>map()</code> (<a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a>) are better tools.</p>
-<p>But there is something strange about <code>factorial</code> that has nothing to do with performance: its base case and inductive step look exactly like a proof by mathematical induction.</p>
+<p>Each call passes new values of <code>n</code>, <code>a</code>, and <code>b</code> to the next call, and no variable is modified along the way. Because the recursive call is the last thing the function does, this form is called <em>tail recursion</em>.</p>
+<p>Many functions with several recursive calls can be rewritten as one call that carries extra arguments. For Fibonacci, the extra arguments hold the last two numbers. For a tree traversal, they might hold an accumulator list.</p>
+<p>R does not turn tail calls into loops, so every call still counts toward the nesting limit set by <code>options(expressions = )</code>, which is 5000 by default. For most everyday R work, vectorized operations and functions like <code>map()</code> (<a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a>) are better tools.</p>
+<p>But there is something interesting about <code>factorial</code> that has nothing to do with performance: its base case and inductive step have the same shape as a proof by mathematical induction.</p>
 <section id="exercises-6" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-6">Exercises</h3>
 <ol type="1">
-<li>Trace through <code>factorial(3)</code> by hand, writing out each step like the example above.</li>
+<li>Trace <code>factorial(3)</code> by hand, writing out each step as in the example above.</li>
 <li>Write a recursive function <code>sum_to</code> that adds up all integers from 1 to <code>n</code>. Check: <code>sum_to(100)</code> should return 5050.</li>
 <li>What happens if you call <code>factorial(-1)</code>? Why? Add a <code>stopifnot()</code> to guard against it.</li>
 </ol>
@@ -1090,21 +1158,24 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  n <span class="sc">*</span> <span class="fu">factorial</span>(n <span class="sc">-</span> <span class="dv">1</span>)</span>
 <span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Two parts: a base case (when <code>n = 0</code>, return 1) and an inductive step (assume <code>factorial(n - 1)</code> gives the right answer, and use it to compute <code>factorial(n)</code>). If you have seen mathematical induction, you recognize the shape immediately. A proof by induction has a base case and an inductive step too. The resemblance is not a coincidence.</p>
-<p>In the 1930s, a logician working on how functions combine noticed something strange: the rules for combining types looked identical to the rules for combining propositions in formal logic. A function that takes an <code>A</code> and returns a <code>B</code> had the same structure as a proof that “if A, then B.” His name was Haskell Curry, and the Haskell programming language is named after him. Three decades later William Howard made the observation precise: every type corresponds to a logical proposition, and every program of that type corresponds to a proof of that proposition. A recursive function that terminates is a proof by induction. The result is called the <em>Curry-Howard correspondence</em>.</p>
-<p>Writing <code>factorial</code> constructs a proof by induction that the product <code>1 * 2 * ... * n</code> exists for every non-negative integer. The transformation from double-recursive <code>fibonacci</code> to tail-recursive <code>fibonacci_fast</code> is the same move a logician makes when they strengthen an inductive hypothesis to make a proof go through: the extra arguments (<code>a</code> and <code>b</code>) <em>are</em> the stronger hypothesis. Double induction reduces to simple induction with stronger invariants, which is why the same trick turns a slow recursive function into a fast one.</p>
-<p>Church, Curry, and Turing were all asking, before any computer existed, what could be <em>proved</em>, and the answer turned out to be identical to what could be <em>computed</em>.</p>
-<p>Look at where the proof lives in <code>factorial</code>. The definition says that <code>factorial(n)</code> and <code>n * factorial(n - 1)</code> are the same expression for arbitrary <code>n</code>, an equivalence that holds by term replacement alone, without evaluating either side. It is true by definition. The base case says <code>factorial(0)</code> is <code>1</code>, also by definition. Those two statements are the entire proof: you show that the program in state <code>n</code> and the program in state <code>n - 1</code> are the same program up to one substitution, and that the chain has a starting point. That is a proof by induction, and it covers every natural number at once. In lambda calculus notation:</p>
-<pre><code>fact = λn. if n = 0 then 1 else n * fact(n - 1)</code></pre>
-<p><code>fact</code> is the function. <code>fact(n)</code> is the function applied to some <code>n</code>. Replacing the name <code>fact</code> with its definition gives:</p>
-<pre><code>fact(n)
-= (λn. if n = 0 then 1 else n * fact(n - 1))(n)   # replace fact with its definition
-= if n = 0 then 1 else n * fact(n - 1)              # substitute n</code></pre>
-<p>You might think: of course they are the same, we just wrote the definition. But <code>fact</code> and <code>fact(n)</code> are not the same thing. <code>fact</code> is a definition, a rule that says what to do with an argument; <code>fact(n)</code> is that rule applied to a specific (but arbitrary) <code>n</code>.</p>
-<p>The reduction above shows what happens when you apply the rule: you get a term that contains <code>fact(n - 1)</code>, the same program applied to a smaller argument. That relationship between <code>fact(n)</code> and <code>fact(n - 1)</code> is not something we assumed or proved; it fell out of one substitution. A tautology. And yet that tautology, together with the base case, constitutes a proof by induction that <code>fact</code> produces the right answer for every natural number. When <code>n = 0</code>, the expression reduces to <code>1</code>. The substitution gives you the step from <code>n - 1</code> to <code>n</code>.</p>
-<p>This is what the Curry-Howard correspondence means in practice: the equivalence of two program states is a tautology that requires only substitution, and a chain of such tautologies with a starting point is a proof.</p>
+<p>Two parts: a base case (when <code>n = 0</code>, return 1) and a recursive step (compute <code>factorial(n - 1)</code>, then multiply by <code>n</code>). You can prove that this calculation gives the factorial by following the same structure. The base case returns the correct value, <code>0! = 1</code>. For the inductive step, assume the recursive call correctly computes <code>(n - 1)!</code>. Multiplying by <code>n</code> then gives <code>n!</code>. Each call reduces a positive integer by one, so the calculation eventually reaches zero. Recursion and induction follow the same structure here.</p>
+<p>In the 1930s, a logician studying how functions combine noticed a connection between types and formal logic. A function taking an <code>A</code> and returning a <code>B</code> had a type that could be read as the proposition “if A, then B.” His name was Haskell Curry, after whom the Haskell programming language is named. In 1969, William Howard made the connection precise for a formal system of typed functions: types correspond to propositions, and programs with those types correspond to proofs. This is the <em>Curry–Howard correspondence</em>. In systems that also express induction, a recursive program can construct a proof one case at a time.</p>
+<p>Our R function gives us a concrete way to follow that reasoning. Working with mathematical integers, the base case supplies the factorial of zero, and the recursive step constructs each subsequent factorial from the preceding one. The correctness argument follows by induction. R itself executes the calculation; checking a formal proof requires a system that can express the claim and verify each step.</p>
+<p>The transformation from double-recursive <code>fibonacci</code> to tail-recursive <code>fibonacci_fast</code> has a related connection to induction. We can track two consecutive Fibonacci numbers together: if we know <code>F(k)</code> and <code>F(k + 1)</code>, addition gives <code>F(k + 2)</code>, and we have the next pair. This strengthens the inductive statement to describe two consecutive values at each step. The extra arguments <code>a</code> and <code>b</code> carry those values through the computation. Each call advances the pair, reusing the work already done. That reuse is what makes this version fast.</p>
+<p>Church, Curry, and Turing studied formal reasoning and computation before electronic computers existed. Their work helped establish precise connections between manipulating expressions, constructing proofs, and carrying out calculations.</p>
+<p>Look at how the definition of <code>factorial</code> enters its correctness proof. For a positive integer <code>n</code>, unfolding the definition gives <code>n * factorial(n - 1)</code>. At zero, it gives <code>1</code>. These equations follow directly from the definition. To show that the function returns the factorial for every natural number, we use them in a proof by induction.</p>
+<p>We can write the recursive definition using lambda notation, with the conditional and arithmetic left in familiar form:</p>
+<pre class="text"><code>fact = λx. if x = 0 then 1 else x * fact(x - 1)</code></pre>
+<p>Here, <code>λx</code> introduces a function whose argument is <code>x</code>. The equation defines <code>fact</code> recursively: its name also appears in its body. Applying it to an arbitrary natural number <code>n</code> gives:</p>
+<pre class="text"><code>fact(n)
+= (λx. if x = 0 then 1 else x * fact(x - 1))(n)
+= if n = 0 then 1 else n * fact(n - 1)</code></pre>
+<p>The first step unfolds the recursive definition. The second substitutes <code>n</code> for the argument <code>x</code> in the function body. This substitution is called <em>beta reduction</em>. For positive <code>n</code>, the conditional selects <code>n * fact(n - 1)</code>. We have derived the relationship between the calculation at <code>n</code> and the calculation at <code>n - 1</code>.</p>
+<p>Now state the claim we want to prove: for every natural number <code>n</code>, <code>fact(n)</code> terminates and returns <code>n!</code>. We reason here about mathematical integers and exact arithmetic. At zero, the expression returns <code>1</code>, which equals <code>0!</code>. For the inductive step, assume <code>fact(k)</code> terminates and returns <code>k!</code>. Unfolding <code>fact(k + 1)</code> gives <code>(k + 1) * fact(k)</code>. By our assumption, the recursive call finishes and supplies <code>k!</code>; multiplication then gives <code>(k + 1)!</code>. Induction establishes the claim for every natural number.</p>
+<p>The function definition supplies the equations, and the inductive hypothesis lets us use the result for the smaller argument. Together they explain why the computation works. For each particular input, evaluation follows a finite sequence of reductions. The induction proof establishes correctness for all natural-number inputs at once.</p>
+<p>The Curry–Howard correspondence makes a further connection precise in suitable formal systems: a proposition can be expressed as a type, and a proof can be written as a program inhabiting that type. A proof by induction can itself be a recursive function, constructing evidence for each case from evidence for the preceding one. Our factorial argument shows the structure such a proof would follow.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1113,7 +1184,7 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>The correspondence is the foundation of <em>formal verification</em>: software that proves other software is correct. The first practical tool built on it was Coq, developed at INRIA in the late 1980s. In Coq, every program must come with a machine-checkable proof that it does what its type signature claims; if the proof has a gap, the code does not compile. This makes Coq painful for ordinary programming but powerful for building software where correctness matters more than convenience.</p>
 <p>In 2013, Leonardo de Moura at Microsoft Research started Lean, a newer proof assistant with a more accessible syntax and a growing library of formalized mathematics called Mathlib. In Lean, a proof that adding zero to any natural number gives back the same number looks like this:</p>
@@ -1126,7 +1197,7 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 </div>
 </div>
 </div>
-<p>R checks none of this; nothing stops you from writing a recursive function with no base case. But the structure is there in every recursive function you write, base case and inductive step, the same shape as a proof that holds for all natural numbers.</p>
+<p>R lets you write recursive functions freely, including ones that call themselves forever. When a function has a base case and each recursive call moves toward it, you can use that structure to prove a property by induction: establish the property at the base case, then show that it holds at each step whenever it holds for the smaller case.</p>
 
 
 </section>

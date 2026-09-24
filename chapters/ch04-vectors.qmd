@@ -11,7 +11,7 @@ Type `42` in R.
 42
 ```
 
-That `[1]` has been there since Chapter 1, quietly announcing something you probably didn't notice: you never made a number. You made a vector\index{atomic vector}.
+That `[1]` has been there since Chapter 1. The `[1]` tells you that the first value printed on this line is element 1. In R, even a single number is a vector\index{atomic vector}: typing `42` creates a vector with one element.
 
 
 ## There are no scalars {#sec-no-scalars}
@@ -24,9 +24,9 @@ length("hello")
 length(TRUE)
 ```
 
-Each one has a length, and the length is 1. `42` is a numeric vector\index{vector!numeric} with one element, `"hello"` a character vector\index{vector!character} with one element, `TRUE` a logical vector\index{vector!logical} with one element. Most languages keep a single number and a collection of numbers as two different kinds of thing, a scalar and an array. R has only the collection.
+Each one has a length, and the length is 1. `42` is a numeric vector\index{vector!numeric} with one element, `"hello"` a character vector\index{vector!character} with one element, `TRUE` a logical vector\index{vector!logical} with one element. Most languages keep a single number and a collection of numbers as two different kinds of thing, a scalar and an array. In R, a single number is simply a vector of length 1.
 
-Why would a language erase the distinction between "one thing" and "many things"? Because S (@sec-s-language), the language R descends from, was built for people who work with columns of data. A single temperature reading is rarely interesting on its own; you care about the whole column. So S made the column the basic unit of computation, and R inherited that decision wholesale, which means every operation you write, from arithmetic to comparison, has to reckon with that choice.
+S (@sec-s-language), the language R descends from, was designed for statistical computing, where you often work with whole columns of data. You might have hundreds of temperature readings and want to convert them all from Celsius to Fahrenheit. Vectors let you write that calculation once and apply it to every reading. R inherited this design: arithmetic and comparisons work element by element along a vector.
 
 `x * 2` works the same whether `x` has one element or a million, because `x` is always a vector and R needs no special case for scalars. But how do you build them?
 
@@ -58,9 +58,9 @@ c(morning, afternoon)
 = [58, 62, 55, 75, 80, 71]
 ```
 
-Each step replaces a name or function call with its value. `morning` becomes `c(58, 62, 55)`, the nested `c()` calls flatten into one, and at the last step the computer takes over: R allocates a contiguous block of memory and stores six numbers side by side.
+Each step replaces a name or function call with its value. `morning` becomes `c(58, 62, 55)`, the nested `c()` calls flatten into one, and R creates a vector containing all six numbers.
 
-This is the same term replacement that folded `add(3, add(5, 10))` down to `18` in @sec-church. Here, `c(morning, afternoon)` reduces to a six-element vector. Even building a data structure is a function call that reduces to a value.
+In @sec-church, we evaluated `add(3, add(5, 10))` by replacing each function call with its result until we reached `18`. The same process applies to `c(morning, afternoon)`: the function call returns a vector containing the six values.
 
 ::: {.callout-note collapse="true"}
 ## Grouping and `NULL`
@@ -92,9 +92,9 @@ typeof("hello")
 typeof(TRUE)
 ```
 
-These are the four atomic types you will use constantly. `double`\index{double} is a decimal number (even `42` is stored as a double by default), while `integer`\index{integer} needs an `L` suffix: `42L`. `character` is text, `logical` is `TRUE` or `FALSE`. Two more types, `complex` and `raw`, exist for specialized work; you can ignore them.
+These are the four atomic types you will use most often. `double`\index{double} stores numbers in floating-point form, including `42` by default. To write an `integer`\index{integer}, add an `L` suffix: `42L`. `character` stores text, and `logical` stores `TRUE` or `FALSE`. Two further types, `complex` and `raw`, are used for specialized work.
 
-Every element in a vector must be the same type. But what happens when you try to break that rule?
+Every element in an atomic vector must have the same type. What happens if you combine values of different types?
 
 
 ### Exercises {.unnumbered}
@@ -130,7 +130,7 @@ sum(x > 70)
 
 ::: callout-tip
 ## Opinion
-R will never warn you about coercion. `c(1, 2, "3")` quietly becomes all character, and your arithmetic breaks ten lines later with an error message that points nowhere near the real problem. Memorize the hierarchy: logical < integer < double < character. It will save you hours.
+Combining types with `c()` can change your values without a warning. `c(1, 2, "3")` produces the character vector `c("1", "2", "3")`, so trying to add or multiply its elements gives an error. For these four types, coercion follows the order logical < integer < double < character: all elements are converted to the furthest type along that sequence.
 :::
 
 ![R's coercion hierarchy: mixing types promotes everything to the most general type.](../images/coercion_hierarchy.png){#fig-coercion width=100%}
@@ -145,48 +145,44 @@ R will never warn you about coercion. `c(1, 2, "3")` quietly becomes all charact
 
 ## Vectorized operations {#sec-vectorized-ops}
 
-Say you have five temperatures in Fahrenheit and want Celsius. In most languages, you write a loop: go through each element, apply the formula, store the result. In R:
+Say you have five temperatures in Fahrenheit and want to convert them to Celsius:
 
 ```{r}
 temperatures <- c(72, 85, 61, 90, 78)
-(temperatures - 32) * 5/9
+(temperatures - 32) * 5 / 9
 ```
 
-One expression, no loop. The subtraction, multiplication, and division each apply to every element at once. This is a *vectorized operation*\index{vectorization}, and it is the default way of working in R.
+R subtracts 32 from each temperature, multiplies each result by 5, and divides by 9. An operation that works element by element on a vector is called a *vectorized operation*\index{vectorization}.
 
-Comparisons are vectorized too:
+Comparisons work element by element too:
 
 ```{r}
 temperatures > 75
 ```
 
-The result is a logical vector of the same length: `TRUE` where the condition holds, `FALSE` where it doesn't.
+The result is a logical vector with one value for each temperature: `TRUE` where the condition holds, `FALSE` where it doesn't.
 
-You can combine comparisons with `&` (and) and `|` (or):
+You can combine comparisons with `&` (and) and `|` (or). To check which temperatures are above 60 and below 85:
 
 ```{r}
 temperatures > 60 & temperatures < 85
 ```
 
-Arithmetic, comparisons, and most built-in functions all work this way, returning a vector of the same length for each input vector. `sqrt()`, `log()`, `round()`, `abs()`: give them a vector and they return a vector.
+Functions such as `sqrt()`, `log()`, `round()`, and `abs()` also return one result for each input element:
 
 ```{r}
 sqrt(c(1, 4, 9, 16, 25))
 ```
 
-Written as term replacement, with `f` standing for `sqrt`, the call unfolds like this:
+We can describe this element-by-element calculation using the notation from @sec-church. Let `f = λx. √x`, a function that takes one number and returns its square root:
 
-```
-f = λx. √x
-
-f(c(1, 4, 9, 16, 25))
-= c(f(1), f(4), f(9), f(16), f(25))          # distribute f over the vector
-= c((λx. √x)(1), (λx. √x)(4), ..., (λx. √x)(25))  # replace f with its definition
-= c(√1, √4, √9, √16, √25)                   # substitute each x
+```text
+c(f(1), f(4), f(9), f(16), f(25))
+= c(√1, √4, √9, √16, √25)
 = c(1, 2, 3, 4, 5)
 ```
 
-R distributes the function over the vector automatically; you write one application, R performs five. This is Church's model extended to collections: a function applied to a vector produces a vector of results. `sqrt(c(1, 4, 9, 16, 25))` is a single function applied to a single argument, and the fact that the argument contains five numbers is R's business, not yours.
+Each call to `f` reduces to a value, and those values form the result vector. R's `sqrt()` implements this calculation for a whole vector in a single call. Vectorization is a property of the function: when you write your own functions, their behavior on vectors depends on the operations you use inside them.
 
 ::: {.callout-note collapse="true"}
 ## Where `√` comes from
@@ -240,7 +236,7 @@ Recycling is useful when the shorter vector has length 1 (e.g., `x * 2`, `x > 0`
 
 ## Indexing {#sec-indexing}
 
-You often need specific elements from a vector, and the `[` operator\index{subsetting} extracts them. The simplest way is by position:
+Use `[`\index{subsetting} to extract elements from a vector by their position:
 
 ```{r}
 temperatures <- c(72, 85, 61, 90, 78)
@@ -260,7 +256,7 @@ Everything except the second element. You can also index with a logical vector:
 temperatures[temperatures > 75]
 ```
 
-`temperatures > 75` produces `c(FALSE, TRUE, FALSE, TRUE, TRUE)`, and `[` keeps only the `TRUE` elements\index{subsetting!logical}. You're asking a yes/no question of every element and keeping the ones that pass. This is filtering, and it will come back in a more powerful form when you learn `dplyr::filter()` (@sec-data-transformation).
+`temperatures > 75` produces `c(FALSE, TRUE, FALSE, TRUE, TRUE)`. Used inside `[`, this logical vector selects the temperatures at positions marked `TRUE`: 85, 90, and 78. This is called filtering\index{subsetting!logical}. In @sec-data-transformation, you'll use `dplyr::filter()` to select rows from a data frame using conditions.
 
 ```{r}
 hot <- temperatures > 75
@@ -283,7 +279,7 @@ x[2] <- 99
 x
 ```
 
-This looks like it's changing the vector in place, but R is actually making a copy with the new value and pointing the name `x` at the copy. The old vector (with 20 in position 2) is gone. This is copy-on-modify, the same idea from @sec-names-binding: values in R don't change; names get moved to point at new values. So far, every element in our vectors has been present and accounted for, but real data has gaps.
+The assignment updates the second element of `x`. If another name refers to the same vector, R copies it before making the change, so the other name retains the original values. This is copy-on-modify, introduced in @sec-names-binding. When R can safely modify a vector in place, it may avoid the copy. Next, we'll look at vectors with missing values.
 
 
 ### Exercises {.unnumbered}
@@ -338,7 +334,7 @@ NA == NA
 
 This returns `NA`, not `TRUE`. Think about it: if you don't know what `x` is and you don't know what `y` is, you can't know whether they're equal. Always use `is.na()`.
 
-Behind every one of these results is a single rule: a value is either present or absent, and any operation on an absent value produces absence. R threads that rule through every arithmetic and comparison operation automatically, which is why `NA` feels contagious. It is. That's the point.
+`NA` represents a missing value. Adding a number to it or comparing it with another value usually returns `NA`, because the result depends on information you don't have. Some operations can still give a definite answer: `FALSE & NA` returns `FALSE`, whatever the missing value might be.
 
 ::: {.callout-note collapse="true"}
 ## The same rule in Haskell and Rust
@@ -349,7 +345,7 @@ Rust adopted the same idea. Its equivalent of `Maybe` is called `Option`: a valu
 R's approach is looser: nothing stops you from ignoring `NA`, and you will not find out until your results look wrong. The underlying rule is the same.
 :::
 
-The question is what this contagion looks like when you have 344 measurements and a handful of gaps.
+What happens when we apply these operations to 344 measurements, some of which are missing?
 
 
 ### Exercises {.unnumbered}
@@ -361,18 +357,18 @@ The question is what this contagion looks like when you have 344 measurements an
 
 ## Meet penguins {#sec-meet-penguins}
 
-R 4.5 and later includes a dataset called `penguins` (from the Palmer Archipelago in Antarctica), and it's a good place to see everything from this chapter working on real measurements. If you're running an older version, install it with `install.packages("palmerpenguins")` and load it with `library(palmerpenguins)`.
+The `penguins` dataset contains measurements of penguins from the Palmer Archipelago in Antarctica. We'll use it to apply what you've learned in this chapter. It is part of the `datasets` package, which is attached in every R session from version 4.5 on, so this chapter needs R 4.5 or later.
 
 ```{r}
 #| eval: false
 head(penguins)
 ```
 
-`penguins` is a data frame (a table), and we'll learn about those properly in @sec-data-frames. For now, the important thing is that you can pull out a single column with `$`, and that column is a vector:
+`penguins` is a data frame, R's way of storing a table. We'll cover data frames in @sec-data-frames. For now, use `$` to extract a column as a vector:
 
 ```{r}
 #| eval: false
-bill <- penguins$bill_length_mm
+bill <- penguins$bill_len
 ```
 
 Now you have a numeric vector of 344 bill length measurements, with some `NA`s mixed in. Everything from this chapter applies:
@@ -400,11 +396,11 @@ long_bills <- bill[bill > 50 & !is.na(bill)]
 length(long_bills)
 ```
 
-How many penguins have a bill longer than 50 mm? Logical indexing filters the values, `is.na()` handles missing data, and `length()` counts the result. One line each, no loops. You wrote five operations in this chapter that would each require explicit iteration in most languages; in R, the vector carried the iteration for you. Data frames (@sec-data-frames) are built from exactly these vectors, stacked side by side like columns in a spreadsheet.
+How many penguins have a bill longer than 50 mm? Use `is.na()` to identify missing measurements, logical indexing to select bills longer than 50 mm, and `length()` to count them. Each operation works on a vector, so you can combine them to answer a question about the measurements. In @sec-data-frames, we'll work with data frames, which organize vectors of equal length into columns.
 
 
 ### Exercises {.unnumbered}
 
-1. What is the mean body mass (`penguins$body_mass_g`) of the penguins? Don't forget the `NA`s.
-2. How many penguins have a flipper length (`penguins$flipper_length_mm`) greater than 200?
+1. What is the mean body mass (`penguins$body_mass`) of the penguins? Don't forget the `NA`s.
+2. How many penguins have a flipper length (`penguins$flipper_len`) greater than 200?
 3. What is the shortest bill in the dataset? (Hint: `min()` with `na.rm = TRUE`.)
