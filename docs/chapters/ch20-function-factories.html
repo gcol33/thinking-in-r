@@ -689,7 +689,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
-<li>Write a function factory <code>make_multiplier</code> that takes a <code>factor</code> and returns a function that multiplies its argument by <code>factor</code>. Create <code>double</code> and <code>triple</code> and test them on the number 7.</li>
+<li>Write a function factory <code>make_multiplier</code> that takes a <code>factor</code> and returns a function that multiplies its argument by <code>factor</code>. Create <code>twice</code> and <code>triple</code> and test them on the number 7.</li>
 <li>What does <code>power(1)</code> return? Is it the identity function? Test it.</li>
 <li>Write a factory <code>make_greeter</code> that takes a greeting string and returns a function that takes a name and produces the greeting. <code>make_greeter("Hello")("Alice")</code> should return <code>"Hello, Alice"</code>.</li>
 </ol>
@@ -850,7 +850,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">fast_square</span>(<span class="dv">10</span>))</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.00    0.00    1.03</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.00    0.00    1.02</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">fast_square</span>(<span class="dv">10</span>))</span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    0.02    0.00    0.00</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>

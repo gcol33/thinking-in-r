@@ -191,14 +191,14 @@ make_multiplier <- function(factor) {
   function(x) x * factor
 }
 
-double <- make_multiplier(2)
+twice <- make_multiplier(2)
 triple <- make_multiplier(3)
 
-double(7)
+twice(7)
 triple(7)
 ```
 
-`make_multiplier` is another function factory, producing `double` and `triple` from the same template with different values baked in. Function factories appear throughout R, in custom plot themes, parameterized statistical tests, and configured data transformations, and @sec-function-factories covers them in depth. Every function in this chapter so far, passed around, stored in a list, or returned from a factory, has leaned on `+` or `*` to do its work. Are those functions too?
+`make_multiplier` is another function factory, producing `twice` and `triple` from the same template with different values baked in. Function factories appear throughout R, in custom plot themes, parameterized statistical tests, and configured data transformations, and @sec-function-factories covers them in depth. Every function in this chapter so far, passed around, stored in a list, or returned from a factory, has leaned on `+` or `*` to do its work. Are those functions too?
 
 
 ### Exercises {.unnumbered}

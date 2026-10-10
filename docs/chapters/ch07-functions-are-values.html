@@ -853,15 +853,15 @@ make_adder(5) = (λn. λx. x + n)(5) = λx. x + 5</code></pre>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) x <span class="sc">*</span> factor</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>double <span class="ot">&lt;-</span> <span class="fu">make_multiplier</span>(<span class="dv">2</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>twice <span class="ot">&lt;-</span> <span class="fu">make_multiplier</span>(<span class="dv">2</span>)</span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>triple <span class="ot">&lt;-</span> <span class="fu">make_multiplier</span>(<span class="dv">3</span>)</span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">double</span>(<span class="dv">7</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">twice</span>(<span class="dv">7</span>)</span>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 14</span></span>
 <span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="fu">triple</span>(<span class="dv">7</span>)</span>
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 21</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>make_multiplier</code> is another function factory, producing <code>double</code> and <code>triple</code> from the same template with different values baked in. Function factories appear throughout R, in custom plot themes, parameterized statistical tests, and configured data transformations, and <a href="ch20-function-factories.html" class="quarto-xref"><span>Chapter 20</span></a> covers them in depth. Every function in this chapter so far, passed around, stored in a list, or returned from a factory, has leaned on <code>+</code> or <code>*</code> to do its work. Are those functions too?</p>
+<p><code>make_multiplier</code> is another function factory, producing <code>twice</code> and <code>triple</code> from the same template with different values baked in. Function factories appear throughout R, in custom plot themes, parameterized statistical tests, and configured data transformations, and <a href="ch20-function-factories.html" class="quarto-xref"><span>Chapter 20</span></a> covers them in depth. Every function in this chapter so far, passed around, stored in a list, or returned from a factory, has leaned on <code>+</code> or <code>*</code> to do its work. Are those functions too?</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
 <ol type="1">

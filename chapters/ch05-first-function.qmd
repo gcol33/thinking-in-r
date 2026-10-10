@@ -13,19 +13,19 @@ So far, the functions you have called, including `sqrt()`, `c()`, and `sum()`, w
 Here is a function\index{function} that doubles its input:
 
 ```{r}
-double <- function(x) x * 2
+twice <- function(x) x * 2
 ```
 
-`function(x)` creates a function with one parameter\index{parameter}, `x`. Its body, `x * 2`, tells R what to calculate when you call it. The assignment binds the name `double` to the function, just as `x <- 3` binds the name `x` to a number. When you call `double(5)`, the value `5` is the argument\index{argument} supplied to the parameter `x`.
+`function(x)` creates a function with one parameter\index{parameter}, `x`. Its body, `x * 2`, tells R what to calculate when you call it. The assignment binds the name `twice` to the function, just as `x <- 3` binds the name `x` to a number. When you call `twice(5)`, the value `5` is the argument\index{argument} supplied to the parameter `x`.
 
 Call it:
 
 ```{r}
-double(5)
+twice(5)
 ```
 
 ```{r}
-double(c(1, 2, 3))
+twice(c(1, 2, 3))
 ```
 
 The second call works because `*` is vectorized (@sec-vectorized-ops): `x * 2` multiplies each element by two. A function's body can also contain several expressions, enclosed in curly braces:
@@ -234,15 +234,15 @@ The general rule: if you want your function to show a result, make sure the last
 Type `sqrt` without parentheses and R prints the function itself. Functions are values: you can assign them to names, store them in lists, and inspect their types.
 
 ```{r}
-f <- double
+f <- twice
 f(5)
 
-is.function(double)
+is.function(twice)
 
-typeof(double)
+typeof(twice)
 ```
 
-`double` is a name bound to a function. The assignment `f <- double` binds a second name to that same function, just as `y <- x` in @sec-names-binding bound a second name to the number `3`. The type `"closure"` describes a function together with the environment in which it was created. We will look at what that environment does shortly.
+`twice` is a name bound to a function. The assignment `f <- twice` binds a second name to that same function, just as `y <- x` in @sec-names-binding bound a second name to the number `3`. The type `"closure"` describes a function together with the environment in which it was created. We will look at what that environment does shortly.
 
 You can also create a function and call it without assigning it a name:
 
