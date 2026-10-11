@@ -692,19 +692,19 @@ window.Quarto = {
 <h2 data-number="5.1" class="anchored" data-anchor-id="sec-anatomy-function"><span class="header-section-number">5.1</span> Anatomy of a function</h2>
 <p>Here is a function that doubles its input:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>double <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">*</span> <span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>twice <span class="ot">&lt;-</span> <span class="cf">function</span>(x) x <span class="sc">*</span> <span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>function(x)</code> creates a function with one parameter, <code>x</code>. Its body, <code>x * 2</code>, tells R what to calculate when you call it. The assignment binds the name <code>double</code> to the function, just as <code>x &lt;- 3</code> binds the name <code>x</code> to a number. When you call <code>double(5)</code>, the value <code>5</code> is the argument supplied to the parameter <code>x</code>.</p>
+<p><code>function(x)</code> creates a function with one parameter, <code>x</code>. Its body, <code>x * 2</code>, tells R what to calculate when you call it. The assignment binds the name <code>twice</code> to the function, just as <code>x &lt;- 3</code> binds the name <code>x</code> to a number. When you call <code>twice(5)</code>, the value <code>5</code> is the argument supplied to the parameter <code>x</code>.</p>
 <p>Call it:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">double</span>(<span class="dv">5</span>)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">twice</span>(<span class="dv">5</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">double</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">twice</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>))</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 2 4 6</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The second call works because <code>*</code> is vectorized (<a href="ch04-vectors.html#sec-vectorized-ops" class="quarto-xref"><span>Section 4.4</span></a>): <code>x * 2</code> multiplies each element by two. A function’s body can also contain several expressions, enclosed in curly braces:</p>
+<p>The second call works because <code>*</code> is vectorized (<span class="quarto-unresolved-ref">?sec-vectorized-ops</span>): <code>x * 2</code> multiplies each element by two. A function’s body can also contain several expressions, enclosed in curly braces:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>describe <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">length</span>(x)</span>
@@ -715,7 +715,7 @@ window.Quarto = {
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="fu">c</span>(<span class="dv">72</span>, <span class="dv">85</span>, <span class="dv">61</span>, <span class="dv">90</span>, <span class="dv">78</span>))</span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "n = 5 , mean = 77.2"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>R evaluates the expressions in order: it assigns the length of <code>x</code> to <code>n</code>, assigns the mean to <code>m</code>, and then combines them into a string. That string is the function’s return value. The rule is the same as in <a href="ch03-expressions-names.html#sec-expressions-all-the-way" class="quarto-xref"><span>Section 3.3</span></a>: a block in curly braces is itself an expression whose value comes from the last expression evaluated.</p>
+<p>R evaluates the expressions in order: it assigns the length of <code>x</code> to <code>n</code>, assigns the mean to <code>m</code>, and then combines them into a string. That string is the function’s return value. The rule is the same as in <span class="quarto-unresolved-ref">?sec-expressions-all-the-way</span>: a block in curly braces is itself an expression whose value comes from the last expression evaluated.</p>
 <section id="exercises" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises">Exercises</h3>
 <ol type="1">
@@ -747,7 +747,7 @@ window.Quarto = {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">greet</span>(<span class="at">greeting =</span> <span class="st">"Bonjour"</span>, <span class="at">name =</span> <span class="st">"R"</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "Bonjour R"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Arguments match by position or name, just as they did in <code>log(8, base = 2)</code> in <a href="ch03-expressions-names.html#sec-calling-functions" class="quarto-xref"><span>Section 3.4</span></a>. You use the same calling syntax for your own functions and those supplied with R.</p>
+<p>Arguments match by position or name, just as they did in <code>log(8, base = 2)</code> in <span class="quarto-unresolved-ref">?sec-calling-functions</span>. You use the same calling syntax for your own functions and those supplied with R.</p>
 <p>A function can also accept a variable number of arguments through <code>...</code> (pronounced “dot-dot-dot”):</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>shout <span class="ot">&lt;-</span> <span class="cf">function</span>(...) {</span>
@@ -758,7 +758,7 @@ window.Quarto = {
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">shout</span>(<span class="st">"hello"</span>, <span class="st">"world"</span>)</span>
 <span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "HELLO WORLD"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>...</code> collects every argument you pass, however many there are, and <code>c(...)</code> combines them into a vector. <code>c()</code>, <code>paste()</code>, and <code>sum()</code> all use <code>...</code>, which is why <code>c(1, 2, 3)</code> and <code>c(1, 2, 3, 4, 5, 6, 7)</code> both work. More on <code>...</code> in <a href="ch23-lazy-evaluation.html" class="quarto-xref"><span>Chapter 23</span></a>.</p>
+<p><code>...</code> collects every argument you pass, however many there are, and <code>c(...)</code> combines them into a vector. <code>c()</code>, <code>paste()</code>, and <code>sum()</code> all use <code>...</code>, which is why <code>c(1, 2, 3)</code> and <code>c(1, 2, 3, 4, 5, 6, 7)</code> both work. More on <code>...</code> in <span class="quarto-unresolved-ref">?sec-lazy-evaluation</span>.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -773,7 +773,7 @@ window.Quarto = {
 <div class="callout-body-container callout-body">
 <p>In the lambda calculus, a function takes exactly one argument. If you want two, you write a function that returns another function:</p>
 <pre><code>λx. λy. x + y</code></pre>
-<p>This reads: “a function that takes <code>x</code> and returns <em>another function</em> that takes <code>y</code> and returns <code>x + y</code>.” To add 3 and 5, you apply it twice: <code>(λx. λy. x + y)(3)(5)</code> = <code>(λy. 3 + y)(5)</code> = <code>3 + 5</code> = <code>8</code>. Each application replaces one argument, one step at a time. This is called <em>currying</em>, and R can do it too (<a href="ch20-function-factories.html" class="quarto-xref"><span>Chapter 20</span></a>). <code>...</code> is the practical alternative: a single function accepts any number of arguments and decides what to do with them inside.</p>
+<p>This reads: “a function that takes <code>x</code> and returns <em>another function</em> that takes <code>y</code> and returns <code>x + y</code>.” To add 3 and 5, you apply it twice: <code>(λx. λy. x + y)(3)(5)</code> = <code>(λy. 3 + y)(5)</code> = <code>3 + 5</code> = <code>8</code>. Each application replaces one argument, one step at a time. This is called <em>currying</em>, and R can do it too (<span class="quarto-unresolved-ref">?sec-function-factories</span>). <code>...</code> is the practical alternative: a single function accepts any number of arguments and decides what to do with them inside.</p>
 </div>
 </div>
 </div>
@@ -803,7 +803,7 @@ window.Quarto = {
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">add_one</span>(<span class="dv">8</span>))</span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>In <code>sqrt(add_one(8))</code>, <code>add_one(8)</code> produces <code>9</code>, which <code>sqrt()</code> uses to calculate <code>3</code>. This follows the idea from <a href="ch03-expressions-names.html#sec-expressions-all-the-way" class="quarto-xref"><span>Section 3.3</span></a>: a function call is an expression, and its value can become part of a larger expression.</p>
+<p>In <code>sqrt(add_one(8))</code>, <code>add_one(8)</code> produces <code>9</code>, which <code>sqrt()</code> uses to calculate <code>3</code>. This follows the idea from <span class="quarto-unresolved-ref">?sec-expressions-all-the-way</span>: a function call is an expression, and its value can become part of a larger expression.</p>
 <p>The same rule applies to a body with several expressions:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>add_one <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
@@ -906,23 +906,23 @@ window.Quarto = {
 <h2 data-number="5.4" class="anchored" data-anchor-id="sec-functions-are-values"><span class="header-section-number">5.4</span> Functions are just values</h2>
 <p>Type <code>sqrt</code> without parentheses and R prints the function itself. Functions are values: you can assign them to names, store them in lists, and inspect their types.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> double</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>f <span class="ot">&lt;-</span> twice</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">f</span>(<span class="dv">5</span>)</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span>
 <span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">is.function</span>(double)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">is.function</span>(twice)</span>
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(double)</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="fu">typeof</span>(twice)</span>
 <span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "closure"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>double</code> is a name bound to a function. The assignment <code>f &lt;- double</code> binds a second name to that same function, just as <code>y &lt;- x</code> in <a href="ch03-expressions-names.html#sec-names-binding" class="quarto-xref"><span>Section 3.2</span></a> bound a second name to the number <code>3</code>. The type <code>"closure"</code> describes a function together with the environment in which it was created. We will look at what that environment does shortly.</p>
+<p><code>twice</code> is a name bound to a function. The assignment <code>f &lt;- twice</code> binds a second name to that same function, just as <code>y &lt;- x</code> in <span class="quarto-unresolved-ref">?sec-names-binding</span> bound a second name to the number <code>3</code>. The type <code>"closure"</code> describes a function together with the environment in which it was created. We will look at what that environment does shortly.</p>
 <p>You can also create a function and call it without assigning it a name:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>(<span class="cf">function</span>(x) x <span class="sc">+</span> <span class="dv">1</span>)(<span class="dv">10</span>)</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 11</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The expression <code>function(x) x + 1</code> creates the function. The surrounding parentheses group that expression, and the following <code>(10)</code> calls the resulting function with the argument <code>10</code>. A function used without a name is called an <em>anonymous function</em>. This example corresponds to applying <code>λx. x + 1</code> to <code>10</code>; in <a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a>, we will pass anonymous functions to other functions.</p>
+<p>The expression <code>function(x) x + 1</code> creates the function. The surrounding parentheses group that expression, and the following <code>(10)</code> calls the resulting function with the argument <code>10</code>. A function used without a name is called an <em>anonymous function</em>. This example corresponds to applying <code>λx. x + 1</code> to <code>10</code>; in <span class="quarto-unresolved-ref">?sec-iteration-without-loops</span>, we will pass anonymous functions to other functions.</p>
 <p>Functions can also be returned as results. Together, these uses make functions <em>first-class values</em>: they can be stored, passed, and returned just like numbers or strings. When a function runs, its parameters and local variables need bindings of their own. Where are those bindings kept?</p>
 <section id="exercises-3" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-3">Exercises</h3>
@@ -962,7 +962,7 @@ window.Quarto = {
 <span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="fu">scale</span>(<span class="dv">10</span>)</span>
 <span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 30</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>When <code>scale</code> uses <code>multiplier</code>, R first looks for a local binding inside the running function. It then searches the environment where <code>scale</code> was defined and continues through enclosing environments until it finds the name. Here, it finds <code>multiplier</code> in the workspace. This lookup rule is called <em>lexical scoping</em>, which R inherited from Scheme (<a href="ch02-family-tree.html#sec-scheme" class="quarto-xref"><span>Section 2.2</span></a>). What happens when a function assigns to a name that already exists in the workspace?</p>
+<p>When <code>scale</code> uses <code>multiplier</code>, R first looks for a local binding inside the running function. It then searches the environment where <code>scale</code> was defined and continues through enclosing environments until it finds the name. Here, it finds <code>multiplier</code> in the workspace. This lookup rule is called <em>lexical scoping</em>, which R inherited from Scheme (<span class="quarto-unresolved-ref">?sec-scheme</span>). What happens when a function assigns to a name that already exists in the workspace?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -977,7 +977,7 @@ window.Quarto = {
 <span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>increment</code> created its own local <code>n</code>, set it to 1, and returned it, but the <code>n</code> in the workspace is still 0. The function read the outer <code>n</code> without modifying it; it created a new local binding with the same name. This is R’s copy-on-modify philosophy: values do not change, you create new values.</p>
-<p>The practical rule is simple: what happens inside a function stays inside the function. The full machinery behind this (environments, closures, and the scope chain) is in <a href="ch18-closures-and-scope.html" class="quarto-xref"><span>Chapter 18</span></a>.</p>
+<p>The practical rule is simple: what happens inside a function stays inside the function. The full machinery behind this (environments, closures, and the scope chain) is in <span class="quarto-unresolved-ref">?sec-closures-and-scope</span>.</p>
 <section id="exercises-4" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-4">Exercises</h3>
 <ol type="1">
@@ -1031,7 +1031,7 @@ window.Quarto = {
 <span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in `safe_divide()`:</span></span>
 <span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! y != 0 is not TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>A function that fails immediately with a clear message saves you from chasing wrong outputs later. <a href="ch25-contracts-and-defensive-code.html" class="quarto-xref"><span>Chapter 25</span></a> covers input validation in depth; for now, <code>stopifnot()</code> at the top of your functions is enough. But validation only protects against bad inputs. What about the structure of the computation itself?</p>
+<p>A function that fails immediately with a clear message saves you from chasing wrong outputs later. <span class="quarto-unresolved-ref">?sec-contracts-and-defensive-code</span> covers input validation in depth; for now, <code>stopifnot()</code> at the top of your functions is enough. But validation only protects against bad inputs. What about the structure of the computation itself?</p>
 <section id="exercises-5" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-5">Exercises</h3>
 <ol type="1">
@@ -1087,11 +1087,11 @@ Figure&nbsp;5.1: Recursive calls for <code>factorial(5)</code>. Each call holds 
 <div class="callout-body-container callout-body">
 <p>In lambda calculus notation, factorial looks like this:</p>
 <pre><code>fact = λn. if n = 0 then 1 else n * fact(n - 1)</code></pre>
-<p>The self-reference is informal shorthand; pure lambda calculus has no names, so <code>fact</code> cannot refer to itself directly, and <a href="ch30-r-as-mathematics.html#sec-z-combinator" class="quarto-xref"><span>Section 30.5</span></a> shows how recursion works without them. The <code>if/then/else</code> is shorthand too. The lambda calculus has only variables, functions, and application, but Church showed that true, false, and branching can be encoded as functions that choose between their arguments:</p>
+<p>The self-reference is informal shorthand; pure lambda calculus has no names, so <code>fact</code> cannot refer to itself directly, and <span class="quarto-unresolved-ref">?sec-z-combinator</span> shows how recursion works without them. The <code>if/then/else</code> is shorthand too. The lambda calculus has only variables, functions, and application, but Church showed that true, false, and branching can be encoded as functions that choose between their arguments:</p>
 <pre><code>TRUE  = λx. λy. x      # a function that takes two arguments and returns the first
 FALSE = λx. λy. y      # a function that takes two arguments and returns the second
 IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
-<p><code>IF</code> hands both options to the condition and lets it choose, so <code>IF(TRUE)(1)(2)</code> becomes <code>TRUE(1)(2)</code> becomes <code>(λx. λy. x)(1)(2)</code> becomes <code>1</code>. <a href="ch30-r-as-mathematics.html#sec-church-booleans" class="quarto-xref"><span>Section 30.2</span></a> builds these in R.</p>
+<p><code>IF</code> hands both options to the condition and lets it choose, so <code>IF(TRUE)(1)(2)</code> becomes <code>TRUE(1)(2)</code> becomes <code>(λx. λy. x)(1)(2)</code> becomes <code>1</code>. <span class="quarto-unresolved-ref">?sec-church-booleans</span> builds these in R.</p>
 <p>With the shorthand in place, we can unfold the definition and substitute the argument, one step at a time:</p>
 <pre><code>fact(3)                                     # apply fact with n = 3
 = (λn. if n=0 then 1 else n * fact(n-1))(3) # replace fact with its definition
@@ -1138,7 +1138,7 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 = 3                           # n=0, return a</code></pre>
 <p>Each call passes new values of <code>n</code>, <code>a</code>, and <code>b</code> to the next call, and no variable is modified along the way. Because the recursive call is the last thing the function does, this form is called <em>tail recursion</em>.</p>
 <p>Many functions with several recursive calls can be rewritten as one call that carries extra arguments. For Fibonacci, the extra arguments hold the last two numbers. For a tree traversal, they might hold an accumulator list.</p>
-<p>R does not turn tail calls into loops, so every call still counts toward the nesting limit set by <code>options(expressions = )</code>, which is 5000 by default. For most everyday R work, vectorized operations and functions like <code>map()</code> (<a href="ch19-iteration-without-loops.html" class="quarto-xref"><span>Chapter 19</span></a>) are better tools.</p>
+<p>R does not turn tail calls into loops, so every call still counts toward the nesting limit set by <code>options(expressions = )</code>, which is 5000 by default. For most everyday R work, vectorized operations and functions like <code>map()</code> (<span class="quarto-unresolved-ref">?sec-iteration-without-loops</span>) are better tools.</p>
 <p>But there is something interesting about <code>factorial</code> that has nothing to do with performance: its base case and inductive step have the same shape as a proof by mathematical induction.</p>
 <section id="exercises-6" class="level3 unnumbered">
 <h3 class="unnumbered anchored" data-anchor-id="exercises-6">Exercises</h3>
@@ -1204,93 +1204,49 @@ IF    = λcond. λthen. λelse. cond(then)(else)</code></pre>
 
 </main> <!-- /main -->
 <script>
-
 document.addEventListener('DOMContentLoaded', function() {
 
-
-
   // Replace Quarto's default toggle icon with sun/moon SVGs
-
   var toggle = document.querySelector('.quarto-color-scheme-toggle');
-
   if (toggle) {
-
     var icon = toggle.querySelector('i.bi');
-
     if (icon) {
-
       icon.outerHTML =
-
         '<svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-
           '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>' +
-
         '</svg>' +
-
         '<svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-
           '<circle cx="12" cy="12" r="5"/>' +
-
           '<line x1="12" y1="1" x2="12" y2="3"/>' +
-
           '<line x1="12" y1="21" x2="12" y2="23"/>' +
-
           '<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>' +
-
           '<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>' +
-
           '<line x1="1" y1="12" x2="3" y2="12"/>' +
-
           '<line x1="21" y1="12" x2="23" y2="12"/>' +
-
           '<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>' +
-
           '<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>' +
-
         '</svg>';
-
     }
-
   }
 
-
-
   // Citation copy button
-
   document.querySelectorAll('.copy-btn').forEach(function(btn) {
-
     btn.addEventListener('click', function() {
-
       var text = this.closest('.citation-box').querySelector('.citation-text').textContent;
-
       var originalHTML = btn.innerHTML;
-
       navigator.clipboard.writeText(text).then(function() {
-
         btn.classList.add('copied');
-
         btn.innerHTML = 'Copied!';
-
         setTimeout(function() {
-
           btn.classList.remove('copied');
-
           btn.innerHTML = originalHTML;
-
         }, 2000);
-
       });
-
     });
-
   });
 
-
-
 });
-
 </script>
-
 <script>
 (function() {
   var ENDPOINT = "https://gcol33-analytics.netlify.app/api";
